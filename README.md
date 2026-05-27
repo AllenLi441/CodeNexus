@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CodeNexus
 
-## Getting Started
+CodeNexus is an AI-assisted programming learning platform built with Next.js. It combines a no-login trial mode, structured language/course selection, in-browser Python execution, guided lessons, a chibi assistant interface, Supabase-backed accounts/progress, and shareable learning artifacts.
 
-First, run the development server:
+## Current Status
+
+- Frontend app: Next.js 16 App Router, React 19, Tailwind CSS 4, Framer Motion, CodeMirror, React Flow, and shadcn-style UI primitives.
+- Trial mode: `/play` is available without login. Users can choose a language, choose a branch, then open a lesson. Trial progress is intentionally not saved.
+- Authenticated mode: `/dashboard`, `/learn/[language]`, projects, achievements, settings, shared snippets, and mentor wall features rely on Supabase Auth and database tables.
+- Course content: Python has the strongest implemented lesson flow. C, C++, Java, C#, JavaScript, and Visual Basic modules are present as learning-module structures and static-check based exercises.
+- AI assistant: persona-based assistant assets and chat UI are included. Guest mode uses local fallback replies; authenticated cloud chat requires the configured API key.
+- Database: Supabase SQL migrations live in `supabase/migrations`.
+- Production hardening: lint/build/test scripts, error boundaries, health route, auth protection, security headers, rate-limit logic, and Python runaway-code preflight checks are included.
+
+Note: the linked Supabase project must be active for login/register to work. If Supabase is paused or inactive, the public trial page still loads but authenticated flows will show a service-unavailable message.
+
+## Tech Stack
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Supabase Auth and Postgres
+- Pyodide for browser-side Python execution
+- CodeMirror editor
+- React Flow course maps
+- Vitest unit tests
+
+## Local Setup
+
+Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create your local environment file:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.local.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill in:
 
-## Learn More
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+DEEPSEEK_API_KEY=
+```
 
-To learn more about Next.js, take a look at the following resources:
+Start the background dev server:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run dev:bg
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Useful server commands:
 
-## Deploy on Vercel
+```bash
+npm run dev:status
+npm run dev:logs
+npm run dev:logs:follow
+npm run dev:stop
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+http://localhost:3000/play
+```
+
+## Verification
+
+```bash
+npm run lint
+npm run build
+npm run test
+```
+
+## Database Setup
+
+Apply the SQL files in `supabase/migrations` to a Supabase project in numeric order. The app expects tables for:
+
+- user profiles and settings
+- user progress
+- achievements
+- shared snippets and wall shares
+
+Keep row-level security enabled and use the included policies as the baseline.
+
+## Repository Notes
+
+The repository intentionally excludes:
+
+- `.env.local` and other local secrets
+- `.next/`
+- `node_modules/`
+- local Playwright/browser debugging artifacts
+- generated QA screenshots under `output/`
+
+Assistant character images under `public/assistant-assets` are part of the app and should be committed.
