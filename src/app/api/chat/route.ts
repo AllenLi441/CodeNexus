@@ -16,6 +16,14 @@ export type Persona = 'mentor'
 // stingy enough that a runaway client / scraper hits the wall fast.
 const CHAT_LIMIT = 12
 const CHAT_WINDOW_MS = 60_000
+const DEFAULT_AI_BASE_URL = 'https://api.deepseek.com'
+const DEFAULT_AI_MODEL = 'deepseek-chat'
+type ResolvedAiClient = {
+  client: OpenAI
+  model: string
+} | {
+  error: string
+}
 
 function fenceLanguage(languageName: string) {
   if (languageName === 'JavaScript') return 'javascript'
@@ -75,12 +83,54 @@ function systemPrompt({
 ${assistantMemorySummary?.trim() || '暂无可用记忆；只根据当前代码和对话回答。'}`
 }
 
-const client = process.env.DEEPSEEK_API_KEY
-  ? new OpenAI({
-      baseURL: 'https://api.deepseek.com',
-      apiKey: process.env.DEEPSEEK_API_KEY,
-    })
-  : null
+function normalizeBaseUrl(value?: string | null) {
+  const raw = value?.trim() || process.env.DEEPSEEK_BASE_URL?.trim() || DEFAULT_AI_BASE_URL
+  try {
+    const url = new URL(raw)
+    if (url.protocol !== 'https:') return null
+    url.username = ''
+    url.password = ''
+    url.search = ''
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return null
+  }
+}
+
+function allowedBaseUrls() {
+  return new Set([
+    normalizeBaseUrl(process.env.DEEPSEEK_BASE_URL),
+    DEFAULT_AI_BASE_URL,
+    ...((process.env.AI_ALLOWED_BASE_URLS ?? '')
+      .split(',')
+      .map((item) => normalizeBaseUrl(item))
+      .filter((item): item is string => Boolean(item))),
+  ].filter(Boolean))
+}
+
+function normalizeModel(value?: string | null) {
+  const model = value?.trim() || process.env.DEEPSEEK_MODEL?.trim() || DEFAULT_AI_MODEL
+  return /^[\w./:-]{1,80}$/.test(model) ? model : DEFAULT_AI_MODEL
+}
+
+function resolveAiClient(req: NextRequest): ResolvedAiClient | null {
+  const headerKey = req.headers.get('x-codenexus-ai-key')?.trim()
+  const apiKey = headerKey || process.env.DEEPSEEK_API_KEY?.trim()
+  if (!apiKey) return null
+
+  const baseURL = normalizeBaseUrl(headerKey ? req.headers.get('x-codenexus-ai-base-url') : null)
+  if (!baseURL || !allowedBaseUrls().has(baseURL)) {
+    return {
+      error: `⚠️ AI Base URL 未被允许。把它加到 AI_ALLOWED_BASE_URLS，或者使用默认 ${DEFAULT_AI_BASE_URL}。`,
+    }
+  }
+
+  return {
+    client: new OpenAI({ baseURL, apiKey }),
+    model: normalizeModel(headerKey ? req.headers.get('x-codenexus-ai-model') : null),
+  }
+}
 
 // Stream a plain-text message that the existing client can still read into
 // the assistant bubble. Lets us surface real reasons (rate-limit, missing
@@ -106,8 +156,12 @@ function textStream(message: string, status = 200, retryAfterSec?: number) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!client) {
-    return textStream('⚠️ 小助手缺少 DEEPSEEK_API_KEY 配置，请联系管理员。', 503)
+  const ai = resolveAiClient(req)
+  if (!ai) {
+    return textStream('⚠️ 小助手缺少 API Key。去命令中心填你自己的 DeepSeek Key，或在部署环境配置 DEEPSEEK_API_KEY。', 503)
+  }
+  if ('error' in ai) {
+    return textStream(ai.error, 400)
   }
 
   // Auth: only signed-in learners can talk to the model. Stops匿名 token 烧钱。
@@ -169,8 +223,8 @@ export async function POST(req: NextRequest) {
 
   let stream
   try {
-    stream = await client.chat.completions.create({
-      model: 'deepseek-chat',
+    stream = await ai.client.chat.completions.create({
+      model: ai.model,
       messages: [
         {
           role: 'system',

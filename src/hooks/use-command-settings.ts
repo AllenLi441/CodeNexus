@@ -24,6 +24,9 @@ export type CommandSettings = {
   assistantPersona: AssistantPersonaId
   assistantLiveliness: number
   assistantMemory: boolean
+  aiApiKey: string
+  aiBaseUrl: string
+  aiModel: string
 }
 
 export const DEFAULT_COMMAND_SETTINGS: CommandSettings = {
@@ -41,6 +44,9 @@ export const DEFAULT_COMMAND_SETTINGS: CommandSettings = {
   assistantPersona: DEFAULT_ASSISTANT_PERSONA,
   assistantLiveliness: DEFAULT_ASSISTANT_LIVELINESS,
   assistantMemory: true,
+  aiApiKey: '',
+  aiBaseUrl: 'https://api.deepseek.com',
+  aiModel: 'deepseek-chat',
 }
 
 const STORAGE_KEY = 'codenexus.command-settings'
@@ -72,6 +78,13 @@ export function normalizeCommandSettings(settings?: Partial<CommandSettings> | n
     assistantPersona: resolveAssistantPersona(settings?.assistantPersona).id,
     assistantLiveliness: clampPercent(settings?.assistantLiveliness ?? DEFAULT_COMMAND_SETTINGS.assistantLiveliness),
     assistantMemory: settings?.assistantMemory ?? DEFAULT_COMMAND_SETTINGS.assistantMemory,
+    aiApiKey: typeof settings?.aiApiKey === 'string' ? settings.aiApiKey.trim() : DEFAULT_COMMAND_SETTINGS.aiApiKey,
+    aiBaseUrl: typeof settings?.aiBaseUrl === 'string' && settings.aiBaseUrl.trim()
+      ? settings.aiBaseUrl.trim()
+      : DEFAULT_COMMAND_SETTINGS.aiBaseUrl,
+    aiModel: typeof settings?.aiModel === 'string' && settings.aiModel.trim()
+      ? settings.aiModel.trim().slice(0, 80)
+      : DEFAULT_COMMAND_SETTINGS.aiModel,
   }
 }
 

@@ -76,7 +76,7 @@ export type LanguageRunnerProps = {
   codename: string
   initialLevelId: number
   initialProgress: ProgressRow[]
-  initialSettings: CommandSettings
+  initialSettings: Partial<CommandSettings>
   mode?: 'authenticated' | 'guest-play'
 }
 

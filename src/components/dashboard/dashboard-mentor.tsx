@@ -32,7 +32,7 @@ type DashboardMentorProps = {
   languageRoute: string
   stage: MentorStage
   nextLevelId: number
-  settings: CommandSettings
+  settings: Partial<CommandSettings>
 }
 
 type TutorialStep = {
@@ -143,7 +143,7 @@ export function DashboardMentor({ codename, languageName, languageRoute, stage, 
           className="fixed bottom-4 left-3 right-3 z-40 max-h-[calc(100dvh-32px)] overflow-hidden rounded-lg border border-cyan-300/22 bg-black/94 text-white shadow-[0_28px_100px_rgba(0,0,0,0.68),0_0_70px_rgba(34,211,238,0.14)] backdrop-blur-2xl sm:bottom-6 sm:left-auto sm:right-6 sm:w-[min(520px,calc(100vw-32px))]"
         >
           <div className="flex items-center gap-3 border-b border-white/8 bg-white/[0.035] px-4 py-3">
-            <AssistantAvatar personaId={persona.id} size="sm" active={settings.assistantLiveliness > 55} />
+            <AssistantAvatar personaId={persona.id} size="sm" active={(settings.assistantLiveliness ?? 55) > 55} />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold">{persona.name}</p>
               <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-300/45">{copy.kicker}</p>

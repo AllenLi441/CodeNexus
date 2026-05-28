@@ -637,7 +637,14 @@ export function AIChat({
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(settings.aiApiKey ? {
+            'x-codenexus-ai-key': settings.aiApiKey,
+            'x-codenexus-ai-base-url': settings.aiBaseUrl,
+            'x-codenexus-ai-model': settings.aiModel,
+          } : {}),
+        },
         body: JSON.stringify({
           messages: apiMessages,
           code: currentCode,

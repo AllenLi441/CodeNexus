@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bot, Check, Code2, Cpu, MessageSquare, Monitor, PanelRightOpen, Save, Settings2, SlidersHorizontal, Sparkles, Terminal, UserRound, X } from 'lucide-react'
+import { Bot, Check, Code2, Cpu, KeyRound, MessageSquare, Monitor, PanelRightOpen, Save, Settings2, SlidersHorizontal, Sparkles, Terminal, UserRound, X } from 'lucide-react'
 import { updateCommandSettings } from '@/app/actions/settings'
 import {
   type CommandSettings,
@@ -441,6 +441,54 @@ export function CommandCenter({
                     >
                       清空本机小助手记忆
                     </button>
+
+                    <section className="space-y-3 rounded-lg border border-cyan-300/12 bg-cyan-300/[0.035] p-4">
+                      <div className="flex items-center gap-2 text-xs font-medium text-white/72">
+                        <KeyRound className="h-3.5 w-3.5 text-cyan-300/70" />
+                        AI API 配置
+                      </div>
+                      <input
+                        type="password"
+                        value={settings.aiApiKey}
+                        autoComplete="off"
+                        spellCheck={false}
+                        onChange={(event) => updateSettings({ aiApiKey: event.target.value })}
+                        className="cn-focus-ring h-10 w-full rounded-lg border border-white/10 bg-black/45 px-3 font-mono text-xs text-white outline-none transition-colors placeholder:text-white/20 focus:border-cyan-300/55"
+                        placeholder="DeepSeek API Key"
+                      />
+                      <div className="grid gap-2 sm:grid-cols-[1fr_0.72fr]">
+                        <input
+                          value={settings.aiBaseUrl}
+                          autoComplete="off"
+                          spellCheck={false}
+                          onChange={(event) => updateSettings({ aiBaseUrl: event.target.value })}
+                          className="cn-focus-ring h-10 min-w-0 rounded-lg border border-white/10 bg-black/45 px-3 font-mono text-xs text-white outline-none transition-colors placeholder:text-white/20 focus:border-cyan-300/55"
+                          placeholder="https://api.deepseek.com"
+                        />
+                        <input
+                          value={settings.aiModel}
+                          autoComplete="off"
+                          spellCheck={false}
+                          onChange={(event) => updateSettings({ aiModel: event.target.value })}
+                          className="cn-focus-ring h-10 min-w-0 rounded-lg border border-white/10 bg-black/45 px-3 font-mono text-xs text-white outline-none transition-colors placeholder:text-white/20 focus:border-cyan-300/55"
+                          placeholder="deepseek-chat"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[11px] leading-relaxed text-white/35">只保存在当前浏览器，不同步到账号。</p>
+                        <button
+                          type="button"
+                          onClick={() => updateSettings({
+                            aiApiKey: '',
+                            aiBaseUrl: DEFAULT_COMMAND_SETTINGS.aiBaseUrl,
+                            aiModel: DEFAULT_COMMAND_SETTINGS.aiModel,
+                          })}
+                          className="cn-focus-ring h-8 rounded-lg border border-white/10 px-3 text-[11px] font-semibold text-white/42 transition-colors hover:border-red-300/24 hover:text-red-100"
+                        >
+                          清空
+                        </button>
+                      </div>
+                    </section>
 
                     <SliderControl
                       label="背景噪声亮度"

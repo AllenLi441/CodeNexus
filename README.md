@@ -8,7 +8,7 @@ CodeNexus is an AI-assisted programming learning platform built with Next.js. It
 - Trial mode: `/play` is available without login. Users can choose a language, choose a branch, then open a lesson. Trial progress is intentionally not saved.
 - Authenticated mode: `/dashboard`, `/learn/[language]`, projects, achievements, settings, shared snippets, and mentor wall features rely on Supabase Auth and database tables.
 - Course content: Python has the strongest implemented lesson flow. C, C++, Java, C#, JavaScript, and Visual Basic modules are present as learning-module structures and static-check based exercises.
-- AI assistant: persona-based assistant assets and chat UI are included. Guest mode uses local fallback replies; authenticated cloud chat requires the configured API key.
+- AI assistant: persona-based assistant assets and chat UI are included. Guest mode uses local fallback replies; authenticated cloud chat needs either a server `DEEPSEEK_API_KEY` or a user-provided key in Command Center.
 - Database: Supabase SQL migrations live in `supabase/migrations`.
 - Production hardening: lint/build/test scripts, error boundaries, health route, auth protection, security headers, rate-limit logic, and Python runaway-code preflight checks are included.
 
@@ -45,8 +45,19 @@ Fill in:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-DEEPSEEK_API_KEY=
+DEEPSEEK_API_KEY=       # optional server-side default
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+AI_ALLOWED_BASE_URLS=   # optional, comma-separated
 ```
+
+## AI API Configuration
+
+This repository does not include any real DeepSeek key. Bring your own key:
+
+- For a deployment-wide assistant, set `DEEPSEEK_API_KEY` in `.env.local` or your hosting provider.
+- For local/browser-only use, open Command Center in the app and enter your own DeepSeek API key. That key is stored only in the current browser's `localStorage`; it is not written to Supabase or committed to Git.
+- User-supplied base URLs are restricted. By default only `https://api.deepseek.com` and `DEEPSEEK_BASE_URL` are allowed. Add trusted OpenAI-compatible endpoints to `AI_ALLOWED_BASE_URLS` if you really need them.
 
 Start the background dev server:
 
@@ -99,3 +110,7 @@ The repository intentionally excludes:
 - generated QA screenshots under `output/`
 
 Assistant character images under `public/assistant-assets` are part of the app and should be committed.
+
+## License
+
+MIT. See `LICENSE`.
