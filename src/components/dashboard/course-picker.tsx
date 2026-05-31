@@ -146,7 +146,7 @@ export function CoursePicker({
           </p>
           <h2 className="mt-1 text-lg font-semibold text-white">选择入口</h2>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed text-white/42">
-            先选语言，再选领域分支，最后进具体课程。别把所有节点堆一坨，脑子不是压缩包。
+            先选语言，再选领域分支，最后进入具体课程。结构保持清晰，学习路径也更容易持续。
           </p>
           {demoMode && (
             <p className="mt-2 rounded-lg border border-amber-300/16 bg-amber-300/[0.06] px-3 py-2 text-xs leading-relaxed text-amber-100/68">
@@ -253,7 +253,7 @@ export function CoursePicker({
             <div className="flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed border-white/10 bg-white/[0.018] px-5 text-center">
               <Route className="mb-3 h-8 w-8 text-white/18" />
               <p className="text-sm font-semibold text-white/50">先选一个分支</p>
-              <p className="mt-1 text-xs leading-relaxed text-white/28">右边才会出现这条分支里的课程。顺序很简单，别跳着装高手。</p>
+              <p className="mt-1 text-xs leading-relaxed text-white/28">选择分支后，这里会显示对应课程和可进入的实践任务。</p>
             </div>
           ) : (
             <div className="grid max-h-[520px] gap-2 overflow-y-auto pr-1 cn-scrollbar">
