@@ -1575,11 +1575,7 @@ print(f"\\n恭喜通关！你完成了 CodeNexus 核心节点！")
       },
       {
         heading: '下一步去哪里？',
-        body: '完成 CodeNexus 只是开始。根据你的方向选择下一步：\n\n🌐 **Web 开发**：Flask / Django → 全栈开发\n📊 **数据分析**：Pandas + NumPy → 数据科学\n🤖 **AI / ML**：PyTorch / TensorFlow → 机器学习\n🎮 **游戏开发**：Pygame → 2D 游戏\n🔧 **自动化**：Selenium / requests → 爬虫 & 自动化',
-        codeBlock: {
-          code: '# 你的 Python 之旅从这里开始\n# 构建你自己的路线\n\nprint("Hello, World!")\nprint("这是你的起点，也是无限可能的开始。")',
-          fillable: false,
-        },
+        body: '完成核心 20 关之后，不应该再回到 Hello World。你已经有足够的基础去选择一个真实方向继续训练：\n\n🌐 **Web 开发**：Flask / Django → 接口、登录、数据库、部署\n📊 **数据分析**：Pandas + NumPy → 清洗、统计、图表、报告\n🤖 **AI / ML**：PyTorch / TensorFlow → 数据集、训练、推理、应用\n🎮 **游戏开发**：Pygame → 事件循环、碰撞、关卡、发布\n🔧 **自动化**：Selenium / requests → 文件、网页、表格、流程自动化\n\n这一关的实践目标仍然是文字冒险引擎：用类组织角色，用列表/字典管理物品，用函数拆动作，用异常处理兜住错误，最后打印完整通关日志。',
         tip: '恭喜！你已经完成 CodeNexus 核心路径。把你的项目分享给朋友，让更多人感受编程的魅力！',
       },
     ],

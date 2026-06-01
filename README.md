@@ -49,6 +49,7 @@ DEEPSEEK_API_KEY=       # optional server-side default
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-chat
 AI_ALLOWED_BASE_URLS=   # optional, comma-separated
+FULL_UNLOCK_EMAILS=     # optional server-only test allowlist, comma-separated
 ```
 
 ## AI API Configuration
@@ -58,6 +59,10 @@ This repository does not include any real DeepSeek key. Bring your own key:
 - For a deployment-wide assistant, set `DEEPSEEK_API_KEY` in `.env.local` or your hosting provider.
 - For local/browser-only use, open Command Center in the app and enter your own DeepSeek API key. That key is stored only in the current browser's `localStorage`; it is not written to Supabase or committed to Git.
 - User-supplied base URLs are restricted. By default only `https://api.deepseek.com` and `DEEPSEEK_BASE_URL` are allowed. Add trusted OpenAI-compatible endpoints to `AI_ALLOWED_BASE_URLS` if you really need them.
+
+## Test Account Unlocks
+
+For internal testing, set `FULL_UNLOCK_EMAILS` to a comma-separated list of registered account emails. Matching users see every language module and lesson as unlocked without writing fake progress rows into Supabase.
 
 Start the background dev server:
 

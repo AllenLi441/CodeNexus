@@ -9,7 +9,10 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".vercel/**",
+    ".playwright-cli/**",
     "out/**",
+    "output/**",
     "build/**",
     "next-env.d.ts",
   ]),

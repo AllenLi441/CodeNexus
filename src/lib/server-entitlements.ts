@@ -8,10 +8,17 @@ type ProgressLike = {
   attempts: number
 }
 
-const FULL_UNLOCK_TEST_EMAILS = new Set(['allen20120203@gmail.com'])
+function getFullUnlockEmails() {
+  return new Set(
+    (process.env.FULL_UNLOCK_EMAILS ?? '')
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean)
+  )
+}
 
 export function hasFullUnlockAccess(email: string | null | undefined) {
-  return Boolean(email && FULL_UNLOCK_TEST_EMAILS.has(email.trim().toLowerCase()))
+  return Boolean(email && getFullUnlockEmails().has(email.trim().toLowerCase()))
 }
 
 export function mergeFullUnlockProgress(progress: ProgressLike[]): ProgressLike[] {
