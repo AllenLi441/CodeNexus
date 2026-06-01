@@ -93,6 +93,7 @@ function contextFor(languageName: string) {
 
 function levelIntent(level: Level) {
   const text = `${level.title} ${level.objective}`.toLowerCase()
+  if (level.id === 20) return '把类、函数、集合、异常处理和装饰器融合成一个可运行的小项目'
   if (/hello|输出|print|console|printf/.test(text)) return '让程序对外发出第一条可验证信号'
   if (/变量|类型|string|int|double|dim|const|let|var/.test(text)) return '把数据命名、分类，并保持后续逻辑读得懂'
   if (/if|else|条件|判断|分支/.test(text)) return '让程序在不同情况里做不同选择'
@@ -116,6 +117,23 @@ function firstCodeLine(level: Level) {
 function teachingWalkthrough(languageName: string, level: Level, concept: string) {
   const text = lessonText(level)
   const coreLine = firstCodeLine(level)
+
+  if (level.id === 20) {
+    return [
+      {
+        title: '先定游戏世界的骨架',
+        body: '最终关不是拼语法清单，而是把角色、物品、动作和输出日志组织成一个能运行的小系统。先把对象关系想清楚，代码才不会散。',
+      },
+      {
+        title: '用函数和方法拆动作',
+        body: `像 \`${coreLine}\` 这样的导入只是工具入口。真正要交付的是：角色能拾取物品、使用物品、处理错误，并输出完整过程。`,
+      },
+      {
+        title: '异常处理负责兜底',
+        body: '项目题最怕只在正常路径能跑。不存在的物品、错误输入、空背包这些情况都要有可解释的反馈，而不是直接崩掉。',
+      },
+    ]
+  }
 
   if (/hello|输出|print|console|printf|write(line)?/.test(text)) {
     return [
@@ -279,6 +297,20 @@ function reviewQuestions(languageName: string, level: Level, concept: string) {
 
 function syntaxVocabulary(languageName: string, level: Level) {
   const text = lessonText(level)
+
+  if (level.id === 20) {
+    return {
+      concept: '综合项目结构',
+      mentalModel: '把程序想成一个小系统：类保存角色状态，列表和字典保存数据，函数和方法负责动作，异常处理负责兜底。',
+      learnFirst: ['角色对象有哪些状态', '每个动作由哪个函数或方法负责', '错误情况如何被 try/except 接住'],
+      pitfalls: ['把所有逻辑堆在全局作用域', '只写正常路径不处理错误', '类、函数和数据结构之间职责混乱'],
+      vocabulary: [
+        { term: '对象', meaning: '一组状态和行为的组合。' },
+        { term: '方法', meaning: '定义在类里、负责操作对象状态的函数。' },
+        { term: '异常处理', meaning: '让程序遇到错误时给出可控反馈。' },
+      ],
+    }
+  }
 
   if (/hello|输出|print|console|printf|write(line)?/.test(text)) {
     return {
