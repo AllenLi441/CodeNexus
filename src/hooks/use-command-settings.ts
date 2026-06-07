@@ -134,13 +134,23 @@ function broadcast(settings: CommandSettings) {
 
 export function useCommandSettings(initialSettings?: Partial<CommandSettings> | null) {
   const normalizedInitial = useMemo(() => normalizeCommandSettings(initialSettings), [initialSettings])
-  const [settings, setSettings] = useState<CommandSettings>(() =>
-    normalizeCommandSettings({ ...normalizedInitial, ...readStoredSettings() })
-  )
+  const [settings, setSettings] = useState<CommandSettings>(() => normalizedInitial)
 
   useEffect(() => {
     applySettings(settings)
   }, [settings])
+
+  useEffect(() => {
+    let cancelled = false
+    void Promise.resolve().then(() => {
+      if (cancelled) return
+      const stored = readStoredSettings()
+      if (!stored) return
+      const next = normalizeCommandSettings({ ...normalizedInitial, ...stored })
+      setSettings((current) => sameSettings(current, next) ? current : next)
+    })
+    return () => { cancelled = true }
+  }, [normalizedInitial])
 
   useEffect(() => {
     const onSettings = (event: Event) => {

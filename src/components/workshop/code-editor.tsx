@@ -7,20 +7,30 @@ import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
 import type { EditorLanguage } from '@/lib/language-modules'
 
+/* Code surfaces stay dark regardless of page theme — high contrast, eye-friendly. */
 const nexusTheme = EditorView.theme({
   '&': {
     height: '100%',
     fontSize: 'var(--cn-editor-font-size, 14px)',
     fontFamily: 'var(--font-geist-mono), "JetBrains Mono", "Fira Code", monospace',
-    backgroundColor: '#020408',
+    backgroundColor: 'var(--code-bg, #0d0d18)',
   },
-  '.cm-scroller': { fontFamily: 'inherit', overflow: 'auto' },
-  '.cm-gutters': { backgroundColor: '#03070d', borderRight: '1px solid rgba(103,232,249,0.14)', color: '#24404a' },
-  '.cm-activeLineGutter': { backgroundColor: 'rgba(103,232,249,0.08)' },
-  '.cm-activeLine': { backgroundColor: 'rgba(103,232,249,0.05)' },
-  '.cm-cursor': { borderLeftColor: '#67e8f9' },
-  '.cm-selectionBackground': { backgroundColor: 'rgba(103,232,249,0.20) !important' },
-  '.cm-focused .cm-selectionBackground': { backgroundColor: 'rgba(103,232,249,0.28) !important' },
+  '.cm-scroller': { fontFamily: 'inherit', overflow: 'auto', lineHeight: '1.65' },
+  '.cm-content': { lineHeight: '1.65' },
+  '.cm-gutters': {
+    backgroundColor: 'var(--code-bg-elevated, #12121f)',
+    borderRight: '1px solid color-mix(in oklab, var(--nexus, cyan) 14%, transparent)',
+    color: 'var(--code-line-number, #6b8a96)',
+  },
+  '.cm-activeLineGutter': { backgroundColor: 'color-mix(in oklab, var(--nexus, cyan) 8%, transparent)' },
+  '.cm-activeLine': { backgroundColor: 'color-mix(in oklab, var(--nexus, cyan) 5%, transparent)' },
+  '.cm-cursor': { borderLeftColor: 'var(--nexus, cyan)' },
+  '.cm-selectionBackground': { backgroundColor: 'color-mix(in oklab, var(--nexus, cyan) 20%, transparent) !important' },
+  '.cm-focused .cm-selectionBackground': { backgroundColor: 'color-mix(in oklab, var(--nexus, cyan) 28%, transparent) !important' },
+  /* Lift the dimmest one-dark token (comments) above 7:1 on the near-black bg */
+  '.cm-line .tok-comment, .cm-line .tok-lineComment, .cm-line .tok-blockComment': {
+    color: 'oklch(0.68 0.03 220)',
+  },
 })
 
 export type CodeEditorHandle = {

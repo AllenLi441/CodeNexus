@@ -48,6 +48,16 @@ const ASSISTANT_CHARACTER_ASSETS: Record<AssistantPersonaId, AssistantCharacterA
     chibiThink: '/assistant-assets/nexus-sera-think.png',
     portrait: '/assistant-assets/nexus-sera-portrait.png',
   },
+  // 苏予 (Socratic guide) borrows 青栈(aoi)'s calm, reflective character art for now.
+  // TODO: commission dedicated art so it reads as its own character.
+  socrates: {
+    avatar: '/assistant-assets/nexus-aoi-avatar.png',
+    chibiIdle: '/assistant-assets/nexus-aoi-idle.png',
+    chibiWave: '/assistant-assets/nexus-aoi-wave.png',
+    chibiExplain: '/assistant-assets/nexus-aoi-explain.png',
+    chibiThink: '/assistant-assets/nexus-aoi-think.png',
+    portrait: '/assistant-assets/nexus-aoi-portrait.png',
+  },
 }
 
 function characterAssets(personaId?: AssistantPersonaId): AssistantCharacterAssets {

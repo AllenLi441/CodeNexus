@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -83,7 +83,7 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
   const language = useMemo(() => getLanguageModule(languageId), [languageId])
   const project = getProjectCheckpoint(language.name, afterLevel)
   const storageKey = `cn:project:${language.id}:${afterLevel}`
-  const [draft, setDraft] = useState<Draft>(() => readDraft(storageKey, project?.title ?? '阶段作品'))
+  const [draft, setDraft] = useState<Draft>(() => emptyDraft(project?.title ?? '阶段作品'))
   const [saved, setSaved] = useState(false)
   const [cardActionStatus, setCardActionStatus] = useState<'idle' | 'copied' | 'downloaded' | 'error'>('idle')
   const completedChecks = project ? project.skills.filter((skill) => draft.checks[skill]).length : 0
@@ -105,13 +105,21 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
     skills: project?.skills ?? [],
   }), [afterLevel, codename, draft, language.name, project])
 
+  useEffect(() => {
+    let cancelled = false
+    void Promise.resolve().then(() => {
+      if (!cancelled) setDraft(readDraft(storageKey, project?.title ?? '阶段作品'))
+    })
+    return () => { cancelled = true }
+  }, [project?.title, storageKey])
+
   if (!project) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black p-6 text-white">
-        <div className="cn-panel max-w-md p-6 text-center">
-          <Lock className="mx-auto mb-3 h-8 w-8 text-white/35" />
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background p-6 text-foreground">
+        <div className="cn-panel max-w-md rounded-2xl p-6 text-center">
+          <Lock className="mx-auto mb-3 h-8 w-8 text-ink-mute" />
           <h1 className="text-lg font-semibold">没有这个阶段作品</h1>
-          <p className="mt-2 text-sm text-white/42">阶段作品只在 Lv.5 / 10 / 15 / 20 后解锁。</p>
+          <p className="mt-2 text-sm text-ink-mute">阶段作品只在 Lv.5 / 10 / 15 / 20 后解锁。</p>
         </div>
       </div>
     )
@@ -175,8 +183,8 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
   const backHref = demoMode ? `/play?language=${language.route}` : `/dashboard?language=${language.route}`
 
   return (
-    <div className="min-h-screen bg-black text-white cn-noise">
-      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-black/88 backdrop-blur-xl">
+    <div className="min-h-[100dvh] bg-background text-foreground cn-noise">
+      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-background/88 backdrop-blur-xl">
         <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:px-4">
           <div className="flex min-w-0 items-center gap-3">
             <Link
@@ -193,7 +201,7 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
             {demoMode ? (
               <Link
                 href="/register?from=play"
-                className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-3 text-xs font-semibold text-black transition-colors hover:bg-cyan-200"
+                className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
               >
                 保存进度
               </Link>
@@ -297,9 +305,9 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
                 <span>完成度</span>
                 <span className="font-mono text-cyan-100/58">{readinessPercent}%</span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/8">
                 <div
-                  className="h-full rounded-full bg-cyan-300 transition-[width] duration-300"
+                  className="h-full rounded-full bg-primary transition-[width] duration-300"
                   style={{ width: `${readinessPercent}%` }}
                 />
               </div>
@@ -327,7 +335,7 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
                 type="button"
                 disabled={!ready}
                 onClick={handleCopyProjectCard}
-                className="cn-focus-ring flex h-11 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-3 text-sm font-semibold text-black transition-colors hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-35"
+                className="cn-focus-ring flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:shadow-none"
               >
                 {ready ? <Copy className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
                 {ready ? '复制' : '待完成'}
@@ -336,7 +344,7 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
                 type="button"
                 disabled={!ready}
                 onClick={handleDownloadProjectCard}
-                className="cn-focus-ring flex h-11 items-center justify-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-300/[0.08] px-3 text-sm font-semibold text-cyan-50 transition-colors hover:bg-cyan-300/[0.13] disabled:cursor-not-allowed disabled:opacity-35"
+                className="cn-focus-ring flex h-11 items-center justify-center gap-2 rounded-lg border border-primary/25 bg-primary/[0.08] px-3 text-sm font-semibold text-primary transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/[0.13] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
               >
                 {ready ? <Download className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
                 导出

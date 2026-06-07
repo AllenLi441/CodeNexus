@@ -40,21 +40,21 @@ export default async function WallPage() {
   const items = (data ?? []) as WallItem[]
 
   return (
-    <div className="min-h-screen bg-black text-white cn-noise">
-      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-black/84 backdrop-blur-xl">
+    <div className="min-h-[100dvh] bg-background text-foreground cn-noise">
+      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-background/84 backdrop-blur-xl">
         <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:px-4">
           <BrandHeader dark />
           <div className="flex items-center gap-2">
             <Link
               href="/play"
-              className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 text-sm font-semibold text-white/58 transition-colors hover:border-cyan-300/28 hover:text-cyan-100"
+              className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-hairline px-3 text-sm font-semibold text-ink-soft transition-colors hover:border-cyan-300/28 hover:text-cyan-100"
             >
               <Play className="h-3.5 w-3.5" />
               试玩
             </Link>
             <Link
               href="/register"
-              className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-3 text-sm font-semibold text-black transition-colors hover:bg-cyan-200"
+              className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
             >
               加入
               <ArrowRight className="h-3.5 w-3.5" />
@@ -90,7 +90,7 @@ export default async function WallPage() {
             </p>
             <Link
               href="/play"
-              className="cn-focus-ring mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 text-sm font-semibold text-black transition-colors hover:bg-cyan-200"
+              className="cn-focus-ring mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
             >
               去试玩
               <ArrowRight className="h-3.5 w-3.5" />

@@ -1,7 +1,7 @@
 export default function DashboardLoading() {
   return (
-    <main className="min-h-[100dvh] bg-black text-white">
-      <div className="border-b border-cyan-300/12 bg-black/84 backdrop-blur-xl">
+    <main className="min-h-[100dvh] bg-background text-foreground">
+      <div className="border-b border-cyan-300/12 bg-background/84 backdrop-blur-xl">
         <div className="mx-auto flex min-h-14 max-w-7xl items-center gap-3 px-4 py-2">
           <div className="h-6 w-32 animate-pulse rounded bg-white/8" />
           <div className="ml-auto h-7 w-7 animate-pulse rounded bg-white/8" />

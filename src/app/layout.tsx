@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Outfit, Geist_Mono } from 'next/font/google'
 import { cookies } from 'next/headers'
 import { Toaster } from '@/components/ui/sonner'
 import { ErrorTap } from '@/components/system/error-tap'
@@ -7,9 +7,10 @@ import { LanguageProvider } from '@/contexts/language-context'
 import { type Lang, LANG_COOKIE, DEFAULT_LANG } from '@/lib/i18n'
 import './globals.css'
 
-const geistSans = Geist({
+const sans = Outfit({
   variable: '--font-sans',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
 })
 
 const geistMono = Geist_Mono({
@@ -40,9 +41,9 @@ export default async function RootLayout({
   return (
     <html
       lang={initialLang === 'zh' ? 'zh-CN' : 'en'}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`dark ${sans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col overflow-x-hidden bg-black text-white">
+      <body className="min-h-full flex flex-col overflow-x-hidden bg-background text-foreground">
         <LanguageProvider initialLang={initialLang}>
           {children}
         </LanguageProvider>

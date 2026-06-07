@@ -23,8 +23,52 @@ export type MistakeRecord = {
   createdAt: string
 }
 
+export type ReviewState = {
+  /** Leitner box 1-5: higher = recalled better, longer until next review. */
+  box: number
+  reviewedAt: string
+}
+
+/** One milestone in a user's 「我想做个 X」 custom learning route. */
+export type CustomRouteStep = {
+  id: string
+  title: string
+  why: string
+  concept: string
+  task: string
+  /** Optional deep-link to a real playable level (validated against LEVEL_MAP). */
+  levelId?: number
+  done: boolean
+}
+
+export type CustomRoute = {
+  goal: string
+  steps: CustomRouteStep[]
+  createdAt: string
+}
+
 export type LearningProfile = {
   records: MistakeRecord[]
+  /** Per-area spaced-repetition state powering the 错题本 review schedule. */
+  reviews?: Record<string, ReviewState>
+  /** The learner's active goal-driven route from 「我想做个 X」·定制路线. */
+  customRoute?: CustomRoute
+}
+
+// One active route at a time, capped so a malformed payload can't bloat storage.
+const MAX_ROUTE_STEPS = 6
+
+// Leitner intervals (days) indexed by box. Box 1 = review tomorrow.
+const REVIEW_BOX_DAYS = [0, 1, 3, 7, 14, 30]
+const DAY_MS = 24 * 60 * 60 * 1000
+
+export type ReviewItem = {
+  area: string
+  count: number
+  latest: MistakeRecord
+  box: number
+  isDue: boolean
+  dueInDays: number
 }
 
 export type WeakSpot = {
@@ -50,7 +94,29 @@ export type CompletionReview = {
 }
 
 function emptyProfile(): LearningProfile {
-  return { records: [] }
+  return { records: [], reviews: {} }
+}
+
+// Validate-on-read: a persisted route is only trusted if its shape holds, mirroring
+// the discipline used for `records`. A bad blob is silently dropped, never thrown.
+function parseCustomRoute(value: unknown): CustomRoute | undefined {
+  if (!value || typeof value !== 'object') return undefined
+  const route = value as Partial<CustomRoute>
+  if (typeof route.goal !== 'string' || !Array.isArray(route.steps)) return undefined
+  const steps = route.steps
+    .filter((step): step is CustomRouteStep =>
+      Boolean(step) &&
+      typeof (step as CustomRouteStep).id === 'string' &&
+      typeof (step as CustomRouteStep).title === 'string' &&
+      typeof (step as CustomRouteStep).task === 'string' &&
+      typeof (step as CustomRouteStep).done === 'boolean')
+    .slice(0, MAX_ROUTE_STEPS)
+  if (steps.length === 0) return undefined
+  return {
+    goal: route.goal.slice(0, 200),
+    steps,
+    createdAt: typeof route.createdAt === 'string' ? route.createdAt : new Date().toISOString(),
+  }
 }
 
 export function readLearningProfile(): LearningProfile {
@@ -70,6 +136,11 @@ export function readLearningProfile(): LearningProfile {
         typeof item.reason === 'string' &&
         typeof item.nextStep === 'string'
       ).slice(-MAX_RECORDS),
+      reviews:
+        parsed.reviews && typeof parsed.reviews === 'object'
+          ? (parsed.reviews as Record<string, ReviewState>)
+          : {},
+      customRoute: parseCustomRoute(parsed.customRoute),
     }
   } catch {
     return emptyProfile()
@@ -81,6 +152,8 @@ function writeLearningProfile(profile: LearningProfile) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
       records: profile.records.slice(-MAX_RECORDS),
+      reviews: profile.reviews ?? {},
+      customRoute: profile.customRoute,
     }))
   } catch {
     // Local learning memory is a convenience layer; never block the lesson UI.
@@ -107,9 +180,110 @@ export function recordLearningMistake(input: {
     trigger: input.trigger,
     createdAt: new Date().toISOString(),
   }
-  const next = { records: [...current.records, record].slice(-MAX_RECORDS) }
+  const reviews = { ...(current.reviews ?? {}) }
+  // A fresh mistake in this area resets it to box 1 (resurface again soon).
+  reviews[record.area] = { box: 1, reviewedAt: record.createdAt }
+  const next: LearningProfile = {
+    records: [...current.records, record].slice(-MAX_RECORDS),
+    reviews,
+  }
   writeLearningProfile(next)
   return next
+}
+
+/**
+ * Re-passing a level you previously struggled with promotes its concepts up the
+ * Leitner ladder, pushing the next review further out. Returns the new profile.
+ */
+export function promoteLevelReviews(languageId: string, levelId: number): LearningProfile {
+  const current = readLearningProfile()
+  const areas = new Set(
+    current.records
+      .filter((record) => record.languageId === languageId && record.levelId === levelId)
+      .map((record) => record.area)
+  )
+  if (areas.size === 0) return current
+
+  const reviews = { ...(current.reviews ?? {}) }
+  const now = new Date().toISOString()
+  areas.forEach((area) => {
+    const box = reviews[area]?.box ?? 1
+    reviews[area] = { box: Math.min(box + 1, REVIEW_BOX_DAYS.length - 1), reviewedAt: now }
+  })
+  const next: LearningProfile = { records: current.records, reviews }
+  writeLearningProfile(next)
+  return next
+}
+
+/**
+ * Persist a freshly generated 「我想做个 X」 route, replacing any previous one
+ * (one active route at a time). Steps arrive without ids/done from the API; we
+ * stamp those here. Returns the new profile so the caller can lift it into state.
+ */
+export function saveCustomRoute(input: {
+  goal: string
+  steps: Array<{ title: string; why?: string; concept?: string; task: string; levelId?: number | null }>
+}): LearningProfile {
+  const current = readLearningProfile()
+  const createdAt = new Date().toISOString()
+  const steps: CustomRouteStep[] = input.steps.slice(0, MAX_ROUTE_STEPS).map((step, index) => ({
+    id: `${Date.now()}-${index}`,
+    title: step.title,
+    why: step.why ?? '',
+    concept: step.concept ?? '',
+    task: step.task,
+    levelId: typeof step.levelId === 'number' ? step.levelId : undefined,
+    done: false,
+  }))
+  const next: LearningProfile = { ...current, customRoute: { goal: input.goal.slice(0, 200), steps, createdAt } }
+  writeLearningProfile(next)
+  return next
+}
+
+/** Toggle a milestone's done state. No-op (returns current) if no route exists. */
+export function toggleRouteStep(stepId: string): LearningProfile {
+  const current = readLearningProfile()
+  if (!current.customRoute) return current
+  const steps = current.customRoute.steps.map((step) =>
+    step.id === stepId ? { ...step, done: !step.done } : step
+  )
+  const next: LearningProfile = { ...current, customRoute: { ...current.customRoute, steps } }
+  writeLearningProfile(next)
+  return next
+}
+
+/** Drop the active route so the user can define a new goal. */
+export function clearCustomRoute(): LearningProfile {
+  const current = readLearningProfile()
+  const next: LearningProfile = { ...current, customRoute: undefined }
+  writeLearningProfile(next)
+  return next
+}
+
+/**
+ * The 错题本 review queue: weak-spot areas annotated with their Leitner box and
+ * whether they are due for review, sorted most-overdue first.
+ */
+export function getReviewItems(profile: LearningProfile, now: number = Date.now()): ReviewItem[] {
+  const reviews = profile.reviews ?? {}
+  return summarizeWeakSpots(profile)
+    .map((spot): ReviewItem => {
+      const box = Math.min(Math.max(reviews[spot.area]?.box ?? 1, 1), REVIEW_BOX_DAYS.length - 1)
+      const reviewedAt = reviews[spot.area]?.reviewedAt ?? spot.latest.createdAt
+      const dueAt = new Date(reviewedAt).getTime() + REVIEW_BOX_DAYS[box] * DAY_MS
+      return {
+        area: spot.area,
+        count: spot.count,
+        latest: spot.latest,
+        box,
+        isDue: dueAt <= now,
+        dueInDays: Math.max(0, Math.ceil((dueAt - now) / DAY_MS)),
+      }
+    })
+    .sort((a, b) => {
+      if (a.isDue !== b.isDue) return a.isDue ? -1 : 1
+      return a.dueInDays - b.dueInDays
+    })
 }
 
 export function summarizeWeakSpots(profile: LearningProfile, languageId?: string): WeakSpot[] {

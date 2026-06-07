@@ -10,6 +10,7 @@ import { BrandHeader } from '@/components/layout/logo'
 import { CourseDisplaySwitcher } from '@/components/dashboard/course-display-switcher'
 import { AchievementCabinet } from '@/components/dashboard/achievement-cabinet'
 import { DashboardMentor } from '@/components/dashboard/dashboard-mentor'
+import { NewUserTutorial } from '@/components/dashboard/new-user-tutorial'
 import { CommandCenter } from '@/components/settings/command-center'
 import { OnboardingClient } from '@/app/onboarding/onboarding-client'
 import { getMapLessonCount } from '@/lib/course-maps'
@@ -73,20 +74,20 @@ export default async function DashboardPage({
   const nextLevelId = nextModuleLevelId(activeLanguage, progress)
 
   return (
-    <div className="min-h-screen overflow-hidden bg-black text-white cn-noise">
-      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-black/84 backdrop-blur-xl">
+    <div className="min-h-[100dvh] overflow-hidden bg-background text-foreground cn-noise">
+      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-background/84 backdrop-blur-xl">
         <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:px-4">
           <BrandHeader dark />
           <div className="flex items-center gap-2">
             <Link
               href="/wall"
-              className="cn-focus-ring hidden h-9 items-center justify-center rounded-lg border border-white/10 px-3 text-sm font-semibold text-white/48 transition-colors hover:border-cyan-300/28 hover:text-cyan-100 sm:inline-flex"
+              className="cn-focus-ring hidden h-9 items-center justify-center rounded-lg border border-hairline px-3 text-sm font-semibold text-ink-mute transition-colors hover:border-cyan-300/28 hover:text-cyan-100 sm:inline-flex"
             >
               吐槽墙
             </Link>
             <CommandCenter initialCodename={displayName} initialSettings={initialSettings} compact />
             <form action={logout}>
-              <Button type="submit" variant="ghost" size="sm" className="gap-2 text-white/45 hover:text-white">
+              <Button type="submit" variant="ghost" size="sm" className="gap-2 text-ink-mute hover:text-foreground">
                 <LogOut className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">退出</span>
               </Button>
@@ -101,10 +102,10 @@ export default async function DashboardPage({
           <div className="space-y-6">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.34em] text-cyan-300/45">Mission Control</p>
-              <h1 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">
+              <h1 className="mt-2 text-balance text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl">
                 {displayName}，{activeLanguage.name} 链路已接入。
               </h1>
-              <p className="mt-1 text-sm text-white/48">
+              <p className="mt-1 text-pretty text-sm text-ink-mute">
                 {completedCount === 0
                   ? `从 ${activeLanguage.name} 第一个节点开始，先把入口、输出和类型打稳。`
                   : completedCount === activeLanguage.levels.length
@@ -113,6 +114,16 @@ export default async function DashboardPage({
               </p>
             </div>
 
+            {completedCount === 0 && (
+              <NewUserTutorial
+                codename={displayName}
+                languageName={activeLanguage.name}
+                languageRoute={activeLanguage.route}
+                startHref={`/learn/${activeLanguage.route}?level=${nextLevelId}`}
+                settings={initialSettings}
+                mode="authenticated"
+              />
+            )}
             <CourseDisplaySwitcher
               key={activeLanguage.id}
               progress={progress}
@@ -123,76 +134,75 @@ export default async function DashboardPage({
           </div>
 
           <div className="space-y-4">
-            <section className="cn-panel-cyan p-5">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-2 text-sm font-semibold text-white/72">
-                  <Activity className="h-4 w-4 text-cyan-200/70" />
-                  基础进度
-                </span>
-                <span className="font-mono text-2xl font-bold text-cyan-200">{completedCount}/{activeLanguage.levels.length}</span>
-              </div>
-              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/8">
-                <div
-                  className="h-full rounded-full bg-cyan-300 transition-all duration-700"
-                  style={{ width: `${Math.round((completedCount / activeLanguage.levels.length) * 100)}%` }}
-                />
-              </div>
-              <p className="mt-3 text-center text-xs text-white/34">
-                {activeLanguage.levels.length} 个基础节点清理完，后面的领域分支才算真正开门。
-              </p>
-            </section>
-
-            <section className="cn-panel p-5">
-              <p className="inline-flex items-center gap-2 text-sm font-semibold text-white/72">
-                <GitBranch className="h-4 w-4 text-cyan-200/65" />
-                领域分支
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <div className="rounded-lg border border-white/8 bg-black/42 p-3">
-                  <p className="font-mono text-2xl font-semibold text-white">{activeLanguage.courseMaps.length}</p>
-                  <p className="mt-1 text-[10px] text-white/30">条领域枝干</p>
-                </div>
-                <div className="rounded-lg border border-white/8 bg-black/42 p-3">
-                  <p className="font-mono text-2xl font-semibold text-white">{totalCourseTasks}</p>
-                  <p className="mt-1 text-[10px] text-white/30">道规划训练</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="cn-panel px-4 py-4">
-              <p className="inline-flex items-center gap-2 text-sm font-semibold text-white/72">
-                <TerminalSquare className="h-4 w-4 text-cyan-200/65" />
-                运行模式
-              </p>
-              <p className="mt-2 text-xs leading-relaxed text-white/36">{routeSnapshot.runtimeNote}</p>
-            </section>
-
             <Link href={`/learn/${activeLanguage.route}?level=${nextLevelId}`}>
-              <section className="group cursor-pointer rounded-lg border border-cyan-300/25 bg-cyan-300/8 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/45 hover:bg-cyan-300/13 hover:shadow-[0_18px_70px_rgba(34,211,238,0.12)]">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-cyan-300/20 bg-black/36 text-cyan-100">
+              <section className="group cursor-pointer rounded-2xl border border-primary/30 bg-primary/8 p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/13 active:scale-[0.99]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-background/40 text-primary">
                   <Route className="h-5 w-5" />
                 </div>
                 <div className="mt-3">
-                  <p className="text-sm font-semibold text-white">继续任务</p>
-                  <p className="mt-0.5 text-xs text-white/42">
-                    接入 Lv.{nextLevelId} 代码节点
+                  <p className="text-sm font-semibold text-foreground">继续任务</p>
+                  <p className="mt-0.5 text-xs text-ink-mute">
+                    接入 Lv.<span className="tabular-nums">{nextLevelId}</span> 代码节点
                   </p>
                 </div>
-                <div className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-cyan-200 transition-all group-hover:gap-2">
+                <div className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary transition-all group-hover:gap-2">
                   进入 <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               </section>
             </Link>
 
-            <section className="cn-panel px-4 py-4">
-              <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg border border-white/8 bg-black/35 text-white/35">
-                <Target className="h-4 w-4" />
+            <section className="cn-panel-cyan rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-sm font-semibold text-ink-soft">
+                  <Activity className="h-4 w-4 text-primary/70" />
+                  基础进度
+                </span>
+                <span className="font-mono text-2xl font-bold tabular-nums text-primary">{completedCount}/{activeLanguage.levels.length}</span>
               </div>
-              <p className="text-center text-xs italic leading-relaxed text-white/38">
-                &quot;先把第一行代码跑通，再聊天赋。&quot;
+              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-foreground/8">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    completedCount === activeLanguage.levels.length ? 'bg-[var(--code-green)]' : 'bg-primary'
+                  }`}
+                  style={{ width: `${Math.round((completedCount / activeLanguage.levels.length) * 100)}%` }}
+                />
+              </div>
+              <p className="mt-3 text-center text-xs text-ink-mute">
+                {completedCount === activeLanguage.levels.length
+                  ? '基础节点全部点亮，领域分支已经为你开门。'
+                  : `${activeLanguage.levels.length} 个基础节点点亮后，领域分支就会开门。`}
               </p>
-              <p className="mt-1 text-center text-[10px] text-white/18">CodeNexus 小助手</p>
             </section>
+
+            <section className="cn-panel rounded-2xl p-5">
+              <p className="inline-flex items-center gap-2 text-sm font-semibold text-ink-soft">
+                <GitBranch className="h-4 w-4 text-primary/65" />
+                领域分支
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-hairline bg-foreground/[0.025] p-3">
+                  <p className="font-mono text-2xl font-semibold tabular-nums text-foreground">{activeLanguage.courseMaps.length}</p>
+                  <p className="mt-1 text-[10px] text-ink-mute">条领域枝干</p>
+                </div>
+                <div className="rounded-xl border border-hairline bg-foreground/[0.025] p-3">
+                  <p className="font-mono text-2xl font-semibold tabular-nums text-foreground">{totalCourseTasks}</p>
+                  <p className="mt-1 text-[10px] text-ink-mute">道规划训练</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="cn-panel rounded-2xl px-4 py-4">
+              <p className="inline-flex items-center gap-2 text-sm font-semibold text-ink-soft">
+                <TerminalSquare className="h-4 w-4 text-primary/65" />
+                运行模式
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-ink-mute">{routeSnapshot.runtimeNote}</p>
+            </section>
+
+            <p className="flex items-start gap-2 px-1.5 text-[11px] italic leading-relaxed text-ink-mute">
+              <Target className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary/45" />
+              <span>&quot;先把第一行代码跑通，其他都会跟上。&quot; — CodeNexus 小助手</span>
+            </p>
           </div>
 
         </div>

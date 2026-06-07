@@ -211,6 +211,50 @@ function hasExplicitLoopExit(lines: string[], lineIndex: number, parentIndent: n
   return false
 }
 
+// A while-condition that is a compile-time-constant truthy value → infinite loop.
+// Covers True / 1 / any non-zero number / `not False|None|0` / tautologies (1==1).
+const CONSTANT_TRUTHY_CONDITION = [
+  /^true$/i,
+  /^-?\d+(?:\.\d+)?$/, // numeric literal (zero excluded by the guard below)
+  /^not\s+(?:false|none|0|0\.0|'')$/i,
+  /^([\w.]+)\s*==\s*\1$/i, // tautology: 1==1, True==True, x==x
+  /^true\s*(?:and|or)\s*true$/i
+]
+
+function isConstantTruthyCondition(cond: string): boolean {
+  // Strip one layer of wrapping parens so `while (True):` is caught like `while True:`.
+  const c = cond.trim().replace(/^\((.*)\)$/, '$1').trim()
+  if (!c) return false
+  if (/^-?0+(?:\.0+)?$/.test(c)) return false // `while 0:` is falsy — never runs
+  return CONSTANT_TRUTHY_CONDITION.some((re) => re.test(c))
+}
+
+// Does an expression contain an astronomically large literal (>= 1e8)?
+// Catches range() loop bombs and list/string memory bombs (10**12, 1e9, 9-digit ints).
+function hasHugeMagnitude(expr: string): boolean {
+  const pow = expr.match(/(\d+)\s*\*\*\s*(\d+)/)
+  if (pow) {
+    const value = Math.pow(Number(pow[1]), Number(pow[2]))
+    if (Number.isFinite(value) && value >= 1e8) return true
+  }
+  const sci = expr.match(/\d+(?:\.\d+)?[eE]\+?(\d+)/)
+  if (sci && Number(sci[1]) >= 8) return true
+  for (const lit of expr.match(/\d[\d_]{7,}/g) ?? []) {
+    if (lit.replace(/_/g, '').length >= 9) return true
+  }
+  return false
+}
+
+/**
+ * Pre-execution guard against code that would freeze or crash the browser tab.
+ *
+ * ⚠️ STOPGAP, NOT A SANDBOX. Pyodide runs synchronously on the UI thread, so a
+ * busy loop / huge allocation freezes the tab and even the "force stop" button
+ * can't repaint. Regex pre-screening of Turing-complete code is fundamentally
+ * incomplete — the real fix is to run Pyodide in a Web Worker with a wall-clock
+ * timeout + worker.terminate() (audit SBX-2). This catches the high-frequency
+ * beginner cases so they fail fast with a helpful message instead of a dead tab.
+ */
 export function detectRunawayPython(code: string): string | null {
   const stripped = stripPythonLiteralsAndComments(code)
   const lines = stripped.split('\n')
@@ -220,12 +264,13 @@ export function detectRunawayPython(code: string): string | null {
     const line = rawLine.trim()
     if (!line) continue
 
-    const whileMatch = line.match(/^while\s+(True|1)\s*:\s*(.*)$/)
-    if (whileMatch) {
+    // while <constant-truthy>:  (True / 1 / 2 / not False / 1==1 / ...)
+    const whileMatch = line.match(/^while\b\s*(.+?)\s*:\s*(.*)$/)
+    if (whileMatch && isConstantTruthyCondition(whileMatch[1])) {
       const tail = whileMatch[2].trim()
       if (/\b(break|return|raise)\b|(?:\bsys\s*\.\s*exit\s*\()/.test(tail)) continue
       if (!tail && hasExplicitLoopExit(lines, i, indentation(rawLine))) continue
-      return '检测到明显无退出条件的循环。`while True` / `while 1` 会把浏览器主线程冻住；先加退出条件或 `break`，再运行。'
+      return '检测到明显无退出条件的循环。`while True` / `while 1` / `while 2` / `while not False` 这类恒真条件会把浏览器主线程冻住；先加退出条件或 `break`，再运行。'
     }
 
     const countMatch = line.match(/^for\s+.+\s+in\s+itertools\s*\.\s*count\s*\([^)]*\)\s*:\s*(.*)$/)
@@ -234,6 +279,37 @@ export function detectRunawayPython(code: string): string | null {
       if (/\b(break|return|raise)\b|(?:\bsys\s*\.\s*exit\s*\()/.test(tail)) continue
       if (!tail && hasExplicitLoopExit(lines, i, indentation(rawLine))) continue
       return '检测到 `itertools.count()` 无限计数循环，但没看到退出口。别把浏览器当跑分机器，先写 `break` 或边界条件。'
+    }
+
+    // range(<astronomically large>) → loop bomb that freezes the tab
+    const rangeMatch = line.match(/\brange\s*\(([^)]*)\)/)
+    if (rangeMatch && hasHugeMagnitude(rangeMatch[1])) {
+      return '检测到 `range()` 里是个天文数字，这个循环会把页面冻死。浏览器不是超算，先把范围改小。'
+    }
+
+    // [..]*HUGE / (..)*HUGE → memory bomb that OOM-crashes the tab
+    if (/(?:\]|\))\s*\*/.test(line) && hasHugeMagnitude(line)) {
+      return '检测到用巨大的倍数复制列表/序列，会瞬间吃光浏览器内存、直接崩页；先把倍数改小。'
+    }
+  }
+
+  // def f(...): that calls itself with no base case → infinite recursion
+  for (let i = 0; i < lines.length; i++) {
+    const defMatch = lines[i].trim().match(/^def\s+([A-Za-z_]\w*)\s*\(/)
+    if (!defMatch) continue
+    const name = defMatch[1]
+    const defIndent = indentation(lines[i])
+    const body: string[] = []
+    for (let j = i + 1; j < lines.length; j++) {
+      if (!lines[j].trim()) continue
+      if (indentation(lines[j]) <= defIndent) break
+      body.push(lines[j])
+    }
+    const bodyText = body.join('\n')
+    const callsSelf = new RegExp(`\\b${name}\\s*\\(`).test(bodyText)
+    const hasBaseCase = /\b(return|if|elif|while|for|raise|break|yield|assert)\b/.test(bodyText)
+    if (callsSelf && !hasBaseCase) {
+      return `检测到函数 \`${name}\` 直接调用自己却没有任何 \`return\`/\`if\` 退出条件，会无限递归把浏览器撑爆；先写一个 base case（终止条件）。`
     }
   }
 

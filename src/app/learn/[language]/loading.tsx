@@ -1,12 +1,12 @@
 export default function WorkshopLoading() {
   return (
-    <main className="flex h-[100dvh] flex-col bg-black text-white">
-      <div className="flex min-h-12 items-center gap-3 border-b border-cyan-300/12 bg-black/90 px-4">
+    <main className="flex h-[100dvh] flex-col bg-background text-foreground">
+      <div className="flex min-h-12 items-center gap-3 border-b border-cyan-300/12 bg-background/90 px-4">
         <div className="h-5 w-14 animate-pulse rounded bg-white/8" />
         <div className="h-5 w-px bg-white/10" />
         <div className="h-5 w-32 animate-pulse rounded bg-white/8" />
         <div className="ml-auto h-7 w-7 animate-pulse rounded bg-white/8" />
-        <div className="h-7 w-20 animate-pulse rounded bg-cyan-300/30" />
+        <div className="h-7 w-20 animate-pulse rounded bg-primary/30" />
       </div>
       <div className="flex flex-1 overflow-hidden">
         <aside className="hidden w-64 flex-shrink-0 border-r border-white/8 p-4 lg:block">

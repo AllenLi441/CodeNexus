@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef, startTransition } from 'react'
+import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -53,6 +54,7 @@ import { getFailureDiagnosis, getRuntimeModeCopy } from '@/lib/course-engagement
 import {
   readLearningProfile,
   recordLearningMistake,
+  promoteLevelReviews,
   type LearningProfile,
 } from '@/lib/learning-profile'
 import { rememberAssistantEvent } from '@/lib/assistant-persona'
@@ -61,7 +63,7 @@ import Link from 'next/link'
 const CodeEditor = dynamic(() => import('./code-editor').then((m) => m.CodeEditor), {
   ssr: false,
   loading: () => (
-    <div className="h-full flex items-center justify-center bg-[#0a0a12]">
+    <div className="h-full flex items-center justify-center bg-[var(--code-bg-elevated)]">
       <div className="text-white/20 text-sm font-mono animate-pulse">载入编辑器...</div>
     </div>
   ),
@@ -116,14 +118,15 @@ function runStaticCode(language: LearningLanguage, level: Level, code: string): 
 
   return {
     output: [
-      `CodeNexus ${language.name} 静态检查完成`,
+      `⚠️ ${language.name} · 结构检查模式（未真正运行代码）`,
       `目标：${level.objective}`,
-      '提示：当前非 Python 语言使用结构化练习检查器，先验证语法骨架和核心意图。',
+      '说明：当前非 Python 语言只检查源代码里的结构和关键字，不会真正编译或运行 —— 所以"通过"不代表程序真的能跑通。',
+      '想要真实编译运行（gcc / javac / dotnet 等）并按输出判题，请登录后使用「在线运行」。',
     ].join('\n'),
     error: '',
     imageBase64: null,
     executionMs,
-    speedTier: { emoji: '✓', label: `${executionMs}ms`, percentile: '静态检查' },
+    speedTier: { emoji: '✓', label: `${executionMs}ms`, percentile: '结构检查' },
   }
 }
 
@@ -137,7 +140,7 @@ async function runServerCode(language: LearningLanguage, code: string): Promise<
   if (!res.ok) {
     return {
       output: '',
-      error: payload?.error ?? `${language.name} 真实运行失败。`,
+      error: payload?.error ?? `${language.name} 这次没跑起来。看一眼下面的报错，改一处再试。`,
       imageBase64: null,
       executionMs: 1,
       speedTier: { emoji: '✓', label: '1ms', percentile: 'runner error' },
@@ -161,6 +164,7 @@ export function PythonRunner({
   const levels = language.levels
   const levelMap = useMemo(() => new Map(levels.map((item) => [item.id, item])), [levels])
   const runtimeCopy = useMemo(() => getRuntimeModeCopy(language.name, language.runtime), [language.name, language.runtime])
+  const [assistantOpen, setAssistantOpen] = useState(() => settings.autoOpenMentor)
 
   // ── Level ────────────────────────────────────────────────────────────────────
   const [levelId, setLevelId] = useState(Math.min(Math.max(initialLevelId, 1), levels.length))
@@ -170,14 +174,7 @@ export function PythonRunner({
   // localStorage draft key: per-language + per-level. Survives reload (used by
   // the runaway-protection "force stop" path).
   const draftKey = `cn:draft:${languageId}:${levelId}`
-  const [code, setCode] = useState<string>(() => {
-    if (typeof window === 'undefined') return ''
-    try {
-      return window.localStorage.getItem(draftKey) ?? ''
-    } catch {
-      return ''
-    }
-  })
+  const [code, setCode] = useState('')
   const [lastEditAt, setLastEditAt] = useState(() => Date.now())
   const editorRef = useRef<CodeEditorHandle | null>(null)
   const [briefingComplete, setBriefingComplete] = useState(false)
@@ -188,7 +185,7 @@ export function PythonRunner({
   const [lastTestResult, setLastTestResult] = useState<TestResult | null>(null)
   const [lastOutput, setLastOutput] = useState('')
   const [lastImage, setLastImage] = useState<string | null>(null)
-  const [learningProfile, setLearningProfile] = useState<LearningProfile>(() => readLearningProfile())
+  const [learningProfile, setLearningProfile] = useState<LearningProfile>({ records: [] })
 
   // ── Pyodide ──────────────────────────────────────────────────────────────────
   const [pyStatus, setPyStatus] = useState<PyodideStatus>(() => language.runtime === 'python-pyodide' ? 'idle' : 'ready')
@@ -270,6 +267,28 @@ export function PythonRunner({
     earnedIdsRef.current = earnedIds
   }, [earnedIds])
 
+  useEffect(() => {
+    let cancelled = false
+    void Promise.resolve().then(() => {
+      if (!cancelled) setLearningProfile(readLearningProfile())
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    void Promise.resolve().then(() => {
+      if (cancelled) return
+      try {
+        const storedDraft = window.localStorage.getItem(draftKey) ?? ''
+        if (storedDraft) setCode((current) => current || storedDraft)
+      } catch {
+        // Draft restore is best-effort.
+      }
+    })
+    return () => { cancelled = true }
+  }, [draftKey])
+
   function queueMentorAnalysis(
     trigger: 'idle' | 'error' | 'failed-test',
     details: { error?: string; failedHint?: string } = {}
@@ -341,10 +360,25 @@ export function PythonRunner({
   }, [language.runtime, level.requiresGraphics, pyStatus])
 
   // ── Level switch ─────────────────────────────────────────────────────────────
+  function syncLevelUrl(newLevelId: number) {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    url.searchParams.delete('project')
+    url.searchParams.set('level', String(newLevelId))
+    if (isGuestPlay) {
+      url.pathname = '/play'
+      url.searchParams.set('language', language.route)
+    } else {
+      url.pathname = `/learn/${language.route}`
+    }
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`)
+  }
+
   function handleChangeLevel(newLevelId: number) {
     if (newLevelId === levelId) return
     const newLevel = levelMap.get(newLevelId)
     if (!newLevel) return
+    syncLevelUrl(newLevelId)
     setLevelId(newLevelId)
     // Restore draft for the new level if any (best-effort).
     let restored = ''
@@ -546,6 +580,41 @@ export function PythonRunner({
       }
 
       if (testResult.passed) {
+        const ranForReal =
+          language.runtime === 'python-pyodide' ||
+          (language.runtime === 'server-exec' && !isGuestPlay)
+
+        // Guest mode on non-Python languages only structure-checks the source —
+        // it never compiles or runs. Be honest: never mark the level complete or
+        // celebrate "通关" on a check that didn't actually run the code.
+        if (!ranForReal) {
+          setLastTestResult({ ...testResult, passed: false })
+          setEntries((prev) => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              timestamp: new Date().toLocaleTimeString('zh-CN', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+              }),
+              result: {
+                output:
+                  '结构检查通过 —— 但代码并没有真正编译运行，因此不计入通关。\n' +
+                  '登录后用「在线运行」真实编译运行、按程序输出判题，才能正式通过本关。',
+                error: '',
+                imageBase64: null,
+                executionMs: 1,
+                speedTier: { emoji: 'ℹ️', label: '预览', percentile: '结构检查' },
+              },
+            },
+          ])
+          setMobileTab('output')
+          return
+        }
+
+        // Real pass: promote this level's previously-missed concepts up the
+        // spaced-repetition ladder (powers the 错题本 · 间隔复盘 review queue).
+        setLearningProfile(promoteLevelReviews(language.id, level.id))
+
         if (settings.assistantMemory) {
           rememberAssistantEvent({
             type: 'run-success',
@@ -642,6 +711,11 @@ export function PythonRunner({
   }, [handleRun])
 
   const isRunDisabled = !briefingComplete || isRunning || pyStatus !== 'ready' || graphicsLoading
+  const assistantLayoutStyle = {
+    '--cn-assistant-panel-width': `${settings.chatPanelWidth}px`,
+  } as CSSProperties
+  const guidePanelWidth = assistantOpen ? 'w-56' : 'w-64'
+  const resultPanelWidth = assistantOpen ? 'w-72' : 'w-80'
 
   function startPractice() {
     setBriefingComplete(true)
@@ -702,21 +776,22 @@ export function PythonRunner({
   )
 
   const testHintsBar = lastTestResult && !lastTestResult.passed && failureDiagnosis && (
-    <div className="flex-shrink-0 space-y-2 border-t border-white/5 bg-red-500/5 px-4 py-3">
-      <div className="rounded-lg border border-red-300/18 bg-red-400/[0.055] px-3 py-2">
-        <p className="flex items-center gap-1.5 text-xs font-semibold text-red-100/82">
+    <div className="flex-shrink-0 space-y-2 border-t border-white/5 bg-amber-500/5 px-4 py-3">
+      <div className="rounded-lg border border-amber-300/18 bg-amber-400/[0.055] px-3 py-2">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-100/85">
           <AlertTriangle className="h-3.5 w-3.5" />
-          你现在卡在：{failureDiagnosis.area}
-          {failureDiagnosis.directMode && <span className="ml-auto rounded border border-red-200/20 px-1.5 py-0.5 text-[10px] text-red-100/60">直接提示</span>}
+          当前卡点：{failureDiagnosis.area}
+          {failureDiagnosis.directMode && <span className="ml-auto rounded border border-amber-200/20 px-1.5 py-0.5 text-[10px] text-amber-100/60">直接提示</span>}
         </p>
-        <p className="mt-1 text-[11px] leading-relaxed text-red-100/58">{failureDiagnosis.reason}</p>
-        <p className="mt-1 text-[11px] leading-relaxed text-white/46">
-          下一步：{failureDiagnosis.directMode ? failureDiagnosis.nextStep : `${failureDiagnosis.nextStep} 先改这一处，别一口气重写。`}
+        <p className="mt-1 text-[11px] leading-relaxed text-amber-100/62">{failureDiagnosis.reason}</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-white/52">
+          下一步：{failureDiagnosis.directMode ? failureDiagnosis.nextStep : `${failureDiagnosis.nextStep} 先只改这一处。`}
+          <span className="text-emerald-200/70">再试一次，你离通过很近。</span>
         </p>
       </div>
       {lastTestResult.results.filter((r) => !r.passed).map((r) => (
-        <p key={r.id} className="flex items-start gap-1.5 text-xs text-red-300/70">
-          <XCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-red-300" />
+        <p key={r.id} className="flex items-start gap-1.5 text-xs text-amber-200/75">
+          <XCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-300/80" />
           {r.hint}
         </p>
       ))}
@@ -739,7 +814,8 @@ export function PythonRunner({
       )}
       <button
         onClick={() => { setEntries([]); setLastTestResult(null) }}
-        className="cn-focus-ring inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-white/20 transition-colors hover:bg-white/[0.04] hover:text-white/45"
+        aria-label="清空终端输出"
+        className="cn-focus-ring inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] text-white/30 transition-colors hover:bg-white/[0.04] hover:text-white/55"
       >
         <Eraser className="h-3 w-3" />
         清空
@@ -776,7 +852,12 @@ export function PythonRunner({
   )
 
   return (
-    <div className="relative flex h-[100dvh] w-full max-w-full flex-col overflow-hidden bg-black text-white cn-noise">
+    <div
+      className="cn-assistant-layout relative flex h-[100dvh] w-full max-w-full flex-col overflow-hidden bg-black text-white cn-noise"
+      data-assistant-open={assistantOpen ? 'true' : 'false'}
+      data-assistant-dock={settings.chatDock}
+      style={assistantLayoutStyle}
+    >
       <SparkParticles intensity={Math.max(0.12, settings.noiseBrightness / 100)} />
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
@@ -826,7 +907,9 @@ export function PythonRunner({
         <button
           onClick={toggleSound}
           title={soundOn ? '关闭音效' : '开启音效'}
-          className="cn-focus-ring flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-white/30 transition-colors hover:bg-white/[0.04] hover:text-white/70"
+          aria-label={soundOn ? '关闭音效' : '开启音效'}
+          aria-pressed={soundOn}
+          className="cn-focus-ring flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-white/30 transition-colors hover:bg-white/[0.04] hover:text-white/70"
         >
           {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         </button>
@@ -836,7 +919,7 @@ export function PythonRunner({
       {/* ── Desktop: three-panel layout ─────────────────────────────────────── */}
       <div className="relative z-10 hidden flex-1 overflow-hidden xl:flex">
         {/* Guide */}
-        <aside className="w-64 flex-shrink-0 border-r border-white/8 overflow-hidden">
+        <aside className={`${guidePanelWidth} flex-shrink-0 overflow-hidden border-r border-white/8 transition-[width] duration-500`}>
           <GuidePanel
             levelId={levelId}
             levels={levels}
@@ -845,12 +928,14 @@ export function PythonRunner({
             onChangeLevel={handleChangeLevel}
             completedLevelIds={completedLevelIds}
             learningProfile={learningProfile}
+            guestMode={isGuestPlay}
+            onProfileChange={setLearningProfile}
           />
         </aside>
 
         {/* Editor */}
         <main className="flex-1 flex flex-col overflow-hidden border-r border-white/8">
-          <div className="h-8 flex-shrink-0 flex items-center px-4 border-b border-white/5 bg-[#0a0a12] gap-3">
+          <div className="h-8 flex-shrink-0 flex items-center px-4 border-b border-white/5 bg-[var(--code-bg-elevated)] gap-3">
             <span className="text-white/20 text-[10px] uppercase tracking-widest">
               {briefingComplete ? 'The Lab · 代码节点' : 'The Briefing · 教学引导'}
             </span>
@@ -880,8 +965,8 @@ export function PythonRunner({
         </main>
 
         {/* Result */}
-        <aside className="w-80 flex-shrink-0 flex flex-col overflow-hidden">
-          <div className="h-8 flex-shrink-0 flex items-center px-4 border-b border-white/5 bg-[#08080f] gap-2">
+        <aside className={`${resultPanelWidth} flex flex-shrink-0 flex-col overflow-hidden transition-[width] duration-500`}>
+          <div className="h-8 flex-shrink-0 flex items-center px-4 border-b border-white/5 bg-[var(--code-bg)] gap-2">
             <span className="text-white/20 text-[10px] uppercase tracking-widest">The Result · 输出</span>
             <div className="ml-auto">{outputControls}</div>
           </div>
@@ -914,6 +999,8 @@ export function PythonRunner({
               onChangeLevel={handleChangeLevel}
               completedLevelIds={completedLevelIds}
               learningProfile={learningProfile}
+              guestMode={isGuestPlay}
+              onProfileChange={setLearningProfile}
             />
           )}
 
@@ -936,7 +1023,7 @@ export function PythonRunner({
 
           {mobileTab === 'output' && (
             <div className="h-full flex flex-col overflow-hidden">
-              <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-white/5 bg-[#08080f]">
+              <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-white/5 bg-[var(--code-bg)]">
                 <span className="text-white/20 text-[10px] uppercase tracking-widest">结果</span>
                 <div className="ml-auto">{outputControls}</div>
               </div>
@@ -954,7 +1041,7 @@ export function PythonRunner({
         </div>
 
         {/* Mobile bottom tab bar */}
-        <nav className="grid w-full min-w-0 flex-shrink-0 grid-cols-4 border-t border-white/10 bg-[#0d0d1a] pb-[env(safe-area-inset-bottom)]">
+        <nav className="grid w-full min-w-0 flex-shrink-0 grid-cols-4 border-t border-white/10 bg-[var(--code-bg-elevated)] pb-[env(safe-area-inset-bottom)]">
           {([
             { id: 'briefing', label: '教学', icon: BookOpen },
             { id: 'guide', label: '攻略', icon: BookOpen },
@@ -1027,6 +1114,7 @@ export function PythonRunner({
         lastRunState={assistantRunState}
         lastRunMessage={assistantRunMessage}
         lastEditAt={lastEditAt}
+        onOpenChange={setAssistantOpen}
       />
 
       {/* ── Level complete overlay ───────────────────────────────────────────── */}

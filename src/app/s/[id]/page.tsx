@@ -59,9 +59,9 @@ export default async function SnippetPage({ params }: Props) {
   const truncated = codeLines.length > 40
 
   return (
-    <div className="min-h-screen bg-black text-white cn-noise">
+    <div className="min-h-[100dvh] bg-background text-foreground cn-noise">
       {/* Topbar */}
-      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-black/84 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-background/84 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <BrandHeader dark />
           <div className="flex items-center gap-2 text-xs text-white/30">
@@ -166,14 +166,14 @@ export default async function SnippetPage({ params }: Props) {
               <p className="text-xs text-white/50">先免登录试玩，跑通第一课再决定要不要保存进度。</p>
               <Link
                 href="/play"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-300 py-2.5 text-center text-sm font-semibold text-black transition-colors hover:bg-cyan-200"
+                className="cn-focus-ring flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
               >
                 <Play className="h-3.5 w-3.5" />
                 免费试玩
               </Link>
               <Link
                 href="/wall"
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 py-2.5 text-center text-sm font-semibold text-white/58 transition-colors hover:border-cyan-300/28 hover:text-cyan-100"
+                className="cn-focus-ring flex w-full items-center justify-center gap-2 rounded-lg border border-hairline py-2.5 text-center text-sm font-semibold text-ink-soft transition-colors hover:border-cyan-300/28 hover:text-cyan-100"
               >
                 看吐槽墙
                 <ArrowRight className="h-3.5 w-3.5" />

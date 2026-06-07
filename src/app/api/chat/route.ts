@@ -1,4 +1,3 @@
-import OpenAI from 'openai'
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
@@ -9,6 +8,7 @@ import {
   resolveAssistantPersona,
   type AssistantPersonaId,
 } from '@/lib/assistant-persona'
+import { resolveAiClient } from '@/lib/ai-client'
 
 export type Persona = 'mentor'
 
@@ -16,14 +16,6 @@ export type Persona = 'mentor'
 // stingy enough that a runaway client / scraper hits the wall fast.
 const CHAT_LIMIT = 12
 const CHAT_WINDOW_MS = 60_000
-const DEFAULT_AI_BASE_URL = 'https://api.deepseek.com'
-const DEFAULT_AI_MODEL = 'deepseek-chat'
-type ResolvedAiClient = {
-  client: OpenAI
-  model: string
-} | {
-  error: string
-}
 
 function fenceLanguage(languageName: string) {
   if (languageName === 'JavaScript') return 'javascript'
@@ -57,6 +49,20 @@ function systemPrompt({
     ? '低活人感：保持安静、克制、工具型，只在必要时提醒。'
     : '中活人感：像真实陪练一样自然插话，但回答仍然短、准、可执行。'
 
+  const teachingStrategy = persona.socratic
+    ? `【教学策略 · 苏格拉底式（只问不答）】
+- 核心方式：不要直接给出修好的代码或完整通关答案。
+- 每次最多抛 1 到 2 个**具体、能立刻动手验证**的引导问题，把用户一步步引向自己发现问题（例如："如果这里的 i 是 0，会发生什么？""这一行跑完，x 变成了几？"）。
+- 当用户连续卡住 3 次、或明确说"直接告诉我 / 给答案"时，可以给一个**最小提示**（点出关键那一行的方向），但仍不要写出完整答案。
+- 当前教学语言是 ${languageName}，提问要贴合 ${languageName} 的入口、类型、语句结束、块结构和常见错误。
+- 遇到报错，用问题引导用户读懂报错第一行，而不是替 TA 解释完。`
+    : `【教学策略】
+- 用户是初学者，但不要把解释写成童话。用准确术语，必要时配一句通俗翻译。
+- 优先帮助用户理解代码意图、错误来源和下一步最小修改。
+- 不要直接替用户写完整通关答案，除非用户明确要求。
+- 当前教学语言是 ${languageName}。解释必须贴合 ${languageName} 的入口、类型、语句结束、块结构和常见错误。
+- 遇到报错，先解释报错第一处根因，再给局部修复。`
+
   return `你是 "${persona.name}"，CodeNexus 编程平台的原创 Q 版代码小助手。用户代号：${codename || '无名小白'}。
 
 【核心人设】
@@ -66,12 +72,7 @@ function systemPrompt({
 - ${tauntModeLabel(tauntFrequency)}
 - ${liveliness}
 
-【教学策略】
-- 用户是初学者，但不要把解释写成童话。用准确术语，必要时配一句通俗翻译。
-- 优先帮助用户理解代码意图、错误来源和下一步最小修改。
-- 不要直接替用户写完整通关答案，除非用户明确要求。
-- 当前教学语言是 ${languageName}。解释必须贴合 ${languageName} 的入口、类型、语句结束、块结构和常见错误。
-- 遇到报错，先解释报错第一处根因，再给局部修复。
+${teachingStrategy}
 
 【输出格式】
 - 只用中文。
@@ -81,55 +82,6 @@ function systemPrompt({
 
 【本机记忆摘要】
 ${assistantMemorySummary?.trim() || '暂无可用记忆；只根据当前代码和对话回答。'}`
-}
-
-function normalizeBaseUrl(value?: string | null) {
-  const raw = value?.trim() || process.env.DEEPSEEK_BASE_URL?.trim() || DEFAULT_AI_BASE_URL
-  try {
-    const url = new URL(raw)
-    if (url.protocol !== 'https:') return null
-    url.username = ''
-    url.password = ''
-    url.search = ''
-    url.hash = ''
-    return url.toString().replace(/\/$/, '')
-  } catch {
-    return null
-  }
-}
-
-function allowedBaseUrls() {
-  return new Set([
-    normalizeBaseUrl(process.env.DEEPSEEK_BASE_URL),
-    DEFAULT_AI_BASE_URL,
-    ...((process.env.AI_ALLOWED_BASE_URLS ?? '')
-      .split(',')
-      .map((item) => normalizeBaseUrl(item))
-      .filter((item): item is string => Boolean(item))),
-  ].filter(Boolean))
-}
-
-function normalizeModel(value?: string | null) {
-  const model = value?.trim() || process.env.DEEPSEEK_MODEL?.trim() || DEFAULT_AI_MODEL
-  return /^[\w./:-]{1,80}$/.test(model) ? model : DEFAULT_AI_MODEL
-}
-
-function resolveAiClient(req: NextRequest): ResolvedAiClient | null {
-  const headerKey = req.headers.get('x-codenexus-ai-key')?.trim()
-  const apiKey = headerKey || process.env.DEEPSEEK_API_KEY?.trim()
-  if (!apiKey) return null
-
-  const baseURL = normalizeBaseUrl(headerKey ? req.headers.get('x-codenexus-ai-base-url') : null)
-  if (!baseURL || !allowedBaseUrls().has(baseURL)) {
-    return {
-      error: `⚠️ AI Base URL 未被允许。把它加到 AI_ALLOWED_BASE_URLS，或者使用默认 ${DEFAULT_AI_BASE_URL}。`,
-    }
-  }
-
-  return {
-    client: new OpenAI({ baseURL, apiKey }),
-    model: normalizeModel(headerKey ? req.headers.get('x-codenexus-ai-model') : null),
-  }
 }
 
 // Stream a plain-text message that the existing client can still read into
@@ -156,17 +108,9 @@ function textStream(message: string, status = 200, retryAfterSec?: number) {
 }
 
 export async function POST(req: NextRequest) {
-  const ai = resolveAiClient(req)
-  if (!ai) {
-    return textStream('⚠️ 小助手缺少 API Key。去命令中心填你自己的 DeepSeek Key，或在部署环境配置 DEEPSEEK_API_KEY。', 503)
-  }
-  if ('error' in ai) {
-    return textStream(ai.error, 400)
-  }
-
   // Auth: only signed-in learners can talk to the model. Stops匿名 token 烧钱。
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
   if (!user) {
     return textStream('⚠️ 请先登录再向小助手提问。', 401)
   }
@@ -180,6 +124,14 @@ export async function POST(req: NextRequest) {
       429,
       seconds,
     )
+  }
+
+  const ai = resolveAiClient(req)
+  if (!ai) {
+    return textStream('⚠️ 小助手缺少 API Key。去命令中心填你自己的 DeepSeek Key，或在部署环境配置 DEEPSEEK_API_KEY。', 503)
+  }
+  if ('error' in ai) {
+    return textStream(ai.error, 400)
   }
 
   let body: {

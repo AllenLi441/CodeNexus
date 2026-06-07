@@ -32,7 +32,7 @@ function Spark({ delay, angle }: { delay: number; angle: number }) {
       style={{ top: '50%', left: '50%' }}
       initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
       animate={{ x: tx, y: ty, opacity: 0, scale: 0 }}
-      transition={{ delay, duration: 0.82, ease: appleEase }}
+      transition={{ delay, duration: 0.4, ease: appleEase }}
     />
   )
 }
@@ -110,9 +110,9 @@ export function LevelCompleteOverlay({
           {demoMode ? (
             <p className="text-sm font-semibold text-cyan-200">试玩通过，进度还没保存。注册后接着学，不用重打。</p>
           ) : alreadyCompleted ? (
-            <p className="text-sm text-white/40">这个节点已经清理过了。</p>
+            <p className="text-sm text-white/40">这个节点你已经通关过，重练一遍同样算数。</p>
           ) : (
-            <p className="text-sm font-semibold text-cyan-200">测试通过，节点已写入进度。</p>
+            <p className="text-sm font-semibold text-[var(--code-green)]">测试全部通过，节点已写入进度。</p>
           )}
         </motion.div>
 
@@ -173,7 +173,7 @@ export function LevelCompleteOverlay({
           {levels.find((l) => l.id === levelId)?.tests.map((t) => (
             <div
               key={t.id}
-              className="flex items-center gap-1.5 rounded-lg border border-emerald-400/22 bg-emerald-400/8 px-2.5 py-1 text-xs text-emerald-200/82"
+              className="flex items-center gap-1.5 rounded-lg border border-[color-mix(in_oklab,var(--code-green)_30%,transparent)] bg-[color-mix(in_oklab,var(--code-green)_10%,transparent)] px-2.5 py-1 text-xs text-[color-mix(in_oklab,var(--code-green)_88%,white)]"
             >
               <Check className="h-3 w-3" />
               <span>{t.description}</span>
@@ -189,17 +189,17 @@ export function LevelCompleteOverlay({
         >
           <button
             type="button"
-            onClick={onDashboard}
-            className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg border border-white/15 bg-transparent px-4 py-2 text-sm font-semibold text-white/60 transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-300/30 hover:text-cyan-100"
+            onClick={demoMode && nextLevel ? onNext : onDashboard}
+            className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg border border-hairline bg-transparent px-4 py-2 text-sm font-semibold text-ink-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-300/30 hover:text-cyan-100 active:scale-[0.98]"
           >
-            <Map className="h-4 w-4" />
-            {demoMode ? '继续试玩' : '返回地图'}
+            {demoMode && nextLevel ? <ArrowRight className="h-4 w-4" /> : <Map className="h-4 w-4" />}
+            {demoMode ? (nextLevel ? '下一关' : '回到入口') : '返回地图'}
           </button>
           {demoMode ? (
             <button
               type="button"
               onClick={onRegister ?? onDashboard}
-              className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-200"
+              className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
             >
               2 秒注册保存
               <ArrowRight className="h-4 w-4" />
@@ -208,7 +208,7 @@ export function LevelCompleteOverlay({
             <button
               type="button"
               onClick={onNext}
-              className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-200"
+              className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
             >
               下一关
               <ArrowRight className="h-4 w-4" />
@@ -217,7 +217,7 @@ export function LevelCompleteOverlay({
             <button
               type="button"
               onClick={onDashboard}
-              className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-200"
+              className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
             >
               <Map className="h-4 w-4" />
               返回地图

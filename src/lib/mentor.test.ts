@@ -47,4 +47,36 @@ describe('detectRunawayPython', () => {
     expect(detectRunawayPython('# while True: pass\nprint("ok")')).toBeNull()
     expect(detectRunawayPython('while True:\n    if x > 5:\n        break\n    x += 1')).toBeNull()
   })
+
+  // Broadened guard (audit SBX-2): catch the bypasses that froze/crashed the tab.
+  it('blocks non-literal constant-truthy while conditions', () => {
+    expect(detectRunawayPython('while 2:\n    print("x")')).toContain('恒真条件')
+    expect(detectRunawayPython('while 1 == 1:\n    print("x")')).toContain('恒真条件')
+    expect(detectRunawayPython('while not False:\n    print("x")')).toContain('恒真条件')
+    // audit fix: parenthesized / no-space constant-truthy conditions must not bypass detection
+    expect(detectRunawayPython('while (True):\n    print("x")')).toContain('恒真条件')
+    expect(detectRunawayPython('while(True):\n    print("x")')).toContain('恒真条件')
+  })
+
+  it('blocks astronomically large range() loop bombs', () => {
+    expect(detectRunawayPython('for i in range(10**12):\n    pass')).toContain('天文数字')
+    expect(detectRunawayPython('for i in range(100000000000):\n    pass')).toContain('天文数字')
+  })
+
+  it('blocks list/string memory bombs', () => {
+    expect(detectRunawayPython('x = [0] * 10**12')).toContain('巨大的倍数')
+  })
+
+  it('blocks self-recursion with no base case', () => {
+    expect(detectRunawayPython('def f():\n    f()')).toContain('无限递归')
+  })
+
+  it('does NOT flag bounded ranges or correct recursion (no new false alarms)', () => {
+    expect(detectRunawayPython('for i in range(100):\n    print(i)')).toBeNull()
+    expect(detectRunawayPython('nums = [0] * 100')).toBeNull()
+    expect(detectRunawayPython('while 0:\n    print("never")')).toBeNull()
+    expect(
+      detectRunawayPython('def fib(n):\n    if n < 2:\n        return n\n    return fib(n-1) + fib(n-2)')
+    ).toBeNull()
+  })
 })

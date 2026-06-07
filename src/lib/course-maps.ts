@@ -80,7 +80,7 @@ export const COURSE_MAPS: CourseMap[] = [
     id: 'foundation',
     title: 'Python 基础根系',
     shortTitle: '根系',
-    subtitle: '20 个基础节点 + 4 个阶段作品',
+    subtitle: '20 个基础节点 + 3 道捉虫挑战 + 4 个阶段作品',
     description: '语法、容器、函数、错误处理、文件、模块、面向对象与综合实战；每 5 关做一次小作品。',
     accent: 'cyan',
     nodes: foundationNodes,

@@ -55,10 +55,12 @@ async function runCommand(command: string, args: string[], cwd: string) {
       timeout: TIMEOUT_MS,
       maxBuffer: 1024 * 1024,
       env: {
-        ...process.env,
+        NODE_ENV: process.env.NODE_ENV ?? 'production',
         PATH: process.env.PATH ?? '',
         HOME: cwd,
         TMPDIR: cwd,
+        LANG: process.env.LANG ?? 'C.UTF-8',
+        LC_ALL: process.env.LC_ALL ?? process.env.LANG ?? 'C.UTF-8',
       },
     })
     return {

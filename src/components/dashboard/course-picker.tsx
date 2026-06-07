@@ -81,9 +81,9 @@ function StepHeader({
     <div className="mb-3 flex items-center justify-between gap-3">
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300/38">{label}</p>
-        <h3 className="mt-1 text-sm font-semibold text-white">{title}</h3>
+        <h3 className="mt-1 text-sm font-semibold text-foreground">{title}</h3>
       </div>
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-cyan-300/18 bg-cyan-300/8 font-mono text-xs text-cyan-100">
+      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-primary/18 bg-primary/8 font-mono text-xs tabular-nums text-primary">
         {index}
       </span>
     </div>
@@ -144,8 +144,8 @@ export function CoursePicker({
           <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-cyan-300/45">
             Course Launchpad
           </p>
-          <h2 className="mt-1 text-lg font-semibold text-white">选择入口</h2>
-          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-white/42">
+          <h2 className="mt-1 text-lg font-semibold text-foreground">选择入口</h2>
+          <p className="mt-1 max-w-2xl text-pretty text-xs leading-relaxed text-ink-mute">
             先选语言，再选领域分支，最后进入具体课程。结构保持清晰，学习路径也更容易持续。
           </p>
           {demoMode && (
@@ -250,10 +250,10 @@ export function CoursePicker({
         <div className="rounded-lg border border-white/8 bg-black/28 p-3">
           <StepHeader index={3} label="Lesson" title="选择课程" />
           {!selectedMap ? (
-            <div className="flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed border-white/10 bg-white/[0.018] px-5 text-center">
-              <Route className="mb-3 h-8 w-8 text-white/18" />
-              <p className="text-sm font-semibold text-white/50">先选一个分支</p>
-              <p className="mt-1 text-xs leading-relaxed text-white/28">选择分支后，这里会显示对应课程和可进入的实践任务。</p>
+            <div className="flex min-h-56 flex-col items-center justify-center rounded-lg border border-dashed border-hairline bg-foreground/[0.015] px-5 text-center">
+              <Route className="mb-3 h-8 w-8 text-primary/30" />
+              <p className="text-sm font-semibold text-ink-soft">先选一个分支</p>
+              <p className="mt-1 text-pretty text-xs leading-relaxed text-ink-mute">选择分支后，这里会显示对应课程和可进入的实践任务。</p>
             </div>
           ) : (
             <div className="grid max-h-[520px] gap-2 overflow-y-auto pr-1 cn-scrollbar">
@@ -273,7 +273,7 @@ export function CoursePicker({
                         <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-white/38">{node.objective}</p>
                       </div>
                       {complete ? (
-                        <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-300/75" />
+                        <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-[color-mix(in_oklab,var(--code-green)_85%,transparent)]" />
                       ) : !available ? (
                         <Lock className="h-4 w-4 flex-shrink-0 text-white/22" />
                       ) : (

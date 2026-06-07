@@ -1580,6 +1580,143 @@ print(f"\\n恭喜通关！你完成了 CodeNexus 核心节点！")
       },
     ],
   },
+
+  // ════════════════════════════════════════
+  //  捉虫篇 · DEBUG  (Lv 21–23)
+  //  给你一段"看着对、其实有 bug"的代码，读懂它、找出问题、修好它。
+  // ════════════════════════════════════════
+
+  {
+    id: 21,
+    title: '捉虫 #1 · 消失的冒号',
+    badge: '捉虫',
+    icon: '🐛',
+    objective: '这段代码想依次打印 1 到 5，却一运行就报错。找出那一处小问题并修好它。',
+    starterCode: `# 🐛 捉虫挑战：这段代码想打印 1 到 5，但一运行就报错。
+# 别急着重写——先点运行，读懂报错，再修那一处小问题。
+
+for i in range(1, 6)
+    print(i)
+`,
+    proactiveHints: [
+      '先点运行，读报错的第一行——Python 已经把出错的位置指给你看了。',
+      'for / if / while 这类语句的那一行，结尾需要一个符号来"开启"下面缩进的代码块。',
+      '看看 `for i in range(1, 6)` 这一行的末尾，是不是少了一个英文冒号 `:`。',
+    ],
+    tests: [
+      {
+        id: 'l21-t1',
+        description: '依次输出了 1 2 3 4 5',
+        check: (output) => ['1', '2', '3', '4', '5'].every((n) => output.includes(n)),
+        failHint: '应该依次打印 1 到 5。修好语法后就能跑通了。',
+        points: 70,
+      },
+      {
+        id: 'l21-t2',
+        description: '仍然用 for 循环遍历 range（没投机取巧）',
+        check: (_o, code) => /for\s+\w+\s+in\s+range/.test(code),
+        failHint: '保留原来的 for 循环结构，只修那个小 bug 就好。',
+        points: 30,
+      },
+    ],
+    sections: [
+      {
+        heading: '调试，才是程序员真正的日常',
+        body: '写代码只占一小部分时间，**读代码、找 bug、修 bug** 才是大头。学会冷静读报错，比死记语法更重要。',
+      },
+      {
+        heading: '怎么读报错',
+        body: 'Python 报错时，**最后一行**告诉你错误类型，**上面**告诉你出错的位置（行号）。先看位置，再看类型。\n\n`SyntaxError`（语法错误）通常意味着：少了符号、引号没闭合、或括号不配对。',
+        tip: '目标：让这段代码正常打印 1 到 5。',
+      },
+    ],
+  },
+
+  {
+    id: 22,
+    title: '捉虫 #2 · 差一个的边界',
+    badge: '捉虫',
+    icon: '🐛',
+    objective: '这段代码想算 1 到 10 的总和（正确答案是 55），但结果不对。找出并修好它。',
+    starterCode: `# 🐛 捉虫挑战：想算 1+2+...+10 = 55，可结果偏偏不对。
+# 这种"差一个"的 bug 极其常见。仔细看看循环的范围。
+
+total = 0
+for i in range(1, 10):
+    total += i
+print(total)
+`,
+    proactiveHints: [
+      '先运行看看它到底算出了多少，再想差在哪。',
+      '`range(1, 10)` 到底包含哪些数字？它包含 1，但**不包含** 10。',
+      '想让循环跑到 10，范围要写成 `range(1, 11)`——右边那个数取不到。',
+    ],
+    tests: [
+      {
+        id: 'l22-t1',
+        description: '输出正确的总和 55',
+        check: (output) => output.includes('55'),
+        failHint: '结果应该是 55。注意 range 右边的数取不到。',
+        points: 70,
+      },
+      {
+        id: 'l22-t2',
+        description: '仍然用循环累加（没硬写 print(55)）',
+        check: (_o, code) => /for\s+\w+\s+in\s+range/.test(code) && code.includes('total'),
+        failHint: '保留循环累加的写法，只把范围修对就好。',
+        points: 30,
+      },
+    ],
+    sections: [
+      {
+        heading: '"差一个"错误（off-by-one）',
+        body: '这是编程里最经典、最高频的 bug 之一：边界差了 1。`range(a, b)` 的规则是**含头不含尾**——从 a 开始，到 b 的前一个为止。',
+        tip: '目标：让总和正确等于 55。',
+      },
+    ],
+  },
+
+  {
+    id: 23,
+    title: '捉虫 #3 · 文字和数字打架',
+    badge: '捉虫',
+    icon: '🐛',
+    objective: '这段代码想打印 "我今年 18 岁"，却报了 TypeError。找出原因并修好它。',
+    starterCode: `# 🐛 捉虫挑战：想打印「我今年 18 岁」，却报 TypeError。
+# 提示：文字（字符串）和数字，不能直接用 + 拼在一起。
+
+age = 18
+print("我今年 " + age + " 岁")
+`,
+    proactiveHints: [
+      '运行看看报错类型——TypeError 通常意味着"类型不匹配"。',
+      'Python 里字符串 `"..."` 和整数 `18` 不能直接用 `+` 连接。',
+      '两条路任选其一：把数字转成字符串 `str(age)`，或者用 f-string `f"我今年 {age} 岁"`。',
+    ],
+    tests: [
+      {
+        id: 'l23-t1',
+        description: '正确打印出「我今年 18 岁」',
+        check: (output) => output.includes('我今年') && output.includes('18') && output.includes('岁'),
+        failHint: '应该打印「我今年 18 岁」。用 str(age) 或 f-string 把数字接进去。',
+        points: 70,
+      },
+      {
+        id: 'l23-t2',
+        description: '仍然用了 age 变量（不是直接写死 18）',
+        check: (_o, code) => code.includes('age'),
+        failHint: '保留 age 变量，用 str(age) 或 f"...{age}..." 把它接进句子里。',
+        points: 30,
+      },
+    ],
+    sections: [
+      {
+        heading: '类型错误（TypeError）',
+        body: 'Python 是"强类型"的：它不会偷偷帮你把数字当文字用。`"文字" + 数字` 会直接报错。\n\n解决办法：要么 `str(数字)` 转成文字再拼，要么用 f-string `f"...{变量}..."` 让 Python 自动处理。',
+        tip: '目标：正确打印「我今年 18 岁」。',
+      },
+    ],
+  },
 ]
 
 export const LEVEL_MAP = new Map(LEVELS.map((l) => [l.id, l]))

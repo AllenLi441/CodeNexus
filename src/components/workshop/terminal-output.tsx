@@ -26,12 +26,12 @@ export function TerminalOutput({ entries, isRunning, pyStatus, languageName = 'P
   }, [entries, isRunning])
 
   return (
-    <div className="h-full flex flex-col bg-[#08080f] font-mono overflow-hidden" style={{ fontSize: 'var(--cn-terminal-font-size, 14px)' }}>
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-[#0d0d18] flex-shrink-0">
-        <div className="flex gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-          <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-          <span className="w-3 h-3 rounded-full bg-[#27c93f]" />
+    <div className="h-full flex flex-col bg-[var(--code-bg)] font-mono overflow-hidden" style={{ fontSize: 'var(--cn-terminal-font-size, 14px)' }}>
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-[var(--code-bg-elevated)] flex-shrink-0">
+        <div className="flex gap-1.5" aria-hidden>
+          <span className="w-3 h-3 rounded-full bg-red-400" />
+          <span className="w-3 h-3 rounded-full bg-amber-400" />
+          <span className="w-3 h-3 rounded-full bg-emerald-400" />
         </div>
         <span className="text-white/30 text-xs ml-2">CodeNexus {languageName} Terminal</span>
         <span className="ml-auto text-[10px] text-white/20">{pyStatus}</span>
@@ -57,21 +57,21 @@ export function TerminalOutput({ entries, isRunning, pyStatus, languageName = 'P
 
             {/* stdout */}
             {entry.result.output && (
-              <pre className="text-[#a3e635] whitespace-pre-wrap break-words leading-relaxed text-sm">
+              <pre className="text-[var(--code-stdout)] whitespace-pre-wrap break-words leading-[1.65] text-sm">
                 {entry.result.output}
               </pre>
             )}
 
             {/* stderr */}
             {entry.result.error && (
-              <pre className="text-[#f87171] whitespace-pre-wrap break-words leading-relaxed text-sm">
+              <pre className="text-[var(--code-stderr)] whitespace-pre-wrap break-words leading-[1.65] text-sm">
                 {entry.result.error}
               </pre>
             )}
 
             {/* Graphic output */}
             {entry.result.imageBase64 && (
-              <div className="overflow-hidden rounded-lg border border-white/8 bg-[#0a0a12]">
+              <div className="overflow-hidden rounded-lg border border-white/8 bg-[var(--code-bg-elevated)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`data:image/png;base64,${entry.result.imageBase64}`}

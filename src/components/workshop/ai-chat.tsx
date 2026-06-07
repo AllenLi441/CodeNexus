@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import type { CSSProperties } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Copy, RotateCcw, Send, Square, X } from 'lucide-react'
+import { Camera, Check, Copy, Languages, Mic, MicOff, RotateCcw, Send, ShieldCheck, Square, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { CommandSettings } from '@/hooks/use-command-settings'
 import { appleEase, appleSpring, softSpring } from '@/lib/motion'
@@ -25,12 +26,65 @@ import { detectPythonLint, detectRunawayPython } from '@/lib/mentor'
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string }
 type LastRunState = 'success' | 'error' | 'failed-test' | null
+type MediaKind = 'microphone' | 'camera'
+type MediaPermissionStatus = 'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported'
+type VoiceStatus = 'idle' | 'listening' | 'unsupported' | 'error'
+
+type SpeechRecognitionAlternativeLike = {
+  transcript: string
+}
+
+type SpeechRecognitionResultLike = {
+  isFinal: boolean
+  [index: number]: SpeechRecognitionAlternativeLike | undefined
+}
+
+type SpeechRecognitionResultsLike = {
+  length: number
+  [index: number]: SpeechRecognitionResultLike | undefined
+}
+
+type SpeechRecognitionEventLike = Event & {
+  results: SpeechRecognitionResultsLike
+}
+
+type SpeechRecognitionErrorEventLike = Event & {
+  error?: string
+}
+
+type BrowserSpeechRecognition = {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  maxAlternatives: number
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+  abort: () => void
+}
+
+type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition
+
+declare global {
+  interface Window {
+    SpeechRecognition?: BrowserSpeechRecognitionConstructor
+    webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor
+  }
+}
 
 type InstantInsight = {
   mood: AssistantCompanionMood
   status: string
   detail: string
   autoHint: string | null
+}
+
+const EMPTY_ASSISTANT_MEMORY: AssistantMemorySnapshot = {
+  version: 1,
+  seenRuns: 0,
+  recentEvents: [],
 }
 
 function hasOutputIntent(code: string) {
@@ -120,15 +174,15 @@ function buildInstantInsight({
       mood: 'alert',
       status: '发现运行错误',
       detail: msg,
-      autoHint: `我看到终端炸了：\`${msg}\`\n\n先读第一行错误，再改最小一处。别把整段代码掀了重写。`,
+      autoHint: `终端报了这个错：\`${msg}\`\n\n先读第一行错误，改最小的一处就好。这种错几乎人人都踩过。`,
     }
   }
 
   if (lastRunState === 'failed-test') {
     return {
       mood: 'explain',
-      status: '测试没过',
-      detail: lastRunMessage?.slice(0, 90) ?? '能跑不代表做对，目标输出还得对齐。',
+      status: '测试还差一点',
+      detail: lastRunMessage?.slice(0, 90) ?? '代码能跑了，离目标输出只差对齐这一步。',
       autoHint: null,
     }
   }
@@ -214,6 +268,10 @@ function guestMentorReply({
   const lower = text.toLowerCase()
   const hasCode = code.trim().length > 0
 
+  if (text.includes('【大白话写代码】')) {
+    return `把大白话变成真正能跑的代码，需要登录后接上云端大脑才行——试玩模式我只能给短提示。\n\n登录后你说一句"我想让它数到 10"，我就直接给你 ${languageName} 代码，并标出每句话对应哪一行。`
+  }
+
   if (!hasCode) {
     return `试玩模式先不给 ${assistantName} 接云端大脑，别急着失望。\n\n这一关很简单：在编辑器里用 ${languageName} 打印一句指定文本。先写最小代码，再点运行。`
   }
@@ -245,6 +303,29 @@ function describePointerZone(clientX: number, clientY: number) {
   if (x > 0.78) return '右侧终端 / 小助手区'
   if (y > 0.82) return '底部输入或操作区'
   return '课程正文 / 编辑区'
+}
+
+function getSpeechRecognitionConstructor() {
+  if (typeof window === 'undefined') return null
+  return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null
+}
+
+function mediaPermissionCopy(kind: MediaKind, status: MediaPermissionStatus) {
+  const noun = kind === 'microphone' ? '麦克风' : '摄像头'
+  if (status === 'requesting') return `${noun}申请中`
+  if (status === 'granted') return `${noun}已授权`
+  if (status === 'denied') return `${noun}被拒绝`
+  if (status === 'unsupported') return `${noun}不可用`
+  return `申请${noun}`
+}
+
+function mediaErrorMessage(kind: MediaKind, err: unknown) {
+  const noun = kind === 'microphone' ? '麦克风' : '摄像头'
+  const name = err instanceof DOMException ? err.name : ''
+  if (name === 'NotAllowedError') return `${noun}权限被浏览器拒绝。到地址栏权限设置里打开它。`
+  if (name === 'NotFoundError') return `没有检测到可用${noun}设备。`
+  if (name === 'NotReadableError') return `${noun}正被别的应用占用，关掉占用的软件再试。`
+  return `${noun}权限申请失败。`
 }
 
 function ProactiveBubble({
@@ -352,6 +433,7 @@ export function AIChat({
   lastRunState = null,
   lastRunMessage,
   lastEditAt,
+  onOpenChange,
 }: {
   currentCode: string
   codename: string
@@ -369,9 +451,10 @@ export function AIChat({
   lastRunState?: LastRunState
   lastRunMessage?: string
   lastEditAt?: number
+  onOpenChange?: (open: boolean) => void
 }) {
   const persona = resolveAssistantPersona(settings.assistantPersona)
-  const [memory, setMemory] = useState<AssistantMemorySnapshot>(() => readAssistantMemory())
+  const [memory, setMemory] = useState<AssistantMemorySnapshot>(EMPTY_ASSISTANT_MEMORY)
   const [isOpen, setIsOpen] = useState(settings.autoOpenMentor)
   const [ambientHint, setAmbientHint] = useState<string | null>(null)
   const [interactionHint, setInteractionHint] = useState<string | null>(null)
@@ -394,6 +477,12 @@ export function AIChat({
     },
   ])
   const [input, setInput] = useState('')
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>('idle')
+  const [mediaAccess, setMediaAccess] = useState<Record<MediaKind, MediaPermissionStatus>>({
+    microphone: 'idle',
+    camera: 'idle',
+  })
+  const [permissionMessage, setPermissionMessage] = useState('语音和摄像头只在本机浏览器授权，不会上传音视频。')
   const [isStreaming, setIsStreaming] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [, startTransition] = useTransition()
@@ -401,7 +490,10 @@ export function AIChat({
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const consumedHintRef = useRef<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
+  const voiceBaseInputRef = useRef('')
   const companionRef = useRef<HTMLButtonElement>(null)
+  const autoOpenAppliedRef = useRef(false)
   const pointerFrameRef = useRef<number | null>(null)
   const lastPointerMoveRef = useRef(0)
   const pointerSnapshotRef = useRef({
@@ -436,13 +528,55 @@ export function AIChat({
     }
   }, [isOpen, messages])
 
+  useEffect(() => {
+    let cancelled = false
+    void Promise.resolve().then(() => {
+      if (cancelled) return
+      const storedMemory = readAssistantMemory()
+      setMemory(storedMemory)
+      setMessages((prev) => prev.map((message) =>
+        message.id === 'welcome'
+          ? {
+              ...message,
+              content: assistantWelcome({
+                codename,
+                personaId: persona.id,
+                liveliness: settings.assistantLiveliness,
+                memoryEnabled: settings.assistantMemory,
+                memory: storedMemory,
+              }),
+            }
+          : message
+      ))
+    })
+    return () => { cancelled = true }
+  }, [codename, persona.id, settings.assistantLiveliness, settings.assistantMemory])
+
   // Abort any in-flight request when the component unmounts.
   useEffect(() => () => abortRef.current?.abort(), [])
 
+  useEffect(() => () => {
+    recognitionRef.current?.abort()
+    recognitionRef.current = null
+  }, [])
+
+  useEffect(() => {
+    onOpenChange?.(isOpen)
+  }, [isOpen, onOpenChange])
+
+  useEffect(() => {
+    if (!settings.autoOpenMentor || autoOpenAppliedRef.current) return
+    autoOpenAppliedRef.current = true
+    void Promise.resolve().then(() => setIsOpen(true))
+  }, [settings.autoOpenMentor])
+
   const isRightDocked = settings.chatDock === 'right'
-  const panelSideClass = isRightDocked ? 'right-0 border-l' : 'left-0 border-r'
-  const panelEnter = isRightDocked ? { opacity: 0, x: 40 } : { opacity: 0, x: -40 }
-  const panelExit = isRightDocked ? { opacity: 0, x: 30 } : { opacity: 0, x: -30 }
+  const panelSideClass = isRightDocked ? 'xl:right-0 xl:left-auto xl:border-l' : 'xl:left-0 xl:right-auto xl:border-r'
+  const panelEnter = isRightDocked ? { opacity: 0, x: 40, y: 24 } : { opacity: 0, x: -40, y: 24 }
+  const panelExit = isRightDocked ? { opacity: 0, x: 30, y: 18 } : { opacity: 0, x: -30, y: 18 }
+  const assistantPanelStyle = {
+    '--cn-assistant-panel-width': `${settings.chatPanelWidth}px`,
+  } as CSSProperties
   const isSnoozed = snoozedUntil > Date.now()
   const activeHint = isSnoozed ? null : interactionHint ?? proactiveHint ?? ambientHint
   const hasCode = currentCode.trim().length > 0
@@ -624,6 +758,101 @@ export function AIChat({
     }
   }
 
+  async function requestMediaAccess(kind: MediaKind) {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMediaAccess((current) => ({ ...current, [kind]: 'unsupported' }))
+      setPermissionMessage('当前浏览器不支持媒体权限申请。换 Chrome / Edge，或者确认页面在 HTTPS / localhost 下打开。')
+      return false
+    }
+
+    setMediaAccess((current) => ({ ...current, [kind]: 'requesting' }))
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(
+        kind === 'microphone' ? { audio: true } : { video: true }
+      )
+      stream.getTracks().forEach((track) => track.stop())
+      setMediaAccess((current) => ({ ...current, [kind]: 'granted' }))
+      setPermissionMessage(
+        kind === 'microphone'
+          ? '麦克风已授权。语音识别会把文字填进输入框，你确认后再发送。'
+          : '摄像头已授权并已释放。后续 CV / 图像识别课程可以用这个入口做权限预检。'
+      )
+      return true
+    } catch (err) {
+      setMediaAccess((current) => ({ ...current, [kind]: 'denied' }))
+      setPermissionMessage(mediaErrorMessage(kind, err))
+      return false
+    }
+  }
+
+  function stopVoiceRecognition() {
+    recognitionRef.current?.stop()
+    recognitionRef.current = null
+    setVoiceStatus('idle')
+    setPermissionMessage('语音识别已停止。检查文字没问题再发送，别让错字替你发言。')
+  }
+
+  async function startVoiceRecognition() {
+    const Recognition = getSpeechRecognitionConstructor()
+    if (!Recognition) {
+      setVoiceStatus('unsupported')
+      setMediaAccess((current) => ({ ...current, microphone: 'unsupported' }))
+      setPermissionMessage('当前浏览器不支持 Web Speech 语音识别。Chrome / Edge 通常可以直接用。')
+      return
+    }
+
+    const granted = mediaAccess.microphone === 'granted' || await requestMediaAccess('microphone')
+    if (!granted) return
+
+    recognitionRef.current?.abort()
+    const recognition = new Recognition()
+    recognition.lang = 'zh-CN'
+    recognition.continuous = false
+    recognition.interimResults = true
+    recognition.maxAlternatives = 1
+    recognitionRef.current = recognition
+    voiceBaseInputRef.current = input.trim()
+
+    recognition.onresult = (event) => {
+      let finalTranscript = ''
+      let interimTranscript = ''
+      for (let index = 0; index < event.results.length; index += 1) {
+        const result = event.results[index]
+        const transcript = result?.[0]?.transcript ?? ''
+        if (!transcript) continue
+        if (result?.isFinal) {
+          finalTranscript += transcript
+        } else {
+          interimTranscript += transcript
+        }
+      }
+      const spokenText = `${finalTranscript}${interimTranscript}`.trim()
+      const base = voiceBaseInputRef.current
+      setInput(base && spokenText ? `${base}\n${spokenText}` : spokenText || base)
+    }
+
+    recognition.onerror = (event) => {
+      setVoiceStatus('error')
+      setPermissionMessage(event.error === 'no-speech'
+        ? '没听到有效语音。靠近麦克风，或者直接打字。'
+        : `语音识别出错：${event.error ?? '未知错误'}。`)
+    }
+
+    recognition.onend = () => {
+      recognitionRef.current = null
+      setVoiceStatus((current) => current === 'listening' ? 'idle' : current)
+    }
+
+    try {
+      recognition.start()
+      setVoiceStatus('listening')
+      setPermissionMessage('正在听你说话。识别结果会先填进输入框，不会自动发送。')
+    } catch {
+      setVoiceStatus('error')
+      setPermissionMessage('语音识别没有启动成功。刷新页面或重开麦克风权限后再试。')
+    }
+  }
+
   async function streamReply(opts: {
     apiMessages: { role: 'user' | 'assistant'; content: string }[]
     assistantId: string
@@ -702,6 +931,17 @@ export function AIChat({
     return messageList
       .filter((m) => m.id !== 'welcome' && !m.id.startsWith('hint-'))
       .map((m) => ({ role: m.role, content: m.content }))
+  }
+
+  function sendPlainToCode() {
+    const desc = input.trim()
+    if (!desc) {
+      inputRef.current?.focus()
+      return
+    }
+    void sendMessage(
+      `【大白话写代码】把我下面这句大白话，翻译成可运行的 ${languageName} 代码。请：(1) 先给完整代码；(2) 再用一个"我说的话 ↔ 对应代码"的对照，一句一句对上；(3) 最后用一句话鼓励我把它敲进编辑器改一改、自己写一遍。\n\n我想做的是：${desc}`,
+    )
   }
 
   async function sendMessage(overrideInput?: string) {
@@ -894,11 +1134,11 @@ export function AIChat({
         {isOpen && (
           <motion.div
             initial={panelEnter}
-            animate={{ opacity: 1, x: 0 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
             exit={panelExit}
             transition={appleSpring}
-            className={`fixed bottom-0 top-0 z-40 flex max-w-[calc(100vw-16px)] flex-col border-cyan-300/14 bg-black/96 shadow-2xl shadow-cyan-950/40 backdrop-blur-2xl ${panelSideClass}`}
-            style={{ width: settings.chatPanelWidth }}
+            className={`fixed inset-x-0 bottom-0 top-auto z-40 flex max-h-[42dvh] min-h-[280px] max-w-none flex-col border-t border-cyan-300/14 bg-black/96 shadow-2xl shadow-cyan-950/40 backdrop-blur-2xl xl:inset-x-auto xl:bottom-0 xl:top-0 xl:min-h-0 xl:w-[var(--cn-assistant-panel-width)] xl:max-h-none xl:border-t-0 ${panelSideClass}`}
+            style={assistantPanelStyle}
           >
             <div className="flex flex-shrink-0 gap-3 border-b border-white/8 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.16),transparent_36%)] px-4 py-4">
               <AssistantAnimePortrait personaId={persona.id} active={isStreaming} />
@@ -996,6 +1236,50 @@ export function AIChat({
             </div>
 
             <div className="flex-shrink-0 border-t border-white/8 bg-black/40 p-3">
+              <div className="mb-2 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={voiceStatus === 'listening' ? stopVoiceRecognition : startVoiceRecognition}
+                  disabled={isStreaming || mediaAccess.microphone === 'requesting'}
+                  className={`cn-focus-ring inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border px-2.5 text-xs font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-45 ${
+                    voiceStatus === 'listening'
+                      ? 'border-red-300/30 bg-red-400/14 text-red-100 hover:bg-red-400/20'
+                      : 'border-cyan-300/20 bg-cyan-300/[0.07] text-cyan-50/72 hover:border-cyan-300/34 hover:bg-cyan-300/[0.11]'
+                  }`}
+                  title="用浏览器语音识别填入问题"
+                >
+                  {voiceStatus === 'listening' ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                  <span className="truncate">
+                    {voiceStatus === 'listening' ? '停止语音' : mediaPermissionCopy('microphone', mediaAccess.microphone)}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => requestMediaAccess('camera')}
+                  disabled={isStreaming || mediaAccess.camera === 'requesting'}
+                  className="cn-focus-ring inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-2.5 text-xs font-semibold text-white/54 transition-all duration-200 hover:border-cyan-300/24 hover:bg-cyan-300/[0.065] hover:text-cyan-50/72 disabled:pointer-events-none disabled:opacity-45"
+                  title="为后续图像识别课程预检摄像头权限"
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                  <span className="truncate">{mediaPermissionCopy('camera', mediaAccess.camera)}</span>
+                </button>
+              </div>
+              <p className="mb-2 inline-flex items-start gap-1.5 text-[10px] leading-relaxed text-white/28">
+                <ShieldCheck className="mt-0.5 h-3 w-3 flex-shrink-0 text-cyan-200/42" />
+                <span>{permissionMessage}</span>
+              </p>
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={sendPlainToCode}
+                  disabled={isStreaming}
+                  title="用中文描述你想做的事，我帮你写成代码并标出对应关系"
+                  className="cn-focus-ring inline-flex items-center gap-1.5 rounded-lg border border-cyan-300/25 bg-cyan-300/[0.06] px-2.5 py-1 text-[11px] text-cyan-100/80 transition-colors hover:bg-cyan-300/12 disabled:opacity-40"
+                >
+                  <Languages className="h-3 w-3" />
+                  大白话写代码
+                </button>
+              </div>
               <div className="flex items-end gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 transition-colors focus-within:border-cyan-300/45">
                 <textarea
                   ref={inputRef}

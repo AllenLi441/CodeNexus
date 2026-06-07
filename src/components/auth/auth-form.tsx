@@ -59,8 +59,8 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
   // Email confirmation screen
   if (state?.needsConfirmation) {
     return (
-      <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-black px-4 py-8 text-white cn-noise">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(103,232,249,0.24),transparent_36%),linear-gradient(180deg,rgba(8,12,20,0.8),#000_62%)]" />
+      <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-background px-4 py-8 text-foreground cn-noise">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(103,232,249,0.24),transparent_36%),linear-gradient(180deg,rgba(8,12,20,0.8),var(--background)_62%)]" />
         <div className="relative z-10 w-full max-w-md space-y-6 text-center">
           <div className="inline-flex justify-center">
             <BrandHeader />
@@ -98,9 +98,9 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
   const supabaseDashboardUrl = serviceOffline ? getSupabaseDashboardUrl() : null
 
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-black text-white cn-noise">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-background text-foreground cn-noise">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(103,232,249,0.18),transparent_27%),radial-gradient(circle_at_78%_22%,rgba(20,184,166,0.13),transparent_25%),linear-gradient(180deg,#020409_0%,#000_64%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(103,232,249,0.18),transparent_27%),radial-gradient(circle_at_78%_22%,rgba(20,184,166,0.13),transparent_25%),linear-gradient(180deg,var(--background)_0%,var(--background)_64%)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/50 to-transparent" />
         <div className="absolute left-[7%] top-[18%] h-60 w-60 rounded-full border border-cyan-200/10 blur-3xl" />
         <div className="absolute bottom-[-16%] right-[8%] h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
@@ -112,10 +112,10 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
             <BrandHeader dark />
             <div className="mt-14 space-y-5">
               <p className="font-mono text-xs uppercase tracking-[0.36em] text-cyan-200/50">AI Programming Campus</p>
-              <h1 className="text-5xl font-semibold leading-[1.04] tracking-tight text-white">
+              <h1 className="text-balance text-5xl font-semibold leading-[1.04] tracking-tight text-foreground">
                 先把代码跑起来，再谈长期学习。
               </h1>
-              <p className="max-w-lg text-base leading-8 text-white/54">
+              <p className="max-w-lg text-pretty text-base leading-8 text-ink-soft">
                 CodeNexus 把课程讲解、练习编辑器、运行反馈和小助手合到一个工作台里。不是把视频搬进网页，而是让你边理解边动手。
               </p>
             </div>
@@ -150,7 +150,7 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
                 <div className="space-y-2 rounded-xl border border-white/8 bg-black/40 p-4 font-mono text-xs text-white/44">
                   <p><span className="text-cyan-200">1</span> print(&quot;Hello, CodeNexus&quot;)</p>
                   <p><span className="text-cyan-200">2</span> # 运行后马上看到反馈</p>
-                  <p className="pt-2 text-emerald-300/80">Output: Hello, CodeNexus</p>
+                  <p className="pt-2 text-[var(--code-green)]">Output: Hello, CodeNexus</p>
                 </div>
               </div>
             </div>
@@ -170,8 +170,8 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200/20 bg-cyan-200/10 text-cyan-100">
                     {isLogin ? <LogIn className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
                   </div>
-                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white">{strings.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-white/48">{strings.desc}</p>
+                  <h2 className="mt-4 text-balance text-2xl font-semibold tracking-tight text-foreground">{strings.title}</h2>
+                  <p className="mt-2 text-pretty text-sm leading-6 text-ink-mute">{strings.desc}</p>
                 </div>
                 <div className="hidden items-center gap-1.5 text-xs text-white/38 sm:flex">
                   <span>{t.nav.language}:</span>
@@ -250,7 +250,7 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
               <div className="mt-5 flex flex-col gap-3">
                 <Button
                   type="submit"
-                  className="h-12 w-full bg-cyan-300 text-sm font-semibold text-black shadow-lg shadow-cyan-500/16 transition-all duration-300 hover:-translate-y-0.5 hover:bg-cyan-200"
+                  className="h-12 w-full bg-primary text-sm font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
                   disabled={isPending}
                 >
                   {isPending ? t.auth.loading : strings.submit}

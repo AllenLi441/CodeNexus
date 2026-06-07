@@ -20,12 +20,12 @@ export function AchievementCabinet({ earnedIds }: { earnedIds: string[] }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300/36">Signal Cabinet</p>
-          <h2 className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-white">
-            <Trophy className="h-4 w-4 text-cyan-200/70" />
+          <h2 className="mt-1 inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
+            <Trophy className="h-4 w-4 text-primary/70" />
             成就矩阵
           </h2>
         </div>
-        <span className="rounded border border-cyan-300/16 bg-cyan-300/5 px-2.5 py-1 font-mono text-xs text-cyan-100/70">
+        <span className="rounded border border-primary/16 bg-primary/5 px-2.5 py-1 font-mono text-xs tabular-nums text-primary">
           {earnedCount} / {ACHIEVEMENTS.length}
         </span>
       </div>
@@ -82,7 +82,7 @@ export function AchievementCabinet({ earnedIds }: { earnedIds: string[] }) {
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute left-2 top-2 h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.8)]"
+                  className="absolute left-2 top-2 h-2 w-2 rounded-full bg-[var(--code-green)] shadow-[0_0_12px_color-mix(in_oklab,var(--code-green)_60%,transparent)]"
                 />
               )}
             </motion.div>
@@ -91,8 +91,8 @@ export function AchievementCabinet({ earnedIds }: { earnedIds: string[] }) {
       </div>
 
       {earnedCount === 0 && (
-        <p className="py-4 text-center text-sm text-white/38">
-          跑通第一段代码，成就系统才懒得理你。
+        <p className="py-4 text-center text-sm text-ink-mute">
+          跑通第一段代码，第一枚成就就会在这里亮起来。
         </p>
       )}
     </section>

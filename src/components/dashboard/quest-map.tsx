@@ -19,6 +19,7 @@ import {
   BookOpen,
   Bot,
   BriefcaseBusiness,
+  Check,
   Code2,
   Database,
   FlaskConical,
@@ -62,25 +63,28 @@ type CourseNodeData = {
 type CourseFlowNode = Node<CourseNodeData, 'branchCourse'>
 
 const STATUS_STYLES = {
+  // 已完成：code-green + 对勾，一眼可辨的「拿下了」
   completed: {
-    glow: 'shadow-[0_0_28px_rgba(52,211,153,0.28)]',
-    border: 'border-emerald-300/45',
-    dot: 'bg-emerald-300',
-    text: 'text-emerald-200',
+    glow: 'shadow-[0_0_24px_color-mix(in_oklab,var(--code-green)_34%,transparent)]',
+    border: 'border-[color-mix(in_oklab,var(--code-green)_55%,transparent)]',
+    dot: 'bg-[var(--code-green)]',
+    text: 'text-[color-mix(in_oklab,var(--code-green)_82%,white)]',
     label: 'CLEAR',
   },
+  // 进行中：primary 高亮 + 发光描边（统一走品牌 token，与「已完成」的 code-green 对齐）
   available: {
-    glow: 'shadow-[0_0_34px_rgba(103,232,249,0.36)]',
-    border: 'border-cyan-300/65',
-    dot: 'bg-cyan-200',
-    text: 'text-cyan-100',
+    glow: 'shadow-[0_0_36px_color-mix(in_oklab,var(--primary)_42%,transparent)]',
+    border: 'border-[color-mix(in_oklab,var(--primary)_80%,transparent)]',
+    dot: 'bg-primary',
+    text: 'text-primary',
     label: 'LIVE',
   },
+  // 锁定：低饱和、低存在感，但仍可读
   locked: {
     glow: '',
-    border: 'border-white/12',
-    dot: 'bg-white/22',
-    text: 'text-white/28',
+    border: 'border-white/10',
+    dot: 'bg-white/18',
+    text: 'text-white/35',
     label: 'LOCK',
   },
 } satisfies Record<QuestStatus, {
@@ -188,6 +192,7 @@ function BranchCourseNode({ data }: NodeProps<CourseFlowNode>) {
       animate={data.isLaunching ? { scale: [1, 1.55, 1.18], opacity: [1, 0.86, 1] } : activePulse ? { scale: [1, 1.12, 1] } : { scale: 1 }}
       transition={data.animations ? data.isLaunching ? { duration: 0.48, ease: appleEase } : { repeat: Infinity, duration: 2.8, ease: appleEase } : quickFade}
     >
+      {data.status === 'completed' && <Check className="absolute inset-0 m-auto h-3 w-3 text-black/75" strokeWidth={3.5} />}
       {data.isSelected && <span className="absolute inset-[-7px] rounded-full border border-cyan-200/55" />}
       {data.isLaunching && (
         <motion.span
@@ -204,7 +209,7 @@ function BranchCourseNode({ data }: NodeProps<CourseFlowNode>) {
     <motion.div
       className={`relative w-[188px] overflow-hidden rounded-lg border ${styles.border} ${styles.glow} bg-black/86 px-3 py-2.5 backdrop-blur-md transition-colors ${
         data.isSelected ? 'ring-1 ring-cyan-200/45' : ''
-      }`}
+      } ${data.status === 'locked' ? 'opacity-65 saturate-50' : ''}`}
       style={{ boxShadow: data.status !== 'locked' ? `0 22px 60px ${ACCENT_FILL[data.map.accent]}` : undefined }}
       animate={data.isLaunching ? { y: -3, scale: 1.025, borderColor: 'rgba(103,232,249,0.9)' } : { y: 0, scale: 1 }}
       whileHover={data.status !== 'locked' ? { y: -2, scale: 1.015 } : undefined}
@@ -222,7 +227,9 @@ function BranchCourseNode({ data }: NodeProps<CourseFlowNode>) {
       )}
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className={`font-mono text-[10px] tracking-[0.18em] ${styles.text}`}>{nodeLabel}</span>
-        <span className={`rounded border px-1.5 py-0.5 font-mono text-[9px] ${styles.border} ${styles.text}`}>
+        <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[9px] ${styles.border} ${styles.text}`}>
+          {data.status === 'completed' && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+          {data.status === 'locked' && <Lock className="h-2.5 w-2.5" />}
           {statusLabel}
         </span>
       </div>
@@ -374,6 +381,7 @@ export function QuestMap({
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              aria-label="搜索全部课程"
               placeholder="搜索全部课程"
                 className="cn-focus-ring h-9 w-full rounded-lg border border-white/10 bg-white/[0.035] pl-9 pr-3 text-xs text-white outline-none transition-colors placeholder:text-white/22 focus:border-cyan-300/45 sm:w-72"
             />

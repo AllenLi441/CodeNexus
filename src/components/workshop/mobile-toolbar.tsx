@@ -30,14 +30,15 @@ export function MobileToolbar({ editorRef }: MobileToolbarProps) {
   }
 
   return (
-    <div className="flex-shrink-0 border-b border-white/5 bg-[#0d0d1a] xl:hidden">
+    <div className="flex-shrink-0 border-b border-white/5 bg-[var(--code-bg-elevated)] xl:hidden">
       <div className="flex gap-1 px-2 py-1.5 overflow-x-auto scrollbar-none">
         {SYMBOLS.map((sym) => (
           <button
             key={sym.label}
             onClick={() => insert(sym)}
             title={sym.title}
-            className="flex-shrink-0 h-8 min-w-[36px] px-2 rounded-md bg-white/5 border border-white/8 text-white/70 hover:bg-indigo-500/20 hover:border-indigo-500/30 hover:text-indigo-300 text-xs font-mono transition-all active:scale-95"
+            aria-label={sym.title ?? `插入 ${sym.label}`}
+            className="cn-focus-ring flex-shrink-0 h-11 min-w-[44px] px-2 rounded-md bg-white/5 border border-white/8 text-white/70 hover:bg-cyan-300/15 hover:border-cyan-300/30 hover:text-cyan-100 text-xs font-mono transition-all duration-150 active:scale-95"
           >
             {sym.label}
           </button>

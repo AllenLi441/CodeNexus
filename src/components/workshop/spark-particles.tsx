@@ -9,9 +9,10 @@ type Particle = {
   size: number; color: string
 }
 
+// Particle palette (canvas needs concrete values) — cyan family + softened greens
 const COLORS = [
   '#67E8F9', '#38BDF8', '#22D3EE',
-  '#00FF41', '#00CC33',
+  '#4ADE80', '#34D399',
   '#A5F3FC', '#7DD3FC',
 ]
 
@@ -26,6 +27,10 @@ export function SparkParticles({ intensity = 1 }: { intensity?: number }) {
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+
+    // Respect reduced-motion: skip the ambient particle loop entirely
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    if (reducedMotion.matches) return
 
     const resize = () => {
       canvas.width = window.innerWidth

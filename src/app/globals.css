@@ -8,9 +8,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  /* Outfit for Latin UI; CJK fallbacks keep Chinese glyphs in the intended weight (Outfit has no CJK coverage) */
+  --font-sans: var(--font-sans), 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-heading: var(--font-sans), 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -28,6 +29,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -62,37 +64,45 @@
   --card-foreground: oklch(0.12 0.01 240);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.12 0.01 240);
-  --primary: oklch(0.75 0.14 210);
-  --primary-foreground: oklch(0.08 0 0);
+  /* Cyan — desaturated a touch so it reads professional, not neon/gaming */
+  --primary: oklch(0.62 0.13 212);
+  --primary-foreground: oklch(0.13 0.015 230);
   --secondary: oklch(0.94 0.01 240);
   --secondary-foreground: oklch(0.25 0.01 240);
   --muted: oklch(0.94 0.01 240);
-  --muted-foreground: oklch(0.50 0.01 240);
+  --muted-foreground: oklch(0.46 0.01 240);
   --accent: oklch(0.92 0.035 210);
   --accent-foreground: oklch(0.26 0.12 210);
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.99 0.003 27);
   --border: oklch(0.88 0.01 240);
   --input: oklch(0.88 0.01 240);
-  --ring: oklch(0.75 0.14 210);
-  --chart-1: oklch(0.75 0.14 210);
+  --ring: oklch(0.65 0.17 212);
+  --chart-1: oklch(0.65 0.17 212);
   --chart-2: oklch(0.65 0.18 180);
-  --chart-3: oklch(0.72 0.15 120);
+  --chart-3: oklch(0.64 0.15 150);
   --chart-4: oklch(0.68 0.20 40);
   --chart-5: oklch(0.60 0.22 320);
   --radius: 0.75rem;
   --sidebar: oklch(0.96 0.008 240);
   --sidebar-foreground: oklch(0.12 0.01 240);
-  --sidebar-primary: oklch(0.75 0.14 210);
-  --sidebar-primary-foreground: oklch(0.08 0 0);
+  --sidebar-primary: oklch(0.65 0.17 212);
+  --sidebar-primary-foreground: oklch(0.13 0.015 230);
   --sidebar-accent: oklch(0.92 0.035 210);
   --sidebar-accent-foreground: oklch(0.26 0.12 210);
   --sidebar-border: oklch(0.88 0.01 240);
-  --sidebar-ring: oklch(0.63 0.25 35);
-  --brand: oklch(0.75 0.14 210);
-  --brand-foreground: oklch(0.98 0 0);
-  --nexus: #67E8F9;
-  --code-green: #00FF41;
+  --sidebar-ring: oklch(0.65 0.17 212);
+  --brand: oklch(0.65 0.17 212);
+  --brand-foreground: oklch(0.13 0.015 230);
+  --nexus: oklch(0.87 0.11 207);
+  --code-green: oklch(0.84 0.21 150);
   --cn-noise-opacity: 0.45;
+  /* Code surfaces — always dark, independent of page theme */
+  --code-bg: oklch(0.13 0.015 280);
+  --code-bg-elevated: oklch(0.17 0.018 280);
+  --code-line-number: oklch(0.52 0.045 220);
+  --code-stdout: oklch(0.88 0.19 130);
+  --code-stderr: oklch(0.80 0.12 22);
 }
 
 .dark {
@@ -103,35 +113,43 @@
   --card-foreground: oklch(0.93 0.005 240);
   --popover: oklch(0.15 0.01 240);
   --popover-foreground: oklch(0.93 0.005 240);
-  --primary: oklch(0.78 0.14 210);
-  --primary-foreground: oklch(0.08 0 0);
+  /* Cyan — desaturated a notch so it reads professional, not neon/gaming */
+  --primary: oklch(0.76 0.12 206);
+  --primary-foreground: oklch(0.13 0.015 230);
   --secondary: oklch(0.20 0.02 240);
   --secondary-foreground: oklch(0.93 0.005 240);
   --muted: oklch(0.20 0.02 240);
-  --muted-foreground: oklch(0.58 0.01 240);
+  --muted-foreground: oklch(0.64 0.01 240);
   --accent: oklch(0.22 0.05 210);
   --accent-foreground: oklch(0.85 0.12 210);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.99 0.003 27);
   --border: oklch(1 0 0 / 7%);
   --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.78 0.14 210);
-  --chart-1: oklch(0.78 0.14 210);
+  --ring: oklch(0.80 0.15 206);
+  --chart-1: oklch(0.80 0.15 206);
   --chart-2: oklch(0.65 0.18 180);
-  --chart-3: oklch(0.90 0.29 142);
+  --chart-3: oklch(0.80 0.18 150);
   --chart-4: oklch(0.68 0.20 40);
   --chart-5: oklch(0.60 0.22 320);
   --sidebar: oklch(0.13 0.01 240);
   --sidebar-foreground: oklch(0.93 0.005 240);
-  --sidebar-primary: oklch(0.78 0.14 210);
-  --sidebar-primary-foreground: oklch(0.08 0 0);
+  --sidebar-primary: oklch(0.80 0.15 206);
+  --sidebar-primary-foreground: oklch(0.13 0.015 230);
   --sidebar-accent: oklch(0.22 0.05 210);
   --sidebar-accent-foreground: oklch(0.85 0.12 210);
   --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: oklch(0.78 0.14 210);
-  --brand: oklch(0.78 0.14 210);
-  --brand-foreground: oklch(0.08 0 0);
-  --nexus: #67E8F9;
-  --code-green: #00FF41;
+  --sidebar-ring: oklch(0.80 0.15 206);
+  --brand: oklch(0.80 0.15 206);
+  --brand-foreground: oklch(0.13 0.015 230);
+  --nexus: oklch(0.87 0.11 207);
+  --code-green: oklch(0.84 0.21 150);
+  /* Code surfaces — identical to :root, kept here so the dark set stays complete */
+  --code-bg: oklch(0.13 0.015 280);
+  --code-bg-elevated: oklch(0.17 0.018 280);
+  --code-line-number: oklch(0.52 0.045 220);
+  --code-stdout: oklch(0.88 0.19 130);
+  --code-stderr: oklch(0.80 0.12 22);
 }
 
 @layer base {
@@ -154,7 +172,7 @@ html[data-cn-font='hacker'] body {
 }
 
 html[data-cn-font='cyberpunk'] body {
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans), 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
 }
 
 /* ── Glassmorphism utilities ──────────────────────────────────────────────── */
@@ -185,19 +203,19 @@ html[data-cn-font='cyberpunk'] body {
   }
 
   .glow-nexus {
-    box-shadow: 0 0 20px rgba(103, 232, 249, 0.25), 0 0 60px rgba(103, 232, 249, 0.08);
+    box-shadow: 0 0 20px color-mix(in oklab, var(--nexus) 25%, transparent), 0 0 60px color-mix(in oklab, var(--nexus) 8%, transparent);
   }
 
   .glow-green {
-    box-shadow: 0 0 20px rgba(0, 255, 65, 0.20), 0 0 40px rgba(0, 255, 65, 0.06);
+    box-shadow: 0 0 20px color-mix(in oklab, var(--code-green) 20%, transparent), 0 0 40px color-mix(in oklab, var(--code-green) 6%, transparent);
   }
 
   .text-nexus {
-    color: #67E8F9;
+    color: var(--nexus);
   }
 
   .text-code-green {
-    color: #00FF41;
+    color: var(--code-green);
   }
 
   /* Energy button ripple */
@@ -266,16 +284,66 @@ html[data-cn-font='cyberpunk'] body {
     background-size: 32px 32px;
   }
 
+  .cn-assistant-layout {
+    --cn-assistant-panel-width: 390px;
+    --cn-assistant-mobile-panel-height: clamp(280px, 42dvh, 420px);
+    transition:
+      padding-left 360ms var(--cn-ease-apple),
+      padding-right 360ms var(--cn-ease-apple),
+      padding-bottom 360ms var(--cn-ease-apple);
+  }
+
+  @media (min-width: 1280px) {
+    .cn-assistant-layout[data-assistant-open='true'][data-assistant-dock='right'] {
+      padding-right: var(--cn-assistant-panel-width);
+    }
+
+    .cn-assistant-layout[data-assistant-open='true'][data-assistant-dock='left'] {
+      padding-left: var(--cn-assistant-panel-width);
+    }
+  }
+
+  @media (max-width: 1279px) {
+    .cn-assistant-layout[data-assistant-open='true'] {
+      padding-bottom: var(--cn-assistant-mobile-panel-height);
+    }
+  }
+
+  /* ── Documented neutral text ramp ─────────────────────────────────────────
+     Use these instead of ad-hoc text-white/{48,42,38,34}. Three fixed steps:
+       .text-ink      → primary copy        (foreground)
+       .text-ink-soft → secondary copy      (~72%)
+       .text-ink-mute → captions / hints    (muted-foreground) */
+  .text-ink {
+    color: var(--foreground);
+  }
+  .text-ink-soft {
+    color: color-mix(in oklab, var(--foreground) 72%, transparent);
+  }
+  .text-ink-mute {
+    color: var(--muted-foreground);
+  }
+  /* Hairline keyed to the token border instead of raw white-alpha */
+  .border-hairline {
+    border-color: var(--border);
+  }
+
   .cn-panel {
-    background: rgba(255, 255, 255, 0.026);
-    border: 1px solid rgba(255, 255, 255, 0.075);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 18px 80px rgba(0, 0, 0, 0.24);
+    background: color-mix(in oklab, var(--foreground) 2.6%, transparent);
+    border: 1px solid var(--border);
+    /* Shadow carries a faint nexus hue rather than pure black */
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent),
+      0 10px 34px color-mix(in oklab, oklch(0.06 0.02 240) 60%, transparent);
   }
 
   .cn-panel-cyan {
-    background: linear-gradient(180deg, rgba(103, 232, 249, 0.065), rgba(255, 255, 255, 0.022));
-    border: 1px solid rgba(103, 232, 249, 0.18);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 20px 90px rgba(8, 145, 178, 0.08);
+    background: color-mix(in oklab, var(--nexus) 6%, transparent);
+    border: 1px solid color-mix(in oklab, var(--nexus) 18%, transparent);
+    /* Elevation tinted with the cyan accent so it reads as a brand surface */
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent),
+      0 12px 44px color-mix(in oklab, var(--nexus) 14%, transparent);
   }
 
   .cn-scrollbar {
@@ -307,5 +375,21 @@ html[data-cn-font='cyberpunk'] body {
 
   html[data-cn-map-animations='off'] .astro-flow .react-flow__edge.animated path {
     animation: none;
+  }
+}
+
+/* ── Reduced motion: keep things calm for users who ask for it ────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .astro-flow .react-flow__edge.animated path {
+    animation: none !important;
   }
 }

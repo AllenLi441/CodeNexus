@@ -1,4 +1,4 @@
-export type AssistantPersonaId = 'mika' | 'reno' | 'aoi' | 'sera'
+export type AssistantPersonaId = 'mika' | 'reno' | 'aoi' | 'sera' | 'socrates'
 
 export type AssistantPersona = {
   id: AssistantPersonaId
@@ -9,6 +9,8 @@ export type AssistantPersona = {
   glowClass: string
   description: string
   systemTone: string
+  /** Socratic mode: the mentor asks guiding questions instead of handing over answers. */
+  socratic?: boolean
 }
 
 export type AssistantMemoryEvent = {
@@ -67,6 +69,17 @@ export const ASSISTANT_PERSONAS: AssistantPersona[] = [
     glowClass: 'shadow-fuchsia-300/25',
     description: '更有表现力，适合做游戏、视觉、网页交互时给灵感和反馈。',
     systemTone: '像一个有审美、会看作品效果的创作型代码搭档。回答可以更有画面感，但必须落到具体代码和下一步动作。',
+  },
+  {
+    id: 'socrates',
+    name: '苏予',
+    pronoun: 'TA',
+    role: '苏格拉底式 · 只问不答',
+    accentClass: 'from-amber-200 via-cyan-200 to-teal-300',
+    glowClass: 'shadow-amber-300/25',
+    description: '不直接给答案，而是用恰到好处的问题把你一步步引到答案。适合想真正学会、而不是抄答案的人。',
+    systemTone: '像一位耐心的苏格拉底式引导者：很少给现成结论，更喜欢用一两个精准的问题点亮你的思路。',
+    socratic: true,
   },
 ]
 
