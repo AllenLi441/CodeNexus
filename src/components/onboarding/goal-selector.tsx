@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { useTr } from '@/contexts/language-context'
 
 type Goal = {
   id: string
@@ -21,6 +22,7 @@ export function GoalSelector({ selected, onToggle }: {
   selected: string[]
   onToggle: (id: string) => void
 }) {
+  const tr = useTr()
   return (
     <div className="flex flex-wrap gap-3">
       {goals.map((goal) => {
@@ -38,7 +40,7 @@ export function GoalSelector({ selected, onToggle }: {
             )}
           >
             <span>{goal.icon}</span>
-            <span>{goal.label}</span>
+            <span>{tr(goal.label)}</span>
           </button>
         )
       })}

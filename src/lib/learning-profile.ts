@@ -319,6 +319,24 @@ export function recentMistakesForLevel(
     .reverse()
 }
 
+// The project title is `${languageName} <suffix>` and doubles as a storage seed /
+// download filename, so `getProjectCheckpoint` keeps it raw Chinese. Display sites
+// call this to localize it without an exact-match miss: the suffix is mapped back
+// to a {languageName} template that EN_MAP can translate.
+const PROJECT_TITLE_TEMPLATES: Record<string, string> = {
+  微型控制台工具: '{languageName} 微型控制台工具',
+  数据整理器: '{languageName} 数据整理器',
+  稳定运行模块: '{languageName} 稳定运行模块',
+  基础毕业作品: '{languageName} 基础毕业作品',
+}
+
+export function localizeProjectTitle(title: string, languageName: string, tr: (zh: string) => string): string {
+  const suffix = title.startsWith(`${languageName} `) ? title.slice(languageName.length + 1) : title
+  const template = PROJECT_TITLE_TEMPLATES[suffix]
+  if (!template) return title
+  return tr(template).replace('{languageName}', languageName)
+}
+
 export function getProjectCheckpoint(languageName: string, levelId: number): ProjectCheckpoint | null {
   if (levelId % 5 !== 0) return null
   const stage = levelId / 5
@@ -367,27 +385,34 @@ export function createCompletionReview({
   languageId,
   level,
   profile,
+  tr = (s) => s,
 }: {
   languageName: string
   languageId: string
   level: Level
   profile: LearningProfile
+  /** zh→lang lookup; defaults to identity so non-UI callers keep Chinese. */
+  tr?: (zh: string) => string
 }): CompletionReview {
-  const teaching = getLevelTeachingBlueprint(languageName, level)
-  const mission = getLevelMission(languageName, level)
+  const teaching = getLevelTeachingBlueprint(languageName, level, tr)
+  const mission = getLevelMission(languageName, level, tr)
   const recent = recentMistakesForLevel(profile, languageId, level.id, 1)[0]
+  // ProjectCheckpoint stays raw Chinese: its title/skills double as storage seeds
+  // and checkbox keys (see project-studio). Translation happens at the display site.
   const nextProject = getProjectCheckpoint(languageName, level.id)
   const nextLevel = level.id + 1
 
   return {
-    learned: `你刚把「${teaching.concept}」从概念推进到了可运行代码。能通过测试，说明至少入口、目标和输出链路已经接上。`,
+    // teaching.concept is already translated by getLevelTeachingBlueprint.
+    learned: tr('你刚把「{concept}」从概念推进到了可运行代码。能通过测试，说明至少入口、目标和输出链路已经接上。').replace('{concept}', teaching.concept),
     mistake: recent
-      ? `本关你卡过「${recent.area}」：${recent.nextStep}`
-      : '本关没有记录到明显错因。别飘，只代表这次没被抓到，不代表你已经能教别人。',
-    realUse: mission.payoff.replace(/^交付：/, ''),
+      ? tr('本关你卡过「{area}」：{nextStep}').replace('{area}', tr(recent.area)).replace('{nextStep}', tr(recent.nextStep))
+      : tr('本关没有记录到明显错因。别飘，只代表这次没被抓到，不代表你已经能教别人。'),
+    // mission.payoff is already translated; strip whichever prefix is present.
+    realUse: mission.payoff.replace(/^交付：/, '').replace(/^Deliverable: /, ''),
     nextFocus: nextProject
-      ? `现在该做阶段作品，不要继续只刷小题。`
-      : `下一关 Lv.${nextLevel} 会继续复用这块能力，把它接到更大的结构里。`,
+      ? tr('现在该做阶段作品，不要继续只刷小题。')
+      : tr('下一关 Lv.{n} 会继续复用这块能力，把它接到更大的结构里。').replace('{n}', String(nextLevel)),
     project: nextProject,
   }
 }

@@ -36,6 +36,7 @@ import {
   Zap,
 } from 'lucide-react'
 import type { ProgressRow } from '@/app/actions/progress'
+import { useTr } from '@/contexts/language-context'
 import { useCommandSettings, type CommandSettings } from '@/hooks/use-command-settings'
 import {
   FOUNDATION_MAP_ID,
@@ -95,6 +96,15 @@ const STATUS_STYLES = {
   label: string
 }>
 
+// Domain-branch nodes that have no built lesson yet — muted, clearly "coming soon".
+const PREVIEW_STYLES = {
+  glow: '',
+  border: 'border-amber-200/20',
+  dot: 'bg-amber-200/30',
+  text: 'text-amber-100/50',
+  label: 'SOON',
+}
+
 const ACCENT_EDGE = {
   cyan: 'rgba(103,232,249,0.48)',
   emerald: 'rgba(110,231,183,0.48)',
@@ -136,18 +146,18 @@ function isLevelCompleted(levelId: number, progress: ProgressRow[], language: Le
   return isModuleLevelCompleted(language, levelId, progress)
 }
 
-function getFoundationStatus(levelId: number, progress: ProgressRow[], language: LearningLanguage): QuestStatus {
+function getFoundationStatus(levelId: number, progress: ProgressRow[], language: LearningLanguage, unlockAll = false): QuestStatus {
   if (isLevelCompleted(levelId, progress, language)) return 'completed'
-  const prevCompleted = levelId === 1 || isLevelCompleted(levelId - 1, progress, language)
+  const prevCompleted = unlockAll || levelId === 1 || isLevelCompleted(levelId - 1, progress, language)
   return prevCompleted ? 'available' : 'locked'
 }
 
-function getCourseStatus(node: CourseNode, map: CourseMap, progress: ProgressRow[], foundationComplete: boolean, language: LearningLanguage): QuestStatus {
-  if (node.levelId) return getFoundationStatus(node.levelId, progress, language)
+function getCourseStatus(node: CourseNode, map: CourseMap, progress: ProgressRow[], foundationComplete: boolean, language: LearningLanguage, unlockAll = false): QuestStatus {
+  if (node.levelId) return getFoundationStatus(node.levelId, progress, language, unlockAll)
   if (node.unlockAfterLevel) {
-    return isLevelCompleted(node.unlockAfterLevel, progress, language) ? 'available' : 'locked'
+    return unlockAll || isLevelCompleted(node.unlockAfterLevel, progress, language) ? 'available' : 'locked'
   }
-  return map.id === FOUNDATION_MAP_ID || foundationComplete ? 'available' : 'locked'
+  return unlockAll || map.id === FOUNDATION_MAP_ID || foundationComplete ? 'available' : 'locked'
 }
 
 function courseNodePosition(index: number, total: number, mapId: string) {
@@ -171,14 +181,18 @@ function courseNodePosition(index: number, total: number, mapId: string) {
 }
 
 function BranchCourseNode({ data }: NodeProps<CourseFlowNode>) {
+  const tr = useTr()
   const compact = data.zoom < 0.62
-  const styles = STATUS_STYLES[data.status]
-  const activePulse = data.animations && data.status === 'available' && !data.isLaunching
+  const isPreview = !data.courseNode.levelId && !(data.courseNode.unlockAfterLevel && data.courseNode.kind === 'project')
+  const styles = isPreview ? PREVIEW_STYLES : STATUS_STYLES[data.status]
+  const activePulse = data.animations && data.status === 'available' && !data.isLaunching && !isPreview
   const nodeLabel = data.courseNode.levelId
     ? `LV.${String(data.courseNode.levelId).padStart(2, '0')}`
-    : `${data.courseNode.lessonCount} 题`
+    : `${data.courseNode.lessonCount} ${tr('题')}`
   const statusLabel = data.isLaunching
     ? 'LINK'
+    : isPreview
+    ? 'SOON'
     : data.courseNode.levelId
     ? styles.label
     : data.status === 'locked'
@@ -188,7 +202,7 @@ function BranchCourseNode({ data }: NodeProps<CourseFlowNode>) {
   const compactNode = (
     <motion.div
       className={`relative h-5 w-5 rounded-full border ${styles.border} ${styles.dot} ${styles.glow}`}
-      title={`${data.map.shortTitle} · ${data.courseNode.title}`}
+      title={`${tr(data.map.shortTitle)} · ${tr(data.courseNode.title)}`}
       animate={data.isLaunching ? { scale: [1, 1.55, 1.18], opacity: [1, 0.86, 1] } : activePulse ? { scale: [1, 1.12, 1] } : { scale: 1 }}
       transition={data.animations ? data.isLaunching ? { duration: 0.48, ease: appleEase } : { repeat: Infinity, duration: 2.8, ease: appleEase } : quickFade}
     >
@@ -237,12 +251,12 @@ function BranchCourseNode({ data }: NodeProps<CourseFlowNode>) {
         <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border border-white/8 bg-white/[0.035] text-white/42">
           <BranchIcon map={data.map} />
         </span>
-        <p className="truncate text-sm font-semibold text-white/88">{data.courseNode.title}</p>
+        <p className="truncate text-sm font-semibold text-white/88">{tr(data.courseNode.title)}</p>
       </div>
-      <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-white/38">{data.courseNode.objective}</p>
+      <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-white/38">{tr(data.courseNode.objective)}</p>
       <div className="mt-2 flex items-center justify-between gap-2 text-[10px]">
-        <span className={styles.text}>{data.courseNode.difficulty}</span>
-        <span className="text-white/28">{data.courseNode.lessonCount} 题</span>
+        <span className={styles.text}>{tr(data.courseNode.difficulty)}</span>
+        <span className="text-white/28">{data.courseNode.lessonCount} {tr('题')}</span>
       </div>
     </motion.div>
   )
@@ -266,14 +280,17 @@ export function QuestMap({
   initialSettings,
   demoMode = false,
   showLanguageBack = false,
+  unlockAll = true,
 }: {
   progress: ProgressRow[]
   activeLanguageId?: string
   initialSettings?: Partial<CommandSettings> | null
   demoMode?: boolean
   showLanguageBack?: boolean
+  unlockAll?: boolean
 }) {
   const router = useRouter()
+  const tr = useTr()
   const { settings, updateSettings } = useCommandSettings(initialSettings)
   const language = useMemo(() => getLanguageModule(activeLanguageId), [activeLanguageId])
   const courseMaps = language.courseMaps
@@ -288,12 +305,12 @@ export function QuestMap({
 
   const currentMap = courseMaps[activeMapIndex] ?? courseMaps[0]
   const completedFoundationCount = levels.filter((level) => isLevelCompleted(level.id, progress, language)).length
-  const foundationComplete = demoMode || completedFoundationCount === levels.length
+  const foundationComplete = unlockAll || demoMode || completedFoundationCount === levels.length
   const totalLessonCount = courseMaps.reduce((sum, map) => sum + getMapLessonCount(map), 0)
   const currentLessonCount = getMapLessonCount(currentMap)
   const selectedNode = currentMap.nodes.find((node) => node.id === selectedNodeId) ?? null
-  const selectedNodeHook = selectedNode ? getCourseNodeHook(language.name, selectedNode) : null
-  const selectedNodeProject = selectedNode ? getCourseProjectPreview(language.name, selectedNode) : null
+  const selectedNodeHook = selectedNode ? getCourseNodeHook(language.name, selectedNode, tr) : null
+  const selectedNodeProject = selectedNode ? getCourseProjectPreview(language.name, selectedNode, tr) : null
 
   const searchItems = useMemo(() => getAllCourseSearchItems(courseMaps), [courseMaps])
   const searchResults = useMemo(() => {
@@ -316,8 +333,8 @@ export function QuestMap({
   }
 
   const nodes = useMemo<CourseFlowNode[]>(() => currentMap.nodes.map((courseNode, index) => {
-    const status = getCourseStatus(courseNode, currentMap, progress, foundationComplete, language)
-    const effectiveStatus = demoMode && status === 'locked' ? 'available' : status
+    const status = getCourseStatus(courseNode, currentMap, progress, foundationComplete, language, unlockAll)
+    const effectiveStatus = (demoMode || unlockAll) && status === 'locked' ? 'available' : status
     return {
       id: courseNode.id,
       type: 'branchCourse',
@@ -333,11 +350,11 @@ export function QuestMap({
       },
       draggable: false,
     }
-  }), [currentMap, progress, foundationComplete, language, zoom, selectedNodeId, launchingId, settings.mapAnimations, demoMode])
+  }), [currentMap, progress, foundationComplete, language, zoom, selectedNodeId, launchingId, settings.mapAnimations, demoMode, unlockAll])
 
   const edges = useMemo<Edge[]>(() => currentMap.nodes.slice(0, -1).map((courseNode, index) => {
     const next = currentMap.nodes[index + 1]
-    const status = demoMode ? 'available' : getCourseStatus(next, currentMap, progress, foundationComplete, language)
+    const status = (demoMode || unlockAll) ? 'available' : getCourseStatus(next, currentMap, progress, foundationComplete, language, unlockAll)
     const active = status !== 'locked'
     return {
       id: `${courseNode.id}-${next.id}`,
@@ -350,7 +367,7 @@ export function QuestMap({
         strokeWidth: active ? 1.2 : 0.8,
       },
     }
-  }), [currentMap, progress, foundationComplete, language, zoom, settings.mapAnimations, demoMode])
+  }), [currentMap, progress, foundationComplete, language, zoom, settings.mapAnimations, demoMode, unlockAll])
 
   return (
     <section id="course-branches" className="overflow-hidden rounded-lg border border-cyan-300/14 bg-black shadow-[0_24px_100px_rgba(0,0,0,0.28)]">
@@ -364,14 +381,14 @@ export function QuestMap({
                 className="cn-focus-ring inline-flex h-9 flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.025] px-3 text-xs font-semibold text-cyan-100/72 transition-colors hover:border-cyan-300/35 hover:bg-cyan-300/10 hover:text-cyan-50"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                选择语言
+                {tr('选择语言')}
               </button>
             )}
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-cyan-300/40">{language.domainLabel}</p>
-              <h2 className="mt-1 text-lg font-semibold text-white">{language.name} 领域分支</h2>
+              <h2 className="mt-1 text-lg font-semibold text-white">{language.name} {tr('领域分支')}</h2>
               <p className="mt-0.5 max-w-2xl text-xs leading-relaxed text-white/34">
-                先选择一个领域分支，再进入该分支课程路线。基础也是一个独立分支，先把 {language.name} 的入口打稳，后面再开专业路线。
+                {tr('先选择一个领域分支，再进入该分支课程路线。基础也是一个独立分支，先把')} {language.name} {tr('的入口打稳，后面再开专业路线。')}
               </p>
             </div>
           </div>
@@ -381,8 +398,8 @@ export function QuestMap({
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              aria-label="搜索全部课程"
-              placeholder="搜索全部课程"
+              aria-label={tr('搜索全部课程')}
+              placeholder={tr('搜索全部课程')}
                 className="cn-focus-ring h-9 w-full rounded-lg border border-white/10 bg-white/[0.035] pl-9 pr-3 text-xs text-white outline-none transition-colors placeholder:text-white/22 focus:border-cyan-300/45 sm:w-72"
             />
             {searchResults.length > 0 && (
@@ -397,8 +414,8 @@ export function QuestMap({
                     }}
                     className="cn-focus-ring block w-full border-b border-white/6 px-3 py-2 text-left transition-colors last:border-0 hover:bg-cyan-300/8"
                   >
-                    <span className="block text-xs font-semibold text-white/78">{item.node.title}</span>
-                    <span className="mt-0.5 block text-[10px] text-cyan-200/45">{item.map.shortTitle} · {item.node.difficulty} · {item.node.lessonCount} 题</span>
+                    <span className="block text-xs font-semibold text-white/78">{tr(item.node.title)}</span>
+                    <span className="mt-0.5 block text-[10px] text-cyan-200/45">{tr(item.map.shortTitle)} · {tr(item.node.difficulty)} · {item.node.lessonCount} {tr('题')}</span>
                   </button>
                 ))}
               </div>
@@ -409,7 +426,7 @@ export function QuestMap({
         <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {courseMaps.map((map, index) => {
             const isActive = index === activeMapIndex
-            const isLocked = !demoMode && map.id !== FOUNDATION_MAP_ID && !foundationComplete
+            const isLocked = !unlockAll && !demoMode && map.id !== FOUNDATION_MAP_ID && !foundationComplete
             return (
               <button
                 key={map.id}
@@ -427,23 +444,23 @@ export function QuestMap({
                     <span className="flex h-7 w-7 items-center justify-center rounded-md border border-white/8 bg-black/28 text-cyan-100/70 transition-colors group-hover:border-cyan-300/22">
                       <BranchIcon map={map} />
                     </span>
-                    <span>{map.shortTitle}</span>
+                    <span>{tr(map.shortTitle)}</span>
                   </span>
                   {isLocked ? <Lock className="mt-1 h-3.5 w-3.5 text-white/28" /> : <span className="mt-1 font-mono text-[10px] text-cyan-200/55">{map.nodes.length}</span>}
                 </div>
-                <p className="mt-2 line-clamp-2 text-[10px] leading-relaxed text-white/34">{map.subtitle}</p>
+                <p className="mt-2 line-clamp-2 text-[10px] leading-relaxed text-white/34">{tr(map.subtitle)}</p>
               </button>
             )
           })}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-white/32">
-          <span className="rounded border border-cyan-300/14 bg-cyan-300/5 px-2 py-1 text-cyan-100/70">当前：{currentMap.title}</span>
-          <span className="rounded border border-white/8 bg-white/[0.025] px-2 py-1">{currentMap.nodes.length} 个模块</span>
-          <span className="rounded border border-white/8 bg-white/[0.025] px-2 py-1">{currentLessonCount} 道训练题</span>
-          <span className="rounded border border-white/8 bg-white/[0.025] px-2 py-1">总规划 {totalLessonCount} 道</span>
+          <span className="rounded border border-cyan-300/14 bg-cyan-300/5 px-2 py-1 text-cyan-100/70">{tr('当前：')}{tr(currentMap.title)}</span>
+          <span className="rounded border border-white/8 bg-white/[0.025] px-2 py-1">{currentMap.nodes.length} {tr('个模块')}</span>
+          <span className="rounded border border-white/8 bg-white/[0.025] px-2 py-1">{currentLessonCount} {tr('道训练题')}</span>
+          <span className="rounded border border-white/8 bg-white/[0.025] px-2 py-1">{tr('总规划')} {totalLessonCount} {tr('道')}</span>
           <span className="rounded border border-white/8 bg-white/[0.025] px-2 py-1">
-            基础{demoMode ? '试玩开放' : `进度 ${completedFoundationCount}/${levels.length}`}
+            {tr('基础')} {demoMode ? tr('试玩开放') : `${tr('进度')} ${completedFoundationCount}/${levels.length}`}
           </span>
         </div>
       </div>
@@ -451,12 +468,12 @@ export function QuestMap({
       <div className="relative h-[520px] cn-grid-shell sm:h-[610px] lg:h-[650px]">
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between border-b border-white/6 bg-black/64 px-3 py-2 sm:px-4 sm:py-3">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-white/86">{currentMap.title}</p>
-            <p className="mt-0.5 line-clamp-1 text-xs text-white/35">{currentMap.description}</p>
+            <p className="text-sm font-semibold text-white/86">{tr(currentMap.title)}</p>
+            <p className="mt-0.5 line-clamp-1 text-xs text-white/35">{tr(currentMap.description)}</p>
           </div>
           <div className="hidden items-center gap-2 text-[10px] text-white/32 sm:flex">
-            <span className="rounded border border-white/8 bg-black/36 px-2 py-1">{currentMap.shortTitle}</span>
-            <span className="rounded border border-white/8 bg-black/36 px-2 py-1">{currentLessonCount} 题</span>
+            <span className="rounded border border-white/8 bg-black/36 px-2 py-1">{tr(currentMap.shortTitle)}</span>
+            <span className="rounded border border-white/8 bg-black/36 px-2 py-1">{currentLessonCount} {tr('题')}</span>
           </div>
         </div>
         <ReactFlow
@@ -476,7 +493,7 @@ export function QuestMap({
             if (status === 'locked' || launchingId) return
             if (!courseNode.levelId && courseNode.unlockAfterLevel && courseNode.kind === 'project') {
               setLaunchingId(courseNode.id)
-              setLaunchLabel(`阶段作品 · ${courseNode.title}`)
+              setLaunchLabel(`${tr('阶段作品')} · ${tr(courseNode.title)}`)
               if (launchTimerRef.current) clearTimeout(launchTimerRef.current)
               launchTimerRef.current = setTimeout(() => {
                 router.push(demoMode ? `/play?language=${language.route}&project=${courseNode.unlockAfterLevel}` : `/project/${language.route}?after=${courseNode.unlockAfterLevel}`)
@@ -485,7 +502,7 @@ export function QuestMap({
             }
             if (!courseNode.levelId) return
             setLaunchingId(courseNode.id)
-            setLaunchLabel(`Lv.${courseNode.levelId} · ${courseNode.title}`)
+            setLaunchLabel(`Lv.${courseNode.levelId} · ${tr(courseNode.title)}`)
             if (launchTimerRef.current) clearTimeout(launchTimerRef.current)
             launchTimerRef.current = setTimeout(() => {
               router.push(demoMode ? `/play?language=${language.route}&level=${courseNode.levelId}` : `/learn/${language.route}?level=${courseNode.levelId}`)
@@ -521,7 +538,7 @@ export function QuestMap({
                   transition={settings.mapAnimations ? appleSpring : quickFade}
                   className="rounded-full border border-cyan-300/25 bg-black/78 px-4 py-2 text-xs font-medium text-cyan-100 shadow-[0_16px_60px_rgba(34,211,238,0.18)] backdrop-blur-xl"
                 >
-                  正在接入 {launchLabel}
+                  {tr('正在接入')} {launchLabel}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -540,18 +557,18 @@ export function QuestMap({
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       {selectedNode.levelId ? <BookOpen className="h-4 w-4 text-cyan-200" /> : <Layers3 className="h-4 w-4 text-cyan-200" />}
-                      <p className="text-sm font-semibold">{selectedNode.title}</p>
+                      <p className="text-sm font-semibold">{tr(selectedNode.title)}</p>
                     </div>
                     <span className="rounded border border-cyan-300/20 px-1.5 py-0.5 text-[10px] text-cyan-100/70">
-                      {selectedNode.difficulty}
+                      {tr(selectedNode.difficulty)}
                     </span>
                   </div>
-                  <p className="text-xs leading-relaxed text-white/44">{selectedNode.objective}</p>
+                  <p className="text-xs leading-relaxed text-white/44">{tr(selectedNode.objective)}</p>
                   {selectedNodeHook && (
                     <div className="mt-3 rounded-lg border border-cyan-300/12 bg-cyan-300/[0.035] px-3 py-2">
                       <p className="mb-1 inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-200/50">
                         <Zap className="h-3 w-3" />
-                        应用场景
+                        {tr('应用场景')}
                       </p>
                       <p className="text-[11px] leading-relaxed text-white/42">{selectedNodeHook}</p>
                     </div>
@@ -564,23 +581,23 @@ export function QuestMap({
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {selectedNode.tags.slice(0, 4).map((tag) => (
                       <span key={tag} className="rounded border border-white/8 bg-white/[0.035] px-2 py-1 text-[10px] text-white/38">
-                        {tag}
+                        {tr(tag)}
                       </span>
                     ))}
                   </div>
                   <div className="mt-3 border-t border-white/8 pt-3 text-[11px] leading-relaxed text-white/35">
                     {selectedNode.levelId ? (
-                      !demoMode && getFoundationStatus(selectedNode.levelId, progress, language) === 'locked'
-                        ? <span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3" /> 先清理前置基础节点。</span>
-                        : <span className="inline-flex items-center gap-1.5"><MousePointer2 className="h-3 w-3" /> 点击节点会先给反馈，再接入关卡。</span>
+                      !unlockAll && !demoMode && getFoundationStatus(selectedNode.levelId, progress, language, unlockAll) === 'locked'
+                        ? <span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3" /> {tr('先清理前置基础节点。')}</span>
+                        : <span className="inline-flex items-center gap-1.5"><MousePointer2 className="h-3 w-3" /> {tr('点击节点会先给反馈，再接入关卡。')}</span>
                     ) : selectedNode.kind === 'project' ? (
                       foundationComplete || !selectedNode.unlockAfterLevel || isLevelCompleted(selectedNode.unlockAfterLevel, progress, language)
-                        ? `阶段作品已解锁：用前 ${selectedNode.unlockAfterLevel ?? levels.length} 关能力做一个能运行、能展示、能复盘的小作品。`
-                        : <span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3" /> 先完成 Lv.{selectedNode.unlockAfterLevel}，再开这个阶段作品。</span>
+                        ? `${tr('阶段作品已解锁：用前')} ${selectedNode.unlockAfterLevel ?? levels.length} ${tr('关能力做一个能运行、能展示、能复盘的小作品。')}`
+                        : <span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3" /> {tr('先完成')} Lv.{selectedNode.unlockAfterLevel}{tr('，再开这个阶段作品。')}</span>
                     ) : foundationComplete ? (
-                      `课程路线已排好：${selectedNode.lessonCount} 道训练题。后续接入训练页时会按这个模块展开。`
+                      `${tr('课程路线已排好：')}${selectedNode.lessonCount} ${tr('道训练题。后续接入训练页时会按这个模块展开。')}`
                     ) : (
-                      <span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3" /> 先完成基础分支 20 个节点，再开专业分支训练。</span>
+                      <span className="inline-flex items-center gap-1.5"><Lock className="h-3 w-3" /> {tr('先完成基础分支 20 个节点，再开专业分支训练。')}</span>
                     )}
                   </div>
                 </motion.div>
@@ -593,7 +610,7 @@ export function QuestMap({
                   transition={quickFade}
                   className="rounded-lg border border-white/8 bg-black/62 px-3 py-2 text-xs text-white/30 backdrop-blur-md"
                 >
-                  先选分支，再点课程节点看反馈。
+                  {tr('先选分支，再点课程节点看反馈。')}
                 </motion.div>
               )}
             </AnimatePresence>

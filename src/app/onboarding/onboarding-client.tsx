@@ -7,13 +7,14 @@ import { saveNickname } from './actions'
 import { LANGUAGE_MODULES } from '@/lib/language-modules'
 import { AssistantAvatar } from '@/components/assistant/assistant-avatar'
 import { ASSISTANT_PERSONAS, resolveAssistantPersona, type AssistantPersonaId } from '@/lib/assistant-persona'
+import { useTr } from '@/contexts/language-context'
 
 type Phase = 'boot' | 'chat' | 'input' | 'confirmed' | 'redirecting'
 
 const INTRO = `CodeNexus 工作台已上线。\n\n我是你的代码小助理。这里不是让你被动刷视频，也不是把答案塞进编辑器骗自己学会了。\n\n你会按这个节奏学习：先选一门语言，再选领域分支，进入课程后先听我讲“这关能干什么、为什么要学、最容易错在哪”，然后打开空编辑器自己写最小代码。\n\n运行后我会看终端、测试结果和你当前代码。报错不用慌，我们只抓第一个关键问题；停太久也没关系，我会提醒你下一步该动哪一行。\n\n**目标不是通关动画，是让你真的做出能运行、能解释、以后能扩成作品的东西。**`
 
-function confirmMsg(name: string, assistantName: string) {
-  return `好，**${name}**，代号入库。\n\n**${assistantName}** 会跟着你进入工作台：先介绍主界面，再带你进入第一关。你不用一开始就懂全部功能，先完成第一段可运行代码。\n\n进去吧。第一关的目标很小：让程序说出第一句话。但这一步会打开后面所有课程的门。`
+function confirmMsg(name: string, assistantName: string, tr: (zh: string) => string) {
+  return `${tr('好，')}**${name}**${tr('，代号入库。')}\n\n**${assistantName}** ${tr('会跟着你进入工作台：先介绍主界面，再带你进入第一关。你不用一开始就懂全部功能，先完成第一段可运行代码。')}\n\n${tr('进去吧。第一关的目标很小：让程序说出第一句话。但这一步会打开后面所有课程的门。')}`
 }
 
 // Renders **bold** and \n in mentor text
@@ -109,13 +110,14 @@ function NeuralCanvas() {
 
 // Mentor avatar chip
 function MentorChip({ personaId }: { personaId: AssistantPersonaId }) {
+  const tr = useTr()
   const persona = resolveAssistantPersona(personaId)
   return (
     <div className="flex items-center gap-2.5 mb-3">
       <AssistantAvatar personaId={persona.id} size="sm" />
       <div>
-        <p className="text-xs font-semibold text-white/85 leading-none">{persona.name}</p>
-        <p className="text-[10px] text-cyan-400/55 mt-0.5">{persona.role}</p>
+        <p className="text-xs font-semibold text-white/85 leading-none">{tr(persona.name)}</p>
+        <p className="text-[10px] text-cyan-400/55 mt-0.5">{tr(persona.role)}</p>
       </div>
     </div>
   )
@@ -123,6 +125,7 @@ function MentorChip({ personaId }: { personaId: AssistantPersonaId }) {
 
 export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: string }) {
   const router = useRouter()
+  const tr = useTr()
   const [phase, setPhase] = useState<Phase>('boot')
   const [bootText, setBootText] = useState('')
   const [introTyped, setIntroTyped] = useState('')
@@ -152,10 +155,11 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
   // Phase: chat — typewriter intro, then show input
   useEffect(() => {
     if (phase !== 'chat') return
+    const introText = tr(INTRO)
     let i = 0; let t: ReturnType<typeof setTimeout>
     const iv = setInterval(() => {
-      i++; setIntroTyped(INTRO.slice(0, i))
-      if (i >= INTRO.length) {
+      i++; setIntroTyped(introText.slice(0, i))
+      if (i >= introText.length) {
         clearInterval(iv)
         t = setTimeout(() => {
           setPhase('input')
@@ -164,19 +168,19 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
       }
     }, 20)
     return () => { clearInterval(iv); clearTimeout(t) }
-  }, [phase])
+  }, [phase, tr])
 
   // Phase: confirmed — typewriter confirm, then redirecting
   useEffect(() => {
     if (phase !== 'confirmed' || !nickname) return
-    const text = confirmMsg(nickname, resolveAssistantPersona(selectedAssistant).name)
+    const text = confirmMsg(nickname, tr(resolveAssistantPersona(selectedAssistant).name), tr)
     let i = 0; let t: ReturnType<typeof setTimeout>
     const iv = setInterval(() => {
       i++; setConfirmTyped(text.slice(0, i))
       if (i >= text.length) { clearInterval(iv); t = setTimeout(() => setPhase('redirecting'), 800) }
     }, 20)
     return () => { clearInterval(iv); clearTimeout(t) }
-  }, [phase, nickname, selectedAssistant])
+  }, [phase, nickname, selectedAssistant, tr])
 
   // Redirect once typewriter done AND save complete
   useEffect(() => {
@@ -194,7 +198,7 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
     startTransition(async () => {
       const res = await saveNickname(name, selectedLanguage, selectedAssistant)
       if (!res.ok) {
-        setSaveError(res.error ?? '保存失败。')
+        setSaveError(res.error ?? tr('保存失败。'))
         setPhase('input')
         return
       }
@@ -222,7 +226,7 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
                 {bootText}<span className="animate-pulse">_</span>
               </p>
               <p className="text-white/12 font-mono text-xs tracking-[0.4em]">
-                CodeNexus · AI 编程中枢
+                {tr('CodeNexus · AI 编程中枢')}
               </p>
             </div>
           </motion.div>
@@ -281,7 +285,7 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
                     <MentorChip personaId={selectedAssistant} />
                     <p className="text-sm text-white/65 leading-relaxed">
                       <MentorText text={confirmTyped} />
-                      {confirmTyped.length < confirmMsg(nickname, resolveAssistantPersona(selectedAssistant).name).length && (
+                      {confirmTyped.length < confirmMsg(nickname, tr(resolveAssistantPersona(selectedAssistant).name), tr).length && (
                         <span className="animate-pulse text-cyan-300/50">_</span>
                       )}
                     </p>
@@ -317,7 +321,7 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
                               }`}
                             >
                               <span className="font-mono text-xs font-semibold">{language.shortName}</span>
-                              <span className="mt-1 line-clamp-2 block text-[10px] leading-relaxed opacity-70">{language.tagline}</span>
+                              <span className="mt-1 line-clamp-2 block text-[10px] leading-relaxed opacity-70">{tr(language.tagline)}</span>
                             </button>
                           )
                         })}
@@ -344,11 +348,11 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
                               <div className="mb-2 flex items-center gap-2">
                                 <AssistantAvatar personaId={persona.id} size="sm" active={active} />
                                 <span>
-                                  <span className="block text-xs font-semibold">{persona.name}</span>
-                                  <span className="block text-[10px] text-white/34">{persona.pronoun}</span>
+                                  <span className="block text-xs font-semibold">{tr(persona.name)}</span>
+                                  <span className="block text-[10px] text-white/34">{tr(persona.pronoun)}</span>
                                 </span>
                               </div>
-                              <span className="line-clamp-2 block text-[10px] leading-relaxed opacity-70">{persona.description}</span>
+                              <span className="line-clamp-2 block text-[10px] leading-relaxed opacity-70">{tr(persona.description)}</span>
                             </button>
                           )
                         })}
@@ -360,7 +364,7 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
                         value={inputVal}
                         onChange={(e) => setInputVal(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
-                        placeholder="你的昵称..."
+                        placeholder={tr('你的昵称...')}
                         maxLength={20}
                         className="cn-focus-ring flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-white/20 focus:border-cyan-300/60"
                       />
@@ -369,7 +373,7 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
                         disabled={!inputVal.trim()}
                         className="cn-focus-ring rounded-lg bg-cyan-300 px-5 py-3 text-sm font-semibold text-black transition-all hover:bg-cyan-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
                       >
-                        确认
+                        {tr('确认')}
                       </button>
                     </div>
                   </motion.div>

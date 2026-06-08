@@ -23,6 +23,7 @@ import {
 import { AssistantAvatar } from '@/components/assistant/assistant-avatar'
 import { resolveAssistantPersona } from '@/lib/assistant-persona'
 import { appleSpring } from '@/lib/motion'
+import { useTr } from '@/contexts/language-context'
 import type { CommandSettings } from '@/hooks/use-command-settings'
 
 type TutorialStep = {
@@ -113,6 +114,7 @@ export function NewUserTutorial({
   settings,
   mode,
 }: NewUserTutorialProps) {
+  const tr = useTr()
   const persona = resolveAssistantPersona(settings.assistantPersona)
   const steps = mode === 'guest' ? GUEST_STEPS : AUTH_STEPS
   const key = useMemo(() => storageKey(mode, languageRoute), [languageRoute, mode])
@@ -161,7 +163,7 @@ export function NewUserTutorial({
       >
         <span className="inline-flex items-center gap-2">
           <RotateCcw className="h-4 w-4 text-cyan-200/70" />
-          重看 {languageName} 新手教程
+          {tr('重看')} {languageName} {tr('新手教程')}
         </span>
         <ArrowRight className="h-4 w-4" />
       </button>
@@ -188,7 +190,7 @@ export function NewUserTutorial({
               <button
                 type="button"
                 onClick={closeTutorial}
-                title="关闭新手教程"
+                title={tr('关闭新手教程')}
                 className="cn-focus-ring flex h-8 w-8 items-center justify-center rounded-lg text-white/32 transition-colors hover:bg-white/[0.06] hover:text-white/68"
               >
                 <X className="h-4 w-4" />
@@ -198,10 +200,10 @@ export function NewUserTutorial({
               Beginner Protocol
             </p>
             <h2 className="mt-2 text-xl font-semibold leading-snug text-white">
-              {codename}，先用 3 分钟搞懂 CodeNexus。
+              {codename}{tr('，先用 3 分钟搞懂 CodeNexus。')}
             </h2>
             <p className="mt-3 text-sm leading-7 text-white/48">
-              {persona.name} 会把新手第一轮路线讲清楚：怎么选课、怎么写、怎么运行、什么时候问小助理。
+              {persona.name} {tr('会把新手第一轮路线讲清楚：怎么选课、怎么写、怎么运行、什么时候问小助理。')}
             </p>
           </div>
           <div className="mt-4 flex flex-wrap gap-1.5">
@@ -229,22 +231,22 @@ export function NewUserTutorial({
                 <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-300/45">
                   Step {stepIndex + 1}/{steps.length}
                 </p>
-                <h3 className="mt-1 text-lg font-semibold text-white">{step.title}</h3>
+                <h3 className="mt-1 text-lg font-semibold text-white">{tr(step.title)}</h3>
               </div>
             </div>
             <span className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-cyan-300/16 bg-cyan-300/[0.07] px-2.5 py-1.5 text-[11px] text-cyan-50/58">
               <MousePointerClick className="h-3.5 w-3.5" />
-              {mode === 'guest' ? '试玩教程' : '新账号教程'}
+              {mode === 'guest' ? tr('试玩教程') : tr('新账号教程')}
             </span>
           </div>
 
-          <p className="mt-4 text-sm leading-7 text-white/56">{step.body}</p>
+          <p className="mt-4 text-sm leading-7 text-white/56">{tr(step.body)}</p>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
             {step.checkpoints.map((checkpoint) => (
               <div key={checkpoint} className="rounded-lg border border-white/8 bg-white/[0.025] px-3 py-2.5 text-xs leading-relaxed text-white/45">
                 <CheckCircle2 className="mb-2 h-4 w-4 text-cyan-200/65" />
-                {checkpoint}
+                {tr(checkpoint)}
               </div>
             ))}
           </div>
@@ -256,7 +258,7 @@ export function NewUserTutorial({
                 onClick={() => setStepIndex((current) => Math.min(steps.length - 1, current + 1))}
                 className="cn-focus-ring inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 text-sm font-semibold text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-200"
               >
-                下一步
+                {tr('下一步')}
                 <ArrowRight className="h-4 w-4" />
               </button>
             ) : (
@@ -264,7 +266,7 @@ export function NewUserTutorial({
                 href={startHref}
                 className="cn-focus-ring inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 text-sm font-semibold text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-200"
               >
-                进入第一课
+                {tr('进入第一课')}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             )}
@@ -273,7 +275,7 @@ export function NewUserTutorial({
               onClick={closeTutorial}
               className="cn-focus-ring inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-white/10 px-4 text-sm font-semibold text-white/52 transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-300/24 hover:text-cyan-100 sm:flex-none"
             >
-              我知道了
+              {tr('我知道了')}
             </button>
           </div>
         </div>

@@ -1,4 +1,8 @@
-export default function DashboardLoading() {
+import { getServerLang } from '@/lib/i18n-server'
+import { translate } from '@/lib/i18n'
+
+export default async function DashboardLoading() {
+  const lang = await getServerLang()
   return (
     <main className="min-h-[100dvh] bg-background text-foreground">
       <div className="border-b border-cyan-300/12 bg-background/84 backdrop-blur-xl">
@@ -26,7 +30,7 @@ export default function DashboardLoading() {
           </div>
         </div>
         <p className="mt-8 text-center font-mono text-[10px] tracking-[0.32em] text-cyan-200/35">
-          LOADING NEXUS · 加载主控台...
+          LOADING NEXUS · {translate('加载主控台...', lang)}
         </p>
       </div>
     </main>

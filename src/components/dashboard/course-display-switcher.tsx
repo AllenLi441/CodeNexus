@@ -25,11 +25,13 @@ export function CourseDisplaySwitcher({
   activeLanguageId = 'python',
   initialSettings,
   demoMode = false,
+  unlockAll = true,
 }: {
   progress: ProgressRow[]
   activeLanguageId?: string
   initialSettings?: Partial<CommandSettings> | null
   demoMode?: boolean
+  unlockAll?: boolean
 }) {
   const { settings } = useCommandSettings(initialSettings)
   const compactCourseLayout = useCompactCourseLayout()
@@ -42,6 +44,7 @@ export function CourseDisplaySwitcher({
         activeLanguageId={activeLanguageId}
         initialSettings={settings}
         demoMode={demoMode}
+        unlockAll={unlockAll}
         showLanguageBack
       />
     )
@@ -53,6 +56,7 @@ export function CourseDisplaySwitcher({
       progress={progress}
       activeLanguageId={activeLanguageId}
       demoMode={demoMode}
+      unlockAll={unlockAll}
     />
   )
 }

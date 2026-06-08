@@ -34,6 +34,7 @@ function systemPrompt({
   assistantPersona,
   assistantLiveliness,
   assistantMemorySummary,
+  lang,
 }: {
   codename: string
   tauntFrequency: number
@@ -41,6 +42,7 @@ function systemPrompt({
   assistantPersona: AssistantPersonaId
   assistantLiveliness: number
   assistantMemorySummary?: string
+  lang: 'zh' | 'en'
 }) {
   const persona = resolveAssistantPersona(assistantPersona)
   const liveliness = assistantLiveliness > 75
@@ -75,7 +77,7 @@ function systemPrompt({
 ${teachingStrategy}
 
 【输出格式】
-- 只用中文。
+- ${lang === 'en' ? 'Respond ONLY in English (the learner switched the interface to English). Keep code identifiers and keywords as-is.' : '只用中文。'}
 - Markdown 格式：代码块用 \`\`\`${fenceLanguage(languageName)}，关键词用 \`inline code\`，重点用 **加粗**。
 - 默认不超过 6 句话，代码示例除外。
 - 不要说你是某个真实公司模型。
@@ -107,16 +109,29 @@ function textStream(message: string, status = 200, retryAfterSec?: number) {
   )
 }
 
+function clientIp(req: NextRequest) {
+  const forwarded = req.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0]?.trim() || 'unknown'
+  return req.headers.get('x-real-ip')?.trim() || 'unknown'
+}
+
 export async function POST(req: NextRequest) {
-  // Auth: only signed-in learners can talk to the model. Stops匿名 token 烧钱。
+  // Logged-in learners use the platform models for free. Trial/guests may still
+  // chat — but only with their own key (BYO) — so anonymous traffic never burns
+  // our spend.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
-  if (!user) {
-    return textStream('⚠️ 请先登录再向小助手提问。', 401)
+  const byoKey = req.headers.get('x-codenexus-ai-key')?.trim()
+  const isGuest = !user
+  const lang = req.headers.get('x-codenexus-lang') === 'en' ? 'en' : 'zh'
+
+  if (isGuest && !byoKey) {
+    return textStream('⚠️ 试玩模式要先在命令中心填入你自己的 API Key（DeepSeek / Kimi 都行）才能和小助手对话。登录后可直接使用平台提供的模型。', 401)
   }
 
-  // Per-user rate limit.
-  const limit = checkRateLimit(`chat:${user.id}`, CHAT_LIMIT, CHAT_WINDOW_MS)
+  // Rate limit: per-user for members, per-IP for guests.
+  const rateKey = user ? `chat:${user.id}` : `chat:guest:${clientIp(req)}`
+  const limit = checkRateLimit(rateKey, CHAT_LIMIT, CHAT_WINDOW_MS)
   if (!limit.ok) {
     const seconds = Math.max(1, Math.ceil(limit.retryAfterMs / 1000))
     return textStream(
@@ -126,9 +141,14 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const ai = resolveAiClient(req)
+  const ai = resolveAiClient(req, { allowServerKey: !isGuest })
   if (!ai) {
-    return textStream('⚠️ 小助手缺少 API Key。去命令中心填你自己的 DeepSeek Key，或在部署环境配置 DEEPSEEK_API_KEY。', 503)
+    return textStream(
+      isGuest
+        ? '⚠️ 试玩模式需要你自己的 API Key。去命令中心填 DeepSeek 或 Kimi 的 Key。'
+        : '⚠️ 小助手缺少 API Key。平台暂未配置服务端模型，或去命令中心填你自己的 Key。',
+      503,
+    )
   }
   if ('error' in ai) {
     return textStream(ai.error, 400)
@@ -187,6 +207,7 @@ export async function POST(req: NextRequest) {
             assistantPersona,
             assistantLiveliness,
             assistantMemorySummary,
+            lang,
           }),
         },
         ...contextMessages,

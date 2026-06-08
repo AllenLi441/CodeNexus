@@ -16,7 +16,8 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { BrandHeader } from '@/components/layout/logo'
-import { getProjectCheckpoint } from '@/lib/learning-profile'
+import { useTr } from '@/contexts/language-context'
+import { getProjectCheckpoint, localizeProjectTitle } from '@/lib/learning-profile'
 import { getLanguageModule } from '@/lib/language-modules'
 import { buildProjectCardMarkdown, projectCardFileName } from '@/lib/project-card'
 
@@ -80,6 +81,7 @@ async function copyText(value: string) {
 }
 
 export function ProjectStudio({ languageId, codename, afterLevel, demoMode = false }: ProjectStudioProps) {
+  const tr = useTr()
   const language = useMemo(() => getLanguageModule(languageId), [languageId])
   const project = getProjectCheckpoint(language.name, afterLevel)
   const storageKey = `cn:project:${language.id}:${afterLevel}`
@@ -118,8 +120,8 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
       <div className="flex min-h-[100dvh] items-center justify-center bg-background p-6 text-foreground">
         <div className="cn-panel max-w-md rounded-2xl p-6 text-center">
           <Lock className="mx-auto mb-3 h-8 w-8 text-ink-mute" />
-          <h1 className="text-lg font-semibold">没有这个阶段作品</h1>
-          <p className="mt-2 text-sm text-ink-mute">阶段作品只在 Lv.5 / 10 / 15 / 20 后解锁。</p>
+          <h1 className="text-lg font-semibold">{tr('没有这个阶段作品')}</h1>
+          <p className="mt-2 text-sm text-ink-mute">{tr('阶段作品只在 Lv.5 / 10 / 15 / 20 后解锁。')}</p>
         </div>
       </div>
     )
@@ -190,25 +192,25 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
             <Link
               href={backHref}
               className="cn-focus-ring flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-white/35 transition-colors hover:bg-white/[0.05] hover:text-white/70"
-              title="返回课程选择"
+              title={tr('返回课程选择')}
             >
               <ArrowLeft className="h-4 w-4" />
             </Link>
             <BrandHeader dark />
           </div>
           <div className="flex items-center gap-2">
-            {saved && <span className="hidden text-xs text-cyan-100/55 sm:inline">已保存草稿</span>}
+            {saved && <span className="hidden text-xs text-cyan-100/55 sm:inline">{tr('已保存草稿')}</span>}
             {demoMode ? (
               <Link
                 href="/register?from=play"
                 className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
               >
-                保存进度
+                {tr('保存进度')}
               </Link>
             ) : (
               <span className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs text-white/42">
                 <Save className="h-3.5 w-3.5" />
-                本地草稿
+                {tr('本地草稿')}
               </span>
             )}
           </div>
@@ -223,45 +225,45 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
             </p>
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">{activeProject.title}</h1>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/46">{activeProject.brief}</p>
+                <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">{localizeProjectTitle(activeProject.title, language.name, tr)}</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/46">{tr(activeProject.brief)}</p>
               </div>
               <span className="w-fit rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-3 py-1.5 text-xs font-medium text-cyan-100/74">
-                {language.name} · 阶段 {activeProject.stage}
+                {language.name} · {tr('阶段')} {activeProject.stage}
               </span>
             </div>
             <div className="mt-4 rounded-lg border border-emerald-300/15 bg-emerald-300/[0.04] px-3 py-3">
               <p className="flex items-center gap-2 text-sm font-semibold text-emerald-100/78">
                 <PackageCheck className="h-4 w-4" />
-                交付物
+                {tr('交付物')}
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-white/42">{activeProject.deliverable}</p>
+              <p className="mt-1 text-xs leading-relaxed text-white/42">{tr(activeProject.deliverable)}</p>
             </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <TextPanel
-              title="1. 你要解决什么"
+              title={tr('1. 你要解决什么')}
               value={draft.problem}
-              placeholder="例：我想做一个能根据分数输出等级的小工具，不再手动判断。"
+              placeholder={tr('例：我想做一个能根据分数输出等级的小工具，不再手动判断。')}
               onChange={(value) => updateText('problem', value)}
             />
             <TextPanel
-              title="2. 你的实现思路"
+              title={tr('2. 你的实现思路')}
               value={draft.approach}
-              placeholder="例：先准备输入数据，再用条件/循环处理，最后统一输出结果。"
+              placeholder={tr('例：先准备输入数据，再用条件/循环处理，最后统一输出结果。')}
               onChange={(value) => updateText('approach', value)}
             />
             <TextPanel
-              title="3. 最终输出长什么样"
+              title={tr('3. 最终输出长什么样')}
               value={draft.output}
-              placeholder="例：终端打印每个用户的等级，并输出总计数量。"
+              placeholder={tr('例：终端打印每个用户的等级，并输出总计数量。')}
               onChange={(value) => updateText('output', value)}
             />
             <TextPanel
-              title="4. 你踩过什么坑"
+              title={tr('4. 你踩过什么坑')}
               value={draft.reflection}
-              placeholder="例：我一开始把输出文本写错了，后来先对齐测试目标再改逻辑。"
+              placeholder={tr('例：我一开始把输出文本写错了，后来先对齐测试目标再改逻辑。')}
               onChange={(value) => updateText('reflection', value)}
             />
           </div>
@@ -271,7 +273,7 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
           <section className="cn-panel p-4">
             <p className="flex items-center gap-2 text-sm font-semibold text-white/74">
               <ClipboardCheck className="h-4 w-4 text-cyan-200/70" />
-              能力清单
+              {tr('能力清单')}
             </p>
             <div className="mt-3 grid gap-2">
               {activeProject.skills.map((skill) => {
@@ -287,7 +289,7 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
                         : 'border-white/8 bg-white/[0.022] text-white/42 hover:border-cyan-300/20 hover:text-white/68'
                     }`}
                   >
-                    <span className="text-xs font-medium">{skill}</span>
+                    <span className="text-xs font-medium">{tr(skill)}</span>
                     <CheckCircle2 className={`h-4 w-4 ${checked ? 'text-emerald-300' : 'text-white/18'}`} />
                   </button>
                 )
@@ -298,11 +300,11 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
           <section className="cn-panel-cyan p-4">
             <p className="flex items-center gap-2 text-sm font-semibold text-white/78">
               <FileCode2 className="h-4 w-4 text-cyan-200/70" />
-              作品卡预览
+              {tr('作品卡预览')}
             </p>
             <div className="mt-3 rounded-lg border border-white/8 bg-black/34 px-3 py-2">
               <div className="flex items-center justify-between gap-3 text-[11px] text-white/38">
-                <span>完成度</span>
+                <span>{tr('完成度')}</span>
                 <span className="font-mono text-cyan-100/58">{readinessPercent}%</span>
               </div>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/8">
@@ -314,17 +316,17 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
             </div>
             <div className="mt-3 rounded-lg border border-white/8 bg-black/42 p-4">
               <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-300/45">CodeNexus Project</p>
-              <h2 className="mt-2 text-lg font-semibold text-white">{draft.title || activeProject.title}</h2>
+              <h2 className="mt-2 text-lg font-semibold text-white">{draft.title || localizeProjectTitle(activeProject.title, language.name, tr)}</h2>
               <p className="mt-1 text-xs text-white/36">by {codename}</p>
               <div className="mt-4 space-y-2 text-xs leading-relaxed text-white/42">
-                <p><span className="text-cyan-100/65">问题：</span>{draft.problem || '还没写。'}</p>
-                <p><span className="text-cyan-100/65">方案：</span>{draft.approach || '还没写。'}</p>
-                <p><span className="text-cyan-100/65">输出：</span>{draft.output || '还没写。'}</p>
+                <p><span className="text-cyan-100/65">{tr('问题：')}</span>{draft.problem || tr('还没写。')}</p>
+                <p><span className="text-cyan-100/65">{tr('方案：')}</span>{draft.approach || tr('还没写。')}</p>
+                <p><span className="text-cyan-100/65">{tr('输出：')}</span>{draft.output || tr('还没写。')}</p>
               </div>
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {activeProject.skills.map((skill) => (
                   <span key={skill} className="rounded border border-cyan-300/12 bg-cyan-300/[0.04] px-2 py-1 text-[10px] text-cyan-100/58">
-                    {skill}
+                    {tr(skill)}
                   </span>
                 ))}
               </div>
@@ -338,7 +340,7 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
                 className="cn-focus-ring flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:shadow-none"
               >
                 {ready ? <Copy className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-                {ready ? '复制' : '待完成'}
+                {ready ? tr('复制') : tr('待完成')}
               </button>
               <button
                 type="button"
@@ -347,18 +349,18 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
                 className="cn-focus-ring flex h-11 items-center justify-center gap-2 rounded-lg border border-primary/25 bg-primary/[0.08] px-3 text-sm font-semibold text-primary transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/[0.13] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0"
               >
                 {ready ? <Download className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-                导出
+                {tr('导出')}
               </button>
             </div>
             {cardActionStatus !== 'idle' && (
               <p className={`mt-2 text-[11px] ${cardActionStatus === 'error' ? 'text-rose-200/70' : 'text-emerald-200/70'}`}>
-                {cardActionStatus === 'copied' && '作品卡 Markdown 已复制'}
-                {cardActionStatus === 'downloaded' && '作品卡 Markdown 已下载'}
-                {cardActionStatus === 'error' && '浏览器拒绝复制，可以改用导出'}
+                {cardActionStatus === 'copied' && tr('作品卡 Markdown 已复制')}
+                {cardActionStatus === 'downloaded' && tr('作品卡 Markdown 已下载')}
+                {cardActionStatus === 'error' && tr('浏览器拒绝复制，可以改用导出')}
               </p>
             )}
             <p className="mt-2 text-[11px] leading-relaxed text-white/30">
-              本地作品卡现在可以复制或下载。下一步可以接 Supabase，生成公开作品 URL。
+              {tr('本地作品卡现在可以复制或下载。下一步可以接 Supabase，生成公开作品 URL。')}
             </p>
           </section>
         </aside>

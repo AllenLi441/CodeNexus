@@ -1,6 +1,15 @@
+import { EN_MAP } from './i18n-en'
+
 export type Lang = 'zh' | 'en'
 export const LANG_COOKIE = 'zf-lang'
 export const DEFAULT_LANG: Lang = 'zh'
+
+// zh→en lookup. The Chinese string is the key; a missing key falls back to the
+// Chinese, so partial coverage is always safe. Use this everywhere display text
+// needs to switch language (client via useTr(), server via translate(s, lang)).
+export function translate(zh: string, lang: Lang): string {
+  return lang === 'en' ? (EN_MAP[zh] ?? zh) : zh
+}
 
 const t = {
   zh: {

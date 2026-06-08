@@ -2,6 +2,7 @@
 
 import type { CodeEditorHandle } from './code-editor'
 import type { RefObject } from 'react'
+import { useTr } from '@/contexts/language-context'
 
 const SYMBOLS = [
   { label: ':', ins: ':' },
@@ -25,6 +26,7 @@ type MobileToolbarProps = {
 }
 
 export function MobileToolbar({ editorRef }: MobileToolbarProps) {
+  const tr = useTr()
   function insert(sym: (typeof SYMBOLS)[0]) {
     editorRef.current?.insertAtCursor(sym.ins, sym.back)
   }
@@ -36,8 +38,8 @@ export function MobileToolbar({ editorRef }: MobileToolbarProps) {
           <button
             key={sym.label}
             onClick={() => insert(sym)}
-            title={sym.title}
-            aria-label={sym.title ?? `插入 ${sym.label}`}
+            title={sym.title ? tr(sym.title) : undefined}
+            aria-label={sym.title ? tr(sym.title) : `${tr('插入')} ${sym.label}`}
             className="cn-focus-ring flex-shrink-0 h-11 min-w-[44px] px-2 rounded-md bg-white/5 border border-white/8 text-white/70 hover:bg-cyan-300/15 hover:border-cyan-300/30 hover:text-cyan-100 text-xs font-mono transition-all duration-150 active:scale-95"
           >
             {sym.label}

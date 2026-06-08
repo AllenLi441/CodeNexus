@@ -17,6 +17,7 @@ import {
   TerminalSquare,
 } from 'lucide-react'
 import type { Level, LessonSection } from '@/lib/levels'
+import { useTr } from '@/contexts/language-context'
 import { getLevelMission, getLevelTeachingBlueprint } from '@/lib/course-engagement'
 import { appleEase, appleSpring, quickFade } from '@/lib/motion'
 import { MarkdownMessage } from './markdown-message'
@@ -28,7 +29,7 @@ type LessonBriefingProps = {
   onStart: () => void
 }
 
-function CodeSample({ section, languageName }: { section: LessonSection; languageName: string }) {
+function CodeSample({ section, languageName, tr }: { section: LessonSection; languageName: string; tr: (zh: string) => string }) {
   if (!section.codeBlock) return null
   const fence = languageName === 'JavaScript'
     ? 'javascript'
@@ -49,7 +50,7 @@ function CodeSample({ section, languageName }: { section: LessonSection; languag
         </span>
         {section.codeBlock.fillable && (
           <span className="rounded border border-cyan-300/18 px-2 py-0.5 text-[10px] text-cyan-100/50">
-            读懂结构，不自动填入
+            {tr('读懂结构，不自动填入')}
           </span>
         )}
       </div>
@@ -64,10 +65,12 @@ function ArticleSection({
   section,
   index,
   languageName,
+  tr,
 }: {
   section: LessonSection
   index: number
   languageName: string
+  tr: (zh: string) => string
 }) {
   return (
     <section id={`chapter-${index + 1}`} className="scroll-mt-24 border-t border-white/8 py-7 first:border-t-0 first:pt-0">
@@ -76,38 +79,38 @@ function ArticleSection({
           {index + 1}
         </span>
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold tracking-tight text-white">{section.heading}</h2>
-          <p className="mt-1 text-xs text-white/28">这一段先读懂，再去写代码。</p>
+          <h2 className="text-lg font-semibold tracking-tight text-white">{tr(section.heading)}</h2>
+          <p className="mt-1 text-xs text-white/28">{tr('这一段先读懂，再去写代码。')}</p>
         </div>
       </div>
 
       <div className="text-sm leading-7 text-white/62">
-        <MarkdownMessage text={section.body} />
+        <MarkdownMessage text={tr(section.body)} />
       </div>
 
-      <CodeSample section={section} languageName={languageName} />
+      <CodeSample section={section} languageName={languageName} tr={tr} />
 
       {section.tip && (
         <div className="mt-4 rounded-lg border border-emerald-300/14 bg-emerald-300/[0.045] px-4 py-3 text-xs leading-relaxed text-emerald-50/62">
-          <span className="font-semibold text-emerald-100/86">提示：</span>{section.tip}
+          <span className="font-semibold text-emerald-100/86">{tr('提示：')}</span>{tr(section.tip)}
         </div>
       )}
 
       {section.warning && (
         <div className="mt-4 rounded-lg border border-red-300/14 bg-red-300/[0.045] px-4 py-3 text-xs leading-relaxed text-red-50/62">
-          <span className="font-semibold text-red-100/86">小心：</span>{section.warning}
+          <span className="font-semibold text-red-100/86">{tr('小心：')}</span>{tr(section.warning)}
         </div>
       )}
     </section>
   )
 }
 
-function MentorAside({ codename, line }: { codename: string; line: string }) {
+function MentorAside({ codename, line, tr }: { codename: string; line: string; tr: (zh: string) => string }) {
   return (
     <div className="rounded-lg border border-cyan-300/14 bg-cyan-300/[0.04] p-4">
       <div className="mb-3 flex items-center gap-2">
         <MessageSquare className="h-4 w-4 text-cyan-200/70" />
-        <p className="text-sm font-semibold text-white/75">小助手旁白</p>
+        <p className="text-sm font-semibold text-white/75">{tr('小助手旁白')}</p>
       </div>
       <p className="text-xs leading-relaxed text-white/50">
         {codename}，{line}
@@ -117,8 +120,9 @@ function MentorAside({ codename, line }: { codename: string; line: string }) {
 }
 
 export function LessonBriefing({ level, languageName, codename, onStart }: LessonBriefingProps) {
-  const mission = getLevelMission(languageName, level)
-  const teaching = getLevelTeachingBlueprint(languageName, level)
+  const tr = useTr()
+  const mission = getLevelMission(languageName, level, tr)
+  const teaching = getLevelTeachingBlueprint(languageName, level, tr)
 
   return (
     <div className="cn-scrollbar h-full w-full max-w-full overflow-x-hidden overflow-y-auto bg-[#020408]">
@@ -133,29 +137,29 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-cyan-300/45">{mission.kicker}</p>
               <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
-                Lv.{level.id} {level.title}
+                Lv.{level.id} {tr(level.title)}
               </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-white/55">{level.objective}</p>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-white/55">{tr(level.objective)}</p>
             </div>
             <span className="w-fit rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-3 py-1.5 text-xs font-medium text-cyan-100/76">
-              {languageName} · {level.badge}
+              {languageName} · {tr(level.badge)}
             </span>
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-lg border border-white/8 bg-black/30 p-4">
               <Compass className="mb-3 h-4 w-4 text-cyan-200/70" />
-              <p className="text-xs font-semibold text-white/78">这节课解决什么</p>
+              <p className="text-xs font-semibold text-white/78">{tr('这节课解决什么')}</p>
               <p className="mt-2 text-xs leading-relaxed text-white/42">{mission.brief}</p>
             </div>
             <div className="rounded-lg border border-white/8 bg-black/30 p-4">
               <BrainCircuit className="mb-3 h-4 w-4 text-cyan-200/70" />
-              <p className="text-xs font-semibold text-white/78">先建立脑内模型</p>
+              <p className="text-xs font-semibold text-white/78">{tr('先建立脑内模型')}</p>
               <p className="mt-2 text-xs leading-relaxed text-white/42">{teaching.mentalModel}</p>
             </div>
             <div className="rounded-lg border border-white/8 bg-black/30 p-4">
               <TerminalSquare className="mb-3 h-4 w-4 text-cyan-200/70" />
-              <p className="text-xs font-semibold text-white/78">最后要交付什么</p>
+              <p className="text-xs font-semibold text-white/78">{tr('最后要交付什么')}</p>
               <p className="mt-2 text-xs leading-relaxed text-white/42">{mission.payoff}</p>
             </div>
           </div>
@@ -171,10 +175,10 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
             <section className="mb-7 rounded-lg border border-cyan-300/12 bg-cyan-300/[0.035] p-4">
               <div className="mb-3 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-cyan-200/70" />
-                <p className="text-sm font-semibold text-white/78">先别打开编辑器</p>
+                <p className="text-sm font-semibold text-white/78">{tr('先别打开编辑器')}</p>
               </div>
               <p className="text-sm leading-7 text-white/58">
-                这一页不是让你背概念，而是先把本关的“为什么、怎么写、怎么验证”讲清楚。读完以后编辑器仍然是空的，你要自己把最小代码写出来。
+                {tr('这一页不是让你背概念，而是先把本关的“为什么、怎么写、怎么验证”讲清楚。读完以后编辑器仍然是空的，你要自己把最小代码写出来。')}
               </p>
             </section>
 
@@ -182,8 +186,8 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
               <div className="mb-4 flex items-center gap-2">
                 <BrainCircuit className="h-4 w-4 text-cyan-200/70" />
                 <div>
-                  <p className="text-sm font-semibold text-white/78">知识拆解</p>
-                  <p className="mt-1 text-xs text-white/32">先把概念、用途和验证方式连起来。</p>
+                  <p className="text-sm font-semibold text-white/78">{tr('知识拆解')}</p>
+                  <p className="mt-1 text-xs text-white/32">{tr('先把概念、用途和验证方式连起来。')}</p>
                 </div>
               </div>
               <div className="grid gap-3 md:grid-cols-3">
@@ -195,7 +199,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
                 ))}
               </div>
               <div className="mt-4 rounded-lg border border-cyan-300/10 bg-cyan-300/[0.035] px-4 py-3">
-                <p className="text-xs font-semibold text-cyan-50/72">真实用途</p>
+                <p className="text-xs font-semibold text-cyan-50/72">{tr('真实用途')}</p>
                 <p className="mt-1 text-xs leading-relaxed text-white/46">{teaching.realUse}</p>
               </div>
             </section>
@@ -206,13 +210,14 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
                 section={section}
                 index={index}
                 languageName={languageName}
+                tr={tr}
               />
             ))}
 
             <section className="border-t border-white/8 pt-7">
               <div className="mb-3 flex items-center gap-2">
                 <FlaskConical className="h-4 w-4 text-cyan-200/70" />
-                <h2 className="text-lg font-semibold tracking-tight text-white">进入平台练习</h2>
+                <h2 className="text-lg font-semibold tracking-tight text-white">{tr('进入平台练习')}</h2>
               </div>
               <p className="text-sm leading-7 text-white/56">{teaching.checkpoint}</p>
               <div className="mt-4 grid gap-2">
@@ -227,7 +232,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
                 {level.tests.map((test) => (
                   <div key={test.id} className="flex items-start gap-2 rounded-lg border border-cyan-300/10 bg-cyan-300/[0.026] px-3 py-2 text-xs leading-relaxed text-white/48">
                     <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-cyan-200/70" />
-                    <span>{test.description}</span>
+                    <span>{tr(test.description)}</span>
                   </div>
                 ))}
               </div>
@@ -236,7 +241,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
                 onClick={onStart}
                 className="cn-focus-ring mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-cyan-300 px-5 text-sm font-semibold text-black shadow-[0_18px_70px_rgba(34,211,238,0.14)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-cyan-200 sm:w-auto"
               >
-                打开空编辑器，开始实践
+                {tr('打开空编辑器，开始实践')}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </section>
@@ -251,7 +256,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
             <section className="rounded-lg border border-white/8 bg-white/[0.025] p-4">
               <div className="mb-3 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-cyan-200/70" />
-                <p className="text-sm font-semibold text-white/74">本课路线</p>
+                <p className="text-sm font-semibold text-white/74">{tr('本课路线')}</p>
               </div>
               <div className="grid gap-2">
                 {level.sections.map((section, index) => (
@@ -261,7 +266,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
                     className="cn-focus-ring flex items-center gap-2 rounded-lg border border-white/8 bg-black/28 px-3 py-2 text-xs text-white/42 transition-colors hover:border-cyan-300/24 hover:text-cyan-100"
                   >
                     <span className="font-mono text-cyan-200/55">{index + 1}</span>
-                    <span className="min-w-0 truncate">{section.heading}</span>
+                    <span className="min-w-0 truncate">{tr(section.heading)}</span>
                   </a>
                 ))}
               </div>
@@ -269,13 +274,14 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
 
             <MentorAside
               codename={codename}
-              line={`这一关的核心是“${teaching.concept}”。先把目标说清楚，再写最短代码。别在第一步就把自己绕进框架里。`}
+              line={`${tr('这一关的核心是')}“${teaching.concept}”${tr('。先把目标说清楚，再写最短代码。别在第一步就把自己绕进框架里。')}`}
+              tr={tr}
             />
 
             <section className="rounded-lg border border-cyan-300/12 bg-cyan-300/[0.035] p-4">
               <div className="mb-3 flex items-center gap-2">
                 <ListChecks className="h-4 w-4 text-cyan-200/70" />
-                <p className="text-sm font-semibold text-white/74">动手前检查</p>
+                <p className="text-sm font-semibold text-white/74">{tr('动手前检查')}</p>
               </div>
               <div className="grid gap-2">
                 {teaching.learnFirst.map((item, index) => (
@@ -290,7 +296,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
             <section className="rounded-lg border border-white/8 bg-black/38 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-cyan-200/70" />
-                <p className="text-sm font-semibold text-white/74">术语速查</p>
+                <p className="text-sm font-semibold text-white/74">{tr('术语速查')}</p>
               </div>
               <div className="grid gap-2">
                 {teaching.vocabulary.map((item) => (
@@ -305,7 +311,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
             <section className="rounded-lg border border-red-300/12 bg-red-400/[0.035] p-4">
               <div className="mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-red-200/70" />
-                <p className="text-sm font-semibold text-white/74">常见坑</p>
+                <p className="text-sm font-semibold text-white/74">{tr('常见坑')}</p>
               </div>
               <div className="grid gap-2">
                 {teaching.pitfalls.map((pitfall) => (
@@ -320,7 +326,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
             <section className="rounded-lg border border-white/8 bg-black/38 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-cyan-200/70" />
-                <p className="text-sm font-semibold text-white/74">加餐</p>
+                <p className="text-sm font-semibold text-white/74">{tr('加餐')}</p>
               </div>
               <p className="text-xs leading-relaxed text-white/42">{teaching.stretchGoal}</p>
               <motion.div
@@ -333,7 +339,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
             <section className="rounded-lg border border-white/8 bg-white/[0.025] p-4">
               <div className="mb-3 flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-cyan-200/70" />
-                <p className="text-sm font-semibold text-white/74">读完自测</p>
+                <p className="text-sm font-semibold text-white/74">{tr('读完自测')}</p>
               </div>
               <div className="grid gap-2">
                 {teaching.reviewQuestions.map((question, index) => (

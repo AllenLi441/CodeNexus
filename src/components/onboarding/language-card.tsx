@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { useTr } from '@/contexts/language-context'
 
 type Language = {
   id: string
@@ -66,6 +67,7 @@ export function LanguageSelector({ selected, onSelect }: {
   selected: string
   onSelect: (id: string) => void
 }) {
+  const tr = useTr()
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {languages.map((lang) => (
@@ -89,7 +91,7 @@ export function LanguageSelector({ selected, onSelect }: {
           <span className="font-mono text-2xl leading-none text-cyan-200">{lang.icon}</span>
           <div className="space-y-1">
             <p className="font-semibold text-sm">{lang.name}</p>
-            <p className="text-xs text-muted-foreground leading-snug">{lang.tagline}</p>
+            <p className="text-xs text-muted-foreground leading-snug">{tr(lang.tagline)}</p>
           </div>
           {selected === lang.id && lang.active && (
             <span className="absolute top-2 right-2 text-primary text-sm">✓</span>

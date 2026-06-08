@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { LockKeyhole, Trophy } from 'lucide-react'
 import { ACHIEVEMENTS, RARITY_STYLES } from '@/lib/achievements'
+import { useTr } from '@/contexts/language-context'
 
 const RARITY_LABELS = {
   common: '普通',
@@ -12,6 +13,7 @@ const RARITY_LABELS = {
 }
 
 export function AchievementCabinet({ earnedIds }: { earnedIds: string[] }) {
+  const tr = useTr()
   const earned = new Set(earnedIds)
   const earnedCount = earnedIds.length
 
@@ -22,7 +24,7 @@ export function AchievementCabinet({ earnedIds }: { earnedIds: string[] }) {
           <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-cyan-300/36">Signal Cabinet</p>
           <h2 className="mt-1 inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground">
             <Trophy className="h-4 w-4 text-primary/70" />
-            成就矩阵
+            {tr('成就矩阵')}
           </h2>
         </div>
         <span className="rounded border border-primary/16 bg-primary/5 px-2.5 py-1 font-mono text-xs tabular-nums text-primary">
@@ -53,7 +55,7 @@ export function AchievementCabinet({ earnedIds }: { earnedIds: string[] }) {
                   isEarned ? styles.badge : 'text-white/22'
                 }`}
               >
-                {RARITY_LABELS[achievement.rarity]}
+                {tr(RARITY_LABELS[achievement.rarity])}
               </div>
 
               <div className="mb-3 mt-3 flex justify-center">
@@ -69,13 +71,13 @@ export function AchievementCabinet({ earnedIds }: { earnedIds: string[] }) {
               <p className={`text-xs font-semibold leading-snug ${
                 isEarned ? 'text-white/82' : 'text-white/28'
               }`}>
-                {achievement.secret && !isEarned ? '隐藏成就' : achievement.name}
+                {achievement.secret && !isEarned ? tr('隐藏成就') : tr(achievement.name)}
               </p>
 
               <p className={`text-[10px] leading-relaxed mt-1 ${
                 isEarned ? 'text-white/38' : 'text-transparent'
               }`}>
-                {achievement.description}
+                {tr(achievement.description)}
               </p>
 
               {isEarned && (
@@ -92,7 +94,7 @@ export function AchievementCabinet({ earnedIds }: { earnedIds: string[] }) {
 
       {earnedCount === 0 && (
         <p className="py-4 text-center text-sm text-ink-mute">
-          跑通第一段代码，第一枚成就就会在这里亮起来。
+          {tr('跑通第一段代码，第一枚成就就会在这里亮起来。')}
         </p>
       )}
     </section>

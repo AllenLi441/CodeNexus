@@ -58,6 +58,8 @@ import {
   type LearningProfile,
 } from '@/lib/learning-profile'
 import { rememberAssistantEvent } from '@/lib/assistant-persona'
+import { useTr } from '@/contexts/language-context'
+import { LanguageToggle } from '@/components/ui/language-toggle'
 import Link from 'next/link'
 
 const CodeEditor = dynamic(() => import('./code-editor').then((m) => m.CodeEditor), {
@@ -158,6 +160,7 @@ export function PythonRunner({
   mode = 'authenticated',
 }: LanguageRunnerProps) {
   const router = useRouter()
+  const tr = useTr()
   const isGuestPlay = mode === 'guest-play'
   const { settings } = useCommandSettings(initialSettings)
   const language = useMemo(() => getLanguageModule(languageId), [languageId])
@@ -190,9 +193,9 @@ export function PythonRunner({
   // ── Pyodide ──────────────────────────────────────────────────────────────────
   const [pyStatus, setPyStatus] = useState<PyodideStatus>(() => language.runtime === 'python-pyodide' ? 'idle' : 'ready')
   const [statusMsg, setStatusMsg] = useState(() => {
-    if (language.runtime === 'python-pyodide') return '准备中'
-    if (language.runtime === 'server-exec') return `${language.name} 真实运行器已就绪`
-    return `${language.name} 检查器已就绪`
+    if (language.runtime === 'python-pyodide') return tr('准备中')
+    if (language.runtime === 'server-exec') return `${language.name} ${tr('真实运行器已就绪')}`
+    return `${language.name} ${tr('检查器已就绪')}`
   })
   const [loadProgress, setLoadProgress] = useState(() => language.runtime === 'python-pyodide' ? 0 : 100)
   const [graphicsLoading, setGraphicsLoading] = useState(false)
@@ -253,8 +256,8 @@ export function PythonRunner({
       setStatusMsg(msg)
       setLoadProgress((p) => Math.min(p + 25, 90))
     })
-      .then(() => { setPyStatus('ready'); setStatusMsg('Python 已就绪'); setLoadProgress(100) })
-      .catch(() => { setPyStatus('error'); setStatusMsg('加载失败，请刷新页面') })
+      .then(() => { setPyStatus('ready'); setStatusMsg(`Python ${tr('已就绪')}`); setLoadProgress(100) })
+      .catch(() => { setPyStatus('error'); setStatusMsg(tr('加载失败，请刷新页面')) })
   }, [language.name, language.runtime])
 
   // ── Fetch earned achievements on mount ───────────────────────────────────────
@@ -447,8 +450,8 @@ export function PythonRunner({
     uniqueIds.forEach((id) => {
       const a = ACHIEVEMENT_MAP.get(id)
       if (a) {
-        toast.success(`解锁成就：${a.icon} ${a.name}`, {
-          description: a.description,
+        toast.success(`${tr('解锁成就')}：${a.icon} ${tr(a.name)}`, {
+          description: tr(a.description),
           duration: 5000,
         })
       }
@@ -487,10 +490,10 @@ export function PythonRunner({
       if (runawayReason) {
         const result: RunResult = {
           output: '',
-          error: `Nexus 预检拦截：${runawayReason}`,
+          error: `${tr('Nexus 预检拦截')}：${tr(runawayReason)}`,
           imageBase64: null,
           executionMs: 1,
-          speedTier: { emoji: '⚠', label: '1ms', percentile: '运行前拦截' },
+          speedTier: { emoji: '⚠', label: '1ms', percentile: tr('运行前拦截') },
         }
         const entry: TerminalEntry = {
           id: Date.now().toString(),
@@ -598,12 +601,12 @@ export function PythonRunner({
               }),
               result: {
                 output:
-                  '结构检查通过 —— 但代码并没有真正编译运行，因此不计入通关。\n' +
-                  '登录后用「在线运行」真实编译运行、按程序输出判题，才能正式通过本关。',
+                  tr('结构检查通过 —— 但代码并没有真正编译运行，因此不计入通关。') + '\n' +
+                  tr('登录后用「在线运行」真实编译运行、按程序输出判题，才能正式通过本关。'),
                 error: '',
                 imageBase64: null,
                 executionMs: 1,
-                speedTier: { emoji: 'ℹ️', label: '预览', percentile: '结构检查' },
+                speedTier: { emoji: 'ℹ️', label: tr('预览'), percentile: tr('结构检查') },
               },
             },
           ])
@@ -738,7 +741,7 @@ export function PythonRunner({
     : null
   const assistantRunMessage = latestEntry?.result.error
     || failedHints[0]
-    || (lastTestResult?.passed ? `刚通过 ${level.title}` : undefined)
+    || (lastTestResult?.passed ? `${tr('刚通过')} ${tr(level.title)}` : undefined)
   const failureDiagnosis = lastTestResult && !lastTestResult.passed
     ? getFailureDiagnosis({
         languageName: language.name,
@@ -755,13 +758,13 @@ export function PythonRunner({
       className="cn-focus-ring flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-cyan-300 px-3 py-1.5 text-xs font-semibold text-black shadow-lg shadow-cyan-950/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-40 sm:gap-2 sm:px-4 sm:text-sm"
     >
       {!briefingComplete ? (
-        <><BookOpen className="h-3.5 w-3.5" /><span className="hidden min-[420px]:inline">先看教学</span><span className="min-[420px]:hidden">教学</span></>
+        <><BookOpen className="h-3.5 w-3.5" /><span className="hidden min-[420px]:inline">{tr('先看教学')}</span><span className="min-[420px]:hidden">{tr('教学')}</span></>
       ) : isRunning ? (
-        <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span className="hidden min-[420px]:inline">运行中</span><span className="min-[420px]:hidden">运行</span></>
+        <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span className="hidden min-[420px]:inline">{tr('运行中')}</span><span className="min-[420px]:hidden">{tr('运行')}</span></>
       ) : graphicsLoading ? (
-        <><PackageOpen className="h-3.5 w-3.5" /><span className="hidden min-[420px]:inline">准备中</span><span className="min-[420px]:hidden">准备</span></>
+        <><PackageOpen className="h-3.5 w-3.5" /><span className="hidden min-[420px]:inline">{tr('准备中')}</span><span className="min-[420px]:hidden">{tr('准备')}</span></>
       ) : (
-        <><Play className="h-3.5 w-3.5 fill-black" />运行</>
+        <><Play className="h-3.5 w-3.5 fill-black" />{tr('运行')}</>
       )}
     </button>
   )
@@ -770,7 +773,7 @@ export function PythonRunner({
     <div className="flex-shrink-0 border-b border-cyan-300/10 bg-cyan-300/[0.035] px-4 py-2">
       <p className="flex items-start gap-2 text-[11px] leading-relaxed text-cyan-50/54">
         <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-cyan-200/70" />
-        <span><span className="font-semibold text-cyan-100/72">{runtimeCopy.title}：</span>{runtimeCopy.body}</span>
+        <span><span className="font-semibold text-cyan-100/72">{tr(runtimeCopy.title)}：</span>{tr(runtimeCopy.body)}</span>
       </p>
     </div>
   )
@@ -780,19 +783,19 @@ export function PythonRunner({
       <div className="rounded-lg border border-amber-300/18 bg-amber-400/[0.055] px-3 py-2">
         <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-100/85">
           <AlertTriangle className="h-3.5 w-3.5" />
-          当前卡点：{failureDiagnosis.area}
-          {failureDiagnosis.directMode && <span className="ml-auto rounded border border-amber-200/20 px-1.5 py-0.5 text-[10px] text-amber-100/60">直接提示</span>}
+          {tr('当前卡点')}：{tr(failureDiagnosis.area)}
+          {failureDiagnosis.directMode && <span className="ml-auto rounded border border-amber-200/20 px-1.5 py-0.5 text-[10px] text-amber-100/60">{tr('直接提示')}</span>}
         </p>
-        <p className="mt-1 text-[11px] leading-relaxed text-amber-100/62">{failureDiagnosis.reason}</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-amber-100/62">{tr(failureDiagnosis.reason)}</p>
         <p className="mt-1 text-[11px] leading-relaxed text-white/52">
-          下一步：{failureDiagnosis.directMode ? failureDiagnosis.nextStep : `${failureDiagnosis.nextStep} 先只改这一处。`}
-          <span className="text-emerald-200/70">再试一次，你离通过很近。</span>
+          {tr('下一步')}：{failureDiagnosis.directMode ? tr(failureDiagnosis.nextStep) : `${tr(failureDiagnosis.nextStep)} ${tr('先只改这一处。')}`}
+          <span className="text-emerald-200/70">{tr('再试一次，你离通过很近。')}</span>
         </p>
       </div>
       {lastTestResult.results.filter((r) => !r.passed).map((r) => (
         <p key={r.id} className="flex items-start gap-1.5 text-xs text-amber-200/75">
           <XCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-300/80" />
-          {r.hint}
+          {tr(r.hint)}
         </p>
       ))}
     </div>
@@ -814,11 +817,11 @@ export function PythonRunner({
       )}
       <button
         onClick={() => { setEntries([]); setLastTestResult(null) }}
-        aria-label="清空终端输出"
+        aria-label={tr('清空终端输出')}
         className="cn-focus-ring inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] text-white/30 transition-colors hover:bg-white/[0.04] hover:text-white/55"
       >
         <Eraser className="h-3 w-3" />
-        清空
+        {tr('清空')}
       </button>
     </div>
   )
@@ -828,7 +831,7 @@ export function PythonRunner({
       {graphicsLoading && (
         <span className="hidden flex-shrink-0 items-center gap-1.5 text-xs text-cyan-300/70 sm:inline-flex">
           <PackageOpen className="h-3.5 w-3.5 animate-pulse" />
-          载入绘图库
+          {tr('载入绘图库')}
         </span>
       )}
       {!graphicsLoading && pyStatus === 'loading' && (
@@ -842,7 +845,7 @@ export function PythonRunner({
       {!graphicsLoading && pyStatus === 'ready' && (
         <span className="text-xs text-emerald-400/70 flex items-center gap-1 flex-shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-          <span className="hidden sm:inline">就绪</span>
+          <span className="hidden sm:inline">{tr('就绪')}</span>
         </span>
       )}
       {pyStatus === 'error' && (
@@ -864,7 +867,7 @@ export function PythonRunner({
       <header className="relative z-10 flex min-h-12 max-w-full flex-shrink-0 flex-wrap items-center gap-2 overflow-hidden border-b border-cyan-300/12 bg-black/90 px-2 py-2 sm:gap-3 sm:px-4 md:h-12 md:flex-nowrap md:py-0">
         <Link href={isGuestPlay ? `/play?language=${language.route}` : '/dashboard'} className="cn-focus-ring flex flex-shrink-0 items-center gap-1.5 rounded px-1.5 py-1 text-sm text-white/30 transition-colors hover:bg-white/[0.04] hover:text-white/60">
           <ArrowLeft className="h-3.5 w-3.5" />
-          <span className="hidden min-[420px]:inline">{isGuestPlay ? '主界面' : '返回'}</span>
+          <span className="hidden min-[420px]:inline">{isGuestPlay ? tr('主界面') : tr('返回')}</span>
         </Link>
         <div className="w-px h-5 bg-white/10 flex-shrink-0" />
         <div className="hidden min-w-0 sm:block">
@@ -874,7 +877,7 @@ export function PythonRunner({
           <CodeNexusLogo className="flex-shrink-0 text-white" size={24} />
           <div className="min-w-0">
             <p className="truncate font-mono text-xs font-semibold text-white/78">{language.shortName} Lv.{level.id}</p>
-            <p className="truncate text-[10px] text-white/32">{level.title}</p>
+            <p className="truncate text-[10px] text-white/32">{tr(level.title)}</p>
           </div>
         </div>
 
@@ -882,19 +885,20 @@ export function PythonRunner({
         <div className="hidden md:flex w-px h-5 bg-white/10 flex-shrink-0" />
         <div className="hidden md:flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-md px-2.5 py-1 text-xs text-white/60 flex-shrink-0">
           <span>{level.icon}</span>
-          <span className="font-mono">{language.shortName} · Lv.{level.id} · {level.badge}</span>
+          <span className="font-mono">{language.shortName} · Lv.{level.id} · {tr(level.badge)}</span>
         </div>
 
         <div className="flex-1" />
 
+        <LanguageToggle variant="badge" />
         {pyStatusIndicator}
         {isGuestPlay ? (
           <Link
             href="/register?from=play"
             className="cn-focus-ring inline-flex h-8 flex-shrink-0 items-center rounded-lg border border-cyan-300/24 bg-cyan-300/10 px-2 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/18 sm:px-3"
           >
-            <span className="sm:hidden">注册</span>
-            <span className="hidden sm:inline">保存进度</span>
+            <span className="sm:hidden">{tr('注册')}</span>
+            <span className="hidden sm:inline">{tr('保存进度')}</span>
           </Link>
         ) : (
           <CommandCenter
@@ -906,8 +910,8 @@ export function PythonRunner({
         {/* Sound toggle */}
         <button
           onClick={toggleSound}
-          title={soundOn ? '关闭音效' : '开启音效'}
-          aria-label={soundOn ? '关闭音效' : '开启音效'}
+          title={soundOn ? tr('关闭音效') : tr('开启音效')}
+          aria-label={soundOn ? tr('关闭音效') : tr('开启音效')}
           aria-pressed={soundOn}
           className="cn-focus-ring flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-white/30 transition-colors hover:bg-white/[0.04] hover:text-white/70"
         >
@@ -937,17 +941,17 @@ export function PythonRunner({
         <main className="flex-1 flex flex-col overflow-hidden border-r border-white/8">
           <div className="h-8 flex-shrink-0 flex items-center px-4 border-b border-white/5 bg-[var(--code-bg-elevated)] gap-3">
             <span className="text-white/20 text-[10px] uppercase tracking-widest">
-              {briefingComplete ? 'The Lab · 代码节点' : 'The Briefing · 教学引导'}
+              {briefingComplete ? tr('The Lab · 代码节点') : tr('The Briefing · 教学引导')}
             </span>
             {lastTestResult && (
               <div className="flex gap-1.5">
                 {lastTestResult.results.map((r) => (
-                  <span key={r.id} title={r.passed ? '测试通过' : r.hint}
+                  <span key={r.id} title={r.passed ? tr('测试通过') : tr(r.hint)}
                     className={`w-2 h-2 rounded-full ${r.passed ? 'bg-emerald-400' : 'bg-red-400'}`} />
                 ))}
               </div>
             )}
-            <span className="ml-auto text-[10px] text-white/15">运行控制</span>
+            <span className="ml-auto text-[10px] text-white/15">{tr('运行控制')}</span>
           </div>
           {runtimeModeBar}
           {briefingComplete ? (
@@ -967,7 +971,7 @@ export function PythonRunner({
         {/* Result */}
         <aside className={`${resultPanelWidth} flex flex-shrink-0 flex-col overflow-hidden transition-[width] duration-500`}>
           <div className="h-8 flex-shrink-0 flex items-center px-4 border-b border-white/5 bg-[var(--code-bg)] gap-2">
-            <span className="text-white/20 text-[10px] uppercase tracking-widest">The Result · 输出</span>
+            <span className="text-white/20 text-[10px] uppercase tracking-widest">{tr('The Result · 输出')}</span>
             <div className="ml-auto">{outputControls}</div>
           </div>
           <div className="flex-1 overflow-hidden">
@@ -1024,7 +1028,7 @@ export function PythonRunner({
           {mobileTab === 'output' && (
             <div className="h-full flex flex-col overflow-hidden">
               <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-white/5 bg-[var(--code-bg)]">
-                <span className="text-white/20 text-[10px] uppercase tracking-widest">结果</span>
+                <span className="text-white/20 text-[10px] uppercase tracking-widest">{tr('结果')}</span>
                 <div className="ml-auto">{outputControls}</div>
               </div>
               <div className="flex-1 overflow-hidden">
@@ -1060,7 +1064,7 @@ export function PythonRunner({
                 }`}
               >
                 <Icon className="h-4 w-4" />
-                <span>{tab.label}</span>
+                <span>{tr(tab.label)}</span>
               </button>
             )
           })}
@@ -1082,15 +1086,15 @@ export function PythonRunner({
           >
             <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-300" />
             <div className="text-xs leading-relaxed text-white/72">
-              检测到代码运行超过 8 秒——可能死循环。
-              <span className="text-white/35"> 编辑器内容已保存。</span>
+              {tr('检测到代码运行超过 8 秒——可能死循环。')}
+              <span className="text-white/35"> {tr('编辑器内容已保存。')}</span>
             </div>
             <button
               type="button"
               onClick={() => window.location.reload()}
               className="cn-focus-ring flex-shrink-0 rounded-lg bg-red-400/95 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-400"
             >
-              强制停止
+              {tr('强制停止')}
             </button>
           </motion.div>
         )}

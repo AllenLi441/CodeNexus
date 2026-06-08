@@ -1,7 +1,7 @@
 'use client'
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
-import { type Lang, LANG_COOKIE, DEFAULT_LANG, TRANSLATIONS } from '@/lib/i18n'
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { type Lang, LANG_COOKIE, DEFAULT_LANG, TRANSLATIONS, translate } from '@/lib/i18n'
 
 // Use a loose type so both zh/en translations are assignable
 type AnyTranslation = typeof TRANSLATIONS.zh | typeof TRANSLATIONS.en
@@ -45,4 +45,11 @@ export function LanguageProvider({ children, initialLang }: { children: ReactNod
 
 export function useLanguage() {
   return useContext(LanguageContext)
+}
+
+// Convenience hook: returns a `tr('中文')` function bound to the current language.
+// Wrap display strings with it — missing translations fall back to Chinese.
+export function useTr() {
+  const { lang } = useLanguage()
+  return useMemo(() => (zh: string) => translate(zh, lang), [lang])
 }

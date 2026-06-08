@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LanguageToggle } from '@/components/ui/language-toggle'
-import { useLanguage } from '@/contexts/language-context'
+import { useLanguage, useTr } from '@/contexts/language-context'
 import { login, register } from '@/app/(auth)/actions'
 import { BrandHeader } from '@/components/layout/logo'
 
@@ -48,6 +48,7 @@ function getSupabaseDashboardUrl() {
 
 export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: string }) {
   const { t } = useLanguage()
+  const tr = useTr()
   const isLogin = mode === 'login'
   const strings = isLogin ? t.auth.login : t.auth.register
 
@@ -113,10 +114,10 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
             <div className="mt-14 space-y-5">
               <p className="font-mono text-xs uppercase tracking-[0.36em] text-cyan-200/50">AI Programming Campus</p>
               <h1 className="text-balance text-5xl font-semibold leading-[1.04] tracking-tight text-foreground">
-                先把代码跑起来，再谈长期学习。
+                {tr('先把代码跑起来，再谈长期学习。')}
               </h1>
               <p className="max-w-lg text-pretty text-base leading-8 text-ink-soft">
-                CodeNexus 把课程讲解、练习编辑器、运行反馈和小助手合到一个工作台里。不是把视频搬进网页，而是让你边理解边动手。
+                {tr('CodeNexus 把课程讲解、练习编辑器、运行反馈和小助手合到一个工作台里。不是把视频搬进网页，而是让你边理解边动手。')}
               </p>
             </div>
 
@@ -127,7 +128,7 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
                   className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.035] px-4 py-3 text-sm text-white/68 backdrop-blur"
                 >
                   <CheckCircle2 className="h-4 w-4 text-cyan-200" />
-                  <span>{point}</span>
+                  <span>{tr(point)}</span>
                 </div>
               ))}
             </div>
@@ -144,12 +145,12 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
               <div className="grid gap-4 py-4 sm:grid-cols-[0.8fr_1fr]">
                 <div className="rounded-xl border border-cyan-200/12 bg-cyan-200/[0.045] p-4">
                   <TerminalSquare className="h-5 w-5 text-cyan-100" />
-                  <p className="mt-4 text-sm font-semibold text-white">第一课不是看完就算</p>
-                  <p className="mt-2 text-xs leading-6 text-white/42">读教学、写代码、看运行结果，然后再进入下一步。</p>
+                  <p className="mt-4 text-sm font-semibold text-white">{tr('第一课不是看完就算')}</p>
+                  <p className="mt-2 text-xs leading-6 text-white/42">{tr('读教学、写代码、看运行结果，然后再进入下一步。')}</p>
                 </div>
                 <div className="space-y-2 rounded-xl border border-white/8 bg-black/40 p-4 font-mono text-xs text-white/44">
                   <p><span className="text-cyan-200">1</span> print(&quot;Hello, CodeNexus&quot;)</p>
-                  <p><span className="text-cyan-200">2</span> # 运行后马上看到反馈</p>
+                  <p><span className="text-cyan-200">2</span> {tr('# 运行后马上看到反馈')}</p>
                   <p className="pt-2 text-[var(--code-green)]">Output: Hello, CodeNexus</p>
                 </div>
               </div>
@@ -224,11 +225,11 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-200" />
                       )}
                       <div className="space-y-1">
-                        <p className="font-semibold">{serviceOffline ? '认证服务离线' : '登录请求失败'}</p>
+                        <p className="font-semibold">{serviceOffline ? tr('认证服务离线') : tr('登录请求失败')}</p>
                         <p className="leading-6 opacity-80">{errorMessage}</p>
                         {serviceOffline && (
                           <p className="text-xs leading-5 opacity-64">
-                            这个需要在 Supabase Dashboard 恢复项目 ZeroForge。恢复后不用改代码，刷新再登录即可。
+                            {tr('这个需要在 Supabase Dashboard 恢复项目 ZeroForge。恢复后不用改代码，刷新再登录即可。')}
                           </p>
                         )}
                         {supabaseDashboardUrl && (
@@ -238,7 +239,7 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
                             rel="noreferrer"
                             className="mt-2 inline-flex text-xs font-semibold text-amber-100 underline underline-offset-4 hover:text-white"
                           >
-                            打开 Supabase 项目
+                            {tr('打开 Supabase 项目')}
                           </a>
                         )}
                       </div>
@@ -262,7 +263,7 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
                   className="cn-focus-ring inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-4 text-sm font-semibold text-white/74 transition-all duration-300 hover:border-cyan-200/26 hover:bg-cyan-200/[0.07] hover:text-white"
                 >
                   <Play className="h-4 w-4" />
-                  先不注册，进入试玩主界面
+                  {tr('先不注册，进入试玩主界面')}
                 </Link>
               </div>
             </form>
@@ -283,13 +284,13 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-white/8 bg-white/[0.035] p-4 text-sm text-white/52 backdrop-blur">
               <Sparkles className="h-4 w-4 text-cyan-200" />
-              <p className="mt-3 font-semibold text-white/78">新手友好</p>
-              <p className="mt-1 text-xs leading-5 text-white/38">先读教学，再进入空编辑器实践。</p>
+              <p className="mt-3 font-semibold text-white/78">{tr('新手友好')}</p>
+              <p className="mt-1 text-xs leading-5 text-white/38">{tr('先读教学，再进入空编辑器实践。')}</p>
             </div>
             <div className="rounded-xl border border-white/8 bg-white/[0.035] p-4 text-sm text-white/52 backdrop-blur">
               <Code2 className="h-4 w-4 text-cyan-200" />
-              <p className="mt-3 font-semibold text-white/78">多语言路线</p>
-              <p className="mt-1 text-xs leading-5 text-white/38">Python、C、C++、Java、C#、JS、VB。</p>
+              <p className="mt-3 font-semibold text-white/78">{tr('多语言路线')}</p>
+              <p className="mt-1 text-xs leading-5 text-white/38">{tr('Python、C、C++、Java、C#、JS、VB。')}</p>
             </div>
           </div>
 

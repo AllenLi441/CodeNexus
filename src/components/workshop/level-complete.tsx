@@ -4,8 +4,9 @@ import { motion } from 'framer-motion'
 import { useEffect } from 'react'
 import { ArrowRight, Check, GraduationCap, Map, PackageCheck, ScanSearch, Wrench } from 'lucide-react'
 import type { Level } from '@/lib/levels'
-import { createCompletionReview, type LearningProfile } from '@/lib/learning-profile'
+import { createCompletionReview, localizeProjectTitle, type LearningProfile } from '@/lib/learning-profile'
 import { appleEase, appleSpring, quickFade, softSpring } from '@/lib/motion'
+import { useTr } from '@/contexts/language-context'
 
 type LevelCompleteProps = {
   levelId: number
@@ -49,11 +50,12 @@ export function LevelCompleteOverlay({
   onDashboard,
   onRegister,
 }: LevelCompleteProps) {
+  const tr = useTr()
   const level = levels.find((l) => l.id === levelId)
   const nextLevel = levels.find((l) => l.id === levelId + 1)
   const sparkAngles = Array.from({ length: 16 }, (_, i) => i * 22.5)
   const review = level
-    ? createCompletionReview({ languageName, languageId, level, profile: learningProfile })
+    ? createCompletionReview({ languageName, languageId, level, profile: learningProfile, tr })
     : null
 
   useEffect(() => {
@@ -104,15 +106,15 @@ export function LevelCompleteOverlay({
           className="mb-6 space-y-2"
         >
           <p className="font-mono text-xs font-medium uppercase tracking-[0.24em] text-cyan-300/42">
-            {languageName} · {level?.badge} 完成
+            {languageName} · {level?.badge ? tr(level.badge) : ''} {tr('完成')}
           </p>
-          <h2 className="text-2xl font-bold text-white">{level?.title}</h2>
+          <h2 className="text-2xl font-bold text-white">{level?.title ? tr(level.title) : ''}</h2>
           {demoMode ? (
-            <p className="text-sm font-semibold text-cyan-200">试玩通过，进度还没保存。注册后接着学，不用重打。</p>
+            <p className="text-sm font-semibold text-cyan-200">{tr('试玩通过，进度还没保存。注册后接着学，不用重打。')}</p>
           ) : alreadyCompleted ? (
-            <p className="text-sm text-white/40">这个节点你已经通关过，重练一遍同样算数。</p>
+            <p className="text-sm text-white/40">{tr('这个节点你已经通关过，重练一遍同样算数。')}</p>
           ) : (
-            <p className="text-sm font-semibold text-[var(--code-green)]">测试全部通过，节点已写入进度。</p>
+            <p className="text-sm font-semibold text-[var(--code-green)]">{tr('测试全部通过，节点已写入进度。')}</p>
           )}
         </motion.div>
 
@@ -126,28 +128,28 @@ export function LevelCompleteOverlay({
             <div className="rounded-lg border border-cyan-300/14 bg-cyan-300/[0.04] p-3">
               <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-cyan-100/76">
                 <GraduationCap className="h-3.5 w-3.5" />
-                刚学会
+                {tr('刚学会')}
               </p>
               <p className="text-[11px] leading-relaxed text-white/42">{review.learned}</p>
             </div>
             <div className="rounded-lg border border-amber-300/14 bg-amber-300/[0.035] p-3">
               <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-amber-100/76">
                 <ScanSearch className="h-3.5 w-3.5" />
-                错因复盘
+                {tr('错因复盘')}
               </p>
               <p className="text-[11px] leading-relaxed text-white/42">{review.mistake}</p>
             </div>
             <div className="rounded-lg border border-white/8 bg-white/[0.025] p-3">
               <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-white/68">
                 <Wrench className="h-3.5 w-3.5 text-cyan-200/70" />
-                真实用途
+                {tr('真实用途')}
               </p>
               <p className="text-[11px] leading-relaxed text-white/38">{review.realUse}</p>
             </div>
             <div className="rounded-lg border border-white/8 bg-white/[0.025] p-3">
               <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-white/68">
                 <ArrowRight className="h-3.5 w-3.5 text-cyan-200/70" />
-                下一步
+                {tr('下一步')}
               </p>
               <p className="text-[11px] leading-relaxed text-white/38">{review.nextFocus}</p>
             </div>
@@ -155,10 +157,10 @@ export function LevelCompleteOverlay({
               <div className="rounded-lg border border-emerald-300/16 bg-emerald-300/[0.045] p-3 sm:col-span-2">
                 <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-emerald-100/78">
                   <PackageCheck className="h-3.5 w-3.5" />
-                  阶段作品解锁 · {review.project.title}
+                  {tr('阶段作品解锁')} · {localizeProjectTitle(review.project.title, languageName, tr)}
                 </p>
-                <p className="text-[11px] leading-relaxed text-white/42">{review.project.brief}</p>
-                <p className="mt-1 text-[11px] leading-relaxed text-emerald-100/52">交付：{review.project.deliverable}</p>
+                <p className="text-[11px] leading-relaxed text-white/42">{tr(review.project.brief)}</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-emerald-100/52">{tr('交付')}：{tr(review.project.deliverable)}</p>
               </div>
             )}
           </motion.div>
@@ -176,7 +178,7 @@ export function LevelCompleteOverlay({
               className="flex items-center gap-1.5 rounded-lg border border-[color-mix(in_oklab,var(--code-green)_30%,transparent)] bg-[color-mix(in_oklab,var(--code-green)_10%,transparent)] px-2.5 py-1 text-xs text-[color-mix(in_oklab,var(--code-green)_88%,white)]"
             >
               <Check className="h-3 w-3" />
-              <span>{t.description}</span>
+              <span>{tr(t.description)}</span>
             </div>
           ))}
         </motion.div>
@@ -193,7 +195,7 @@ export function LevelCompleteOverlay({
             className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg border border-hairline bg-transparent px-4 py-2 text-sm font-semibold text-ink-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-300/30 hover:text-cyan-100 active:scale-[0.98]"
           >
             {demoMode && nextLevel ? <ArrowRight className="h-4 w-4" /> : <Map className="h-4 w-4" />}
-            {demoMode ? (nextLevel ? '下一关' : '回到入口') : '返回地图'}
+            {demoMode ? (nextLevel ? tr('下一关') : tr('回到入口')) : tr('返回地图')}
           </button>
           {demoMode ? (
             <button
@@ -201,7 +203,7 @@ export function LevelCompleteOverlay({
               onClick={onRegister ?? onDashboard}
               className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
             >
-              2 秒注册保存
+              {tr('2 秒注册保存')}
               <ArrowRight className="h-4 w-4" />
             </button>
           ) : nextLevel ? (
@@ -210,7 +212,7 @@ export function LevelCompleteOverlay({
               onClick={onNext}
               className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
             >
-              下一关
+              {tr('下一关')}
               <ArrowRight className="h-4 w-4" />
             </button>
           ) : (
@@ -220,7 +222,7 @@ export function LevelCompleteOverlay({
               className="cn-focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
             >
               <Map className="h-4 w-4" />
-              返回地图
+              {tr('返回地图')}
             </button>
           )}
         </motion.div>

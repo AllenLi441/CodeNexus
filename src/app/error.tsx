@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { AlertTriangle, RotateCcw, Home } from 'lucide-react'
+import { useTr } from '@/contexts/language-context'
 
 export default function Error({
   error,
@@ -11,6 +12,7 @@ export default function Error({
   error: Error & { digest?: string }
   unstable_retry: () => void
 }) {
+  const tr = useTr()
   useEffect(() => {
     console.error('[CodeNexus] segment error:', error)
   }, [error])
@@ -24,12 +26,12 @@ export default function Error({
           </span>
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-red-300/55">System Fault</p>
-            <h1 className="text-lg font-semibold">这一段 Nexus 短路了</h1>
+            <h1 className="text-lg font-semibold">{tr('这一段 Nexus 短路了')}</h1>
           </div>
         </div>
 
         <p className="text-pretty text-sm leading-relaxed text-ink-soft">
-          页面遇到了一个未处理的异常。多数情况是临时的，先点重试一次；不行就回主控台。
+          {tr('页面遇到了一个未处理的异常。多数情况是临时的，先点重试一次；不行就回主控台。')}
         </p>
 
         {error.digest && (
@@ -45,14 +47,14 @@ export default function Error({
             className="cn-focus-ring flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
           >
             <RotateCcw className="h-4 w-4" />
-            重试
+            {tr('重试')}
           </button>
           <Link
             href="/dashboard"
             className="cn-focus-ring flex items-center gap-2 rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-ink-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-300/35 hover:text-cyan-100"
           >
             <Home className="h-4 w-4" />
-            回主控台
+            {tr('回主控台')}
           </Link>
         </div>
       </div>

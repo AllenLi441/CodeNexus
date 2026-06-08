@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import type { CSSProperties } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Check, Copy, Languages, Mic, MicOff, RotateCcw, Send, ShieldCheck, Square, X } from 'lucide-react'
+import { Camera, Check, Copy, Mic, MicOff, RotateCcw, Send, ShieldCheck, Square, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { CommandSettings } from '@/hooks/use-command-settings'
+import { useLanguage, useTr } from '@/contexts/language-context'
 import { appleEase, appleSpring, softSpring } from '@/lib/motion'
 import { MarkdownMessage } from './markdown-message'
 import {
@@ -268,12 +269,8 @@ function guestMentorReply({
   const lower = text.toLowerCase()
   const hasCode = code.trim().length > 0
 
-  if (text.includes('【大白话写代码】')) {
-    return `把大白话变成真正能跑的代码，需要登录后接上云端大脑才行——试玩模式我只能给短提示。\n\n登录后你说一句"我想让它数到 10"，我就直接给你 ${languageName} 代码，并标出每句话对应哪一行。`
-  }
-
   if (!hasCode) {
-    return `试玩模式先不给 ${assistantName} 接云端大脑，别急着失望。\n\n这一关很简单：在编辑器里用 ${languageName} 打印一句指定文本。先写最小代码，再点运行。`
+    return `试玩模式默认只给本地短提示。想让 ${assistantName} 真正接上云端大脑？登录后免费用平台模型，或在命令中心填入你自己的 API Key（DeepSeek / Kimi 都行）。\n\n这一关很简单：在编辑器里用 ${languageName} 打印一句指定文本。先写最小代码，再点运行。`
   }
 
   if (/答案|直接|代码|answer|solution/.test(lower)) {
@@ -284,7 +281,7 @@ function guestMentorReply({
     return '先看终端红字第一行。新手 80% 的问题不是天赋，是引号、括号、大小写这些低级坑在开派对。'
   }
 
-  return '本地试玩小助手只能给短提示，完整版登录后再接云端对话。现在别发散：让代码输出目标文本，跑通第一关再说。'
+  return '本地试玩小助手只能给短提示。登录后免费用平台模型，或在命令中心填入你自己的 API Key 就能开启实时对话。现在别发散：让代码输出目标文本，跑通第一关再说。'
 }
 
 function clampNumber(value: number, min: number, max: number) {
@@ -343,6 +340,7 @@ function ProactiveBubble({
   onAccept: () => void
   onDismiss: () => void
 }) {
+  const tr = useTr()
   return (
     <motion.div
       initial={{ opacity: 0, y: 16, scale: 0.92 }}
@@ -359,7 +357,7 @@ function ProactiveBubble({
       <div className="flex items-start gap-3">
         <AssistantAvatar personaId={personaId} size="sm" active />
         <div className="flex-1 space-y-2">
-          <p className="text-[11px] font-semibold leading-none text-white/82">{assistantName} 插话</p>
+          <p className="text-[11px] font-semibold leading-none text-white/82">{tr(assistantName)} {tr('插话')}</p>
           <div className="line-clamp-4 text-xs leading-relaxed text-white/55">
             <MarkdownMessage text={hint} />
           </div>
@@ -369,14 +367,14 @@ function ProactiveBubble({
               onClick={onAccept}
               className="cn-focus-ring rounded-lg border border-cyan-300/30 bg-cyan-300/14 px-2.5 py-1 text-xs text-cyan-100 transition-colors hover:bg-cyan-300/24"
             >
-              打开
+              {tr('打开')}
             </button>
             <button
               type="button"
               onClick={onDismiss}
               className="cn-focus-ring rounded px-1.5 py-1 text-xs text-white/28 transition-colors hover:text-white/55"
             >
-              略过
+              {tr('略过')}
             </button>
           </div>
         </div>
@@ -390,26 +388,27 @@ function AssistantToolbar({ onCopy, onRetry, copied }: {
   onRetry?: () => void
   copied: boolean
 }) {
+  const tr = useTr()
   return (
     <div className="mt-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
       <button
         type="button"
         onClick={onCopy}
-        title="复制"
+        title={tr('复制')}
         className="cn-focus-ring inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-white/35 transition-colors hover:bg-white/[0.06] hover:text-white/72"
       >
         {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-        {copied ? '已复制' : '复制'}
+        {copied ? tr('已复制') : tr('复制')}
       </button>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          title="让小助手重答"
+          title={tr('让小助手重答')}
           className="cn-focus-ring inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-white/35 transition-colors hover:bg-white/[0.06] hover:text-white/72"
         >
           <RotateCcw className="h-3 w-3" />
-          重答
+          {tr('重答')}
         </button>
       )}
     </div>
@@ -454,6 +453,8 @@ export function AIChat({
   onOpenChange?: (open: boolean) => void
 }) {
   const persona = resolveAssistantPersona(settings.assistantPersona)
+  const { lang } = useLanguage()
+  const tr = useTr()
   const [memory, setMemory] = useState<AssistantMemorySnapshot>(EMPTY_ASSISTANT_MEMORY)
   const [isOpen, setIsOpen] = useState(settings.autoOpenMentor)
   const [ambientHint, setAmbientHint] = useState<string | null>(null)
@@ -737,7 +738,7 @@ export function AIChat({
     if (hasCode) {
       void sendMessage('先观察我当前编辑器里的代码，别直接给完整答案。指出一个最关键的问题和下一步最小修改。')
     } else {
-      setAmbientHint('编辑器还是空的。我能观察空气，但空气不会通关。先写一行最小代码。')
+      setAmbientHint(tr('编辑器还是空的。我能观察空气，但空气不会通关。先写一行最小代码。'))
     }
     setIsOpen(true)
   }
@@ -868,6 +869,8 @@ export function AIChat({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-codenexus-ai-provider': settings.aiProvider,
+          'x-codenexus-lang': lang,
           ...(settings.aiApiKey ? {
             'x-codenexus-ai-key': settings.aiApiKey,
             'x-codenexus-ai-base-url': settings.aiBaseUrl,
@@ -907,7 +910,7 @@ export function AIChat({
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? { ...m, content: '⚠️ 小助手暂时离线。检查网络或稍后再试。' }
+              ? { ...m, content: tr('⚠️ 小助手暂时离线。检查网络或稍后再试。') }
               : m,
           ),
         )
@@ -917,7 +920,7 @@ export function AIChat({
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? { ...m, content: `${m.content}\n\n_（用户中断）_` }
+              ? { ...m, content: `${m.content}\n\n${tr('_（用户中断）_')}` }
               : m,
           ),
         )
@@ -933,17 +936,6 @@ export function AIChat({
       .map((m) => ({ role: m.role, content: m.content }))
   }
 
-  function sendPlainToCode() {
-    const desc = input.trim()
-    if (!desc) {
-      inputRef.current?.focus()
-      return
-    }
-    void sendMessage(
-      `【大白话写代码】把我下面这句大白话，翻译成可运行的 ${languageName} 代码。请：(1) 先给完整代码；(2) 再用一个"我说的话 ↔ 对应代码"的对照，一句一句对上；(3) 最后用一句话鼓励我把它敲进编辑器改一改、自己写一遍。\n\n我想做的是：${desc}`,
-    )
-  }
-
   async function sendMessage(overrideInput?: string) {
     const text = (overrideInput ?? input).trim()
     if (!text || isStreaming) return
@@ -951,7 +943,10 @@ export function AIChat({
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text }
     const assistantId = (Date.now() + 1).toString()
 
-    if (guestMode) {
+    // Trial/guest with no key of their own → local static hints only.
+    // A guest who pasted their own API key in 命令中心 talks to the real model
+    // (their spend); the server accepts guest requests that carry a BYO key.
+    if (guestMode && !settings.aiApiKey.trim()) {
       if (settings.assistantMemory) {
         setMemory(rememberAssistantEvent({
           type: 'chat',
@@ -1076,7 +1071,7 @@ export function AIChat({
                 }
               }}
               className="cn-focus-ring relative block"
-              title={`和 ${persona.name} 互动`}
+              title={tr('和{name}互动').replace('{name}', tr(persona.name))}
             >
               <AssistantCompanionFigure
                 personaId={persona.id}
@@ -1089,33 +1084,33 @@ export function AIChat({
               />
             </button>
             <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 translate-y-1 rounded-lg border border-cyan-300/18 bg-black/94 p-3 text-left opacity-0 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
-              <p className="text-xs font-semibold text-white/86">{persona.name}</p>
+              <p className="text-xs font-semibold text-white/86">{tr(persona.name)}</p>
               <p className="mt-1 text-[11px] leading-relaxed text-white/42">
-                {instantInsight.status}。{hasCode ? '已读当前代码。' : '正在等你写第一行。'}
+                {tr(instantInsight.status)}。{hasCode ? tr('已读当前代码。') : tr('正在等你写第一行。')}
               </p>
-              <p className="mt-1 text-[10px] leading-relaxed text-cyan-100/36">鼠标在：{pointerZone}</p>
-              <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-cyan-100/42">{instantInsight.detail}</p>
+              <p className="mt-1 text-[10px] leading-relaxed text-cyan-100/36">{tr('鼠标在')}：{tr(pointerZone)}</p>
+              <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-cyan-100/42">{tr(instantInsight.detail)}</p>
               <div className="mt-3 grid gap-1.5">
                 <button
                   type="button"
                   onClick={openWithHint}
                   className="cn-focus-ring rounded-md border border-cyan-300/18 bg-cyan-300/10 px-2 py-1.5 text-left text-[11px] font-medium text-cyan-50/78 transition-colors hover:bg-cyan-300/18"
                 >
-                  聊天
+                  {tr('聊天')}
                 </button>
                 <button
                   type="button"
                   onClick={inspectCurrentCode}
                   className="cn-focus-ring rounded-md border border-white/8 bg-white/[0.035] px-2 py-1.5 text-left text-[11px] font-medium text-white/58 transition-colors hover:border-cyan-300/18 hover:text-white/80"
                 >
-                  观察当前代码
+                  {tr('观察当前代码')}
                 </button>
                 <button
                   type="button"
                   onClick={quietForFiveMinutes}
                   className="cn-focus-ring rounded-md px-2 py-1.5 text-left text-[11px] font-medium text-white/32 transition-colors hover:bg-white/[0.04] hover:text-white/58"
                 >
-                  安静 5 分钟
+                  {tr('安静 5 分钟')}
                 </button>
               </div>
             </div>
@@ -1145,42 +1140,42 @@ export function AIChat({
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-none text-white">{persona.name}</p>
+                    <p className="text-sm font-semibold leading-none text-white">{tr(persona.name)}</p>
                     <p className="mt-1 text-[10px] text-cyan-100/45">
-                      {isStreaming ? '正在看你的逻辑...' : guestMode ? `${codename} 的本地试玩助手` : `${codename} 的 ${languageName} 实时小助手`}
+                      {isStreaming ? tr('正在看你的逻辑...') : guestMode ? `${codename} ${tr('的本地试玩助手')}` : `${codename} ${tr('的')} ${languageName} ${tr('实时小助手')}`}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    title="关闭小助手"
+                    title={tr('关闭小助手')}
                     className="cn-focus-ring flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-white/30 transition-colors hover:bg-white/[0.06] hover:text-white/65"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
                 <p className="mt-3 line-clamp-3 text-[11px] leading-relaxed text-white/42">
-                  {instantInsight.status}：{instantInsight.detail}
+                  {tr(instantInsight.status)}：{tr(instantInsight.detail)}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   <span className="rounded border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] text-cyan-100/70">
-                    精致立绘
+                    {tr('精致立绘')}
                   </span>
                   {levelTitle && (
                     <span className="rounded border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] text-cyan-100/70">
-                      {levelTitle}
+                      {tr(levelTitle)}
                     </span>
                   )}
                   {currentCode.trim() && (
                     <span className="rounded border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] text-cyan-100/70">
-                      已读代码
+                      {tr('已读代码')}
                     </span>
                   )}
                   <span className="rounded border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/38">
-                    {guestMode ? '本地试玩' : '实时上下文'}
+                    {guestMode ? tr('本地试玩') : tr('实时上下文')}
                   </span>
                   <span className="rounded border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/38">
-                    鼠标：{pointerZone}
+                    {tr('鼠标')}：{tr(pointerZone)}
                   </span>
                 </div>
               </div>
@@ -1246,11 +1241,11 @@ export function AIChat({
                       ? 'border-red-300/30 bg-red-400/14 text-red-100 hover:bg-red-400/20'
                       : 'border-cyan-300/20 bg-cyan-300/[0.07] text-cyan-50/72 hover:border-cyan-300/34 hover:bg-cyan-300/[0.11]'
                   }`}
-                  title="用浏览器语音识别填入问题"
+                  title={tr('用浏览器语音识别填入问题')}
                 >
                   {voiceStatus === 'listening' ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
                   <span className="truncate">
-                    {voiceStatus === 'listening' ? '停止语音' : mediaPermissionCopy('microphone', mediaAccess.microphone)}
+                    {voiceStatus === 'listening' ? tr('停止语音') : tr(mediaPermissionCopy('microphone', mediaAccess.microphone))}
                   </span>
                 </button>
                 <button
@@ -1258,28 +1253,16 @@ export function AIChat({
                   onClick={() => requestMediaAccess('camera')}
                   disabled={isStreaming || mediaAccess.camera === 'requesting'}
                   className="cn-focus-ring inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-2.5 text-xs font-semibold text-white/54 transition-all duration-200 hover:border-cyan-300/24 hover:bg-cyan-300/[0.065] hover:text-cyan-50/72 disabled:pointer-events-none disabled:opacity-45"
-                  title="为后续图像识别课程预检摄像头权限"
+                  title={tr('为后续图像识别课程预检摄像头权限')}
                 >
                   <Camera className="h-3.5 w-3.5" />
-                  <span className="truncate">{mediaPermissionCopy('camera', mediaAccess.camera)}</span>
+                  <span className="truncate">{tr(mediaPermissionCopy('camera', mediaAccess.camera))}</span>
                 </button>
               </div>
               <p className="mb-2 inline-flex items-start gap-1.5 text-[10px] leading-relaxed text-white/28">
                 <ShieldCheck className="mt-0.5 h-3 w-3 flex-shrink-0 text-cyan-200/42" />
-                <span>{permissionMessage}</span>
+                <span>{tr(permissionMessage)}</span>
               </p>
-              <div className="mb-2 flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={sendPlainToCode}
-                  disabled={isStreaming}
-                  title="用中文描述你想做的事，我帮你写成代码并标出对应关系"
-                  className="cn-focus-ring inline-flex items-center gap-1.5 rounded-lg border border-cyan-300/25 bg-cyan-300/[0.06] px-2.5 py-1 text-[11px] text-cyan-100/80 transition-colors hover:bg-cyan-300/12 disabled:opacity-40"
-                >
-                  <Languages className="h-3 w-3" />
-                  大白话写代码
-                </button>
-              </div>
               <div className="flex items-end gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 transition-colors focus-within:border-cyan-300/45">
                 <textarea
                   ref={inputRef}
@@ -1291,7 +1274,7 @@ export function AIChat({
                       sendMessage()
                     }
                   }}
-                  placeholder={`问${persona.name}，别憋着。`}
+                  placeholder={`${tr('问')}${tr(persona.name)}${tr('，别憋着。')}`}
                   disabled={isStreaming}
                   rows={1}
                   className="max-h-24 flex-1 resize-none bg-transparent text-sm leading-relaxed text-white/85 outline-none placeholder:text-white/20 disabled:opacity-50"
@@ -1300,7 +1283,7 @@ export function AIChat({
                   <Button
                     size="sm"
                     onClick={stopStreaming}
-                    title="停止生成"
+                    title={tr('停止生成')}
                     className="cn-focus-ring h-8 w-8 flex-shrink-0 rounded-lg bg-red-400/90 p-0 text-white hover:bg-red-400"
                   >
                     <Square className="h-3.5 w-3.5" fill="currentColor" />

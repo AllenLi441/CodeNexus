@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { MessageCircle, Sparkles } from 'lucide-react'
 import { resolveAssistantPersona, type AssistantPersonaId } from '@/lib/assistant-persona'
 import { appleEase } from '@/lib/motion'
+import { useTr } from '@/contexts/language-context'
 
 type AssistantCharacterAssets = {
   avatar: string
@@ -106,17 +107,19 @@ export function AssistantAvatar({
   label,
   onClick,
 }: AssistantAvatarProps) {
+  const tr = useTr()
   const persona = resolveAssistantPersona(personaId)
   const assets = characterAssets(persona.id)
   const s = SIZE[size]
   const Wrapper = onClick ? motion.button : motion.div
+  const assistantLabel = label ?? `${tr(persona.name)}${tr(' 小助手')}`
 
   return (
     <Wrapper
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      aria-label={label ?? `${persona.name} 小助手`}
-      title={label ?? `${persona.name} 小助手`}
+      aria-label={assistantLabel}
+      title={assistantLabel}
       whileHover={onClick ? { scale: 1.05, y: -1 } : undefined}
       whileTap={onClick ? { scale: 0.96 } : undefined}
       className={`cn-focus-ring group relative inline-flex ${s.shell} items-center justify-center rounded-full border border-cyan-300/22 bg-[radial-gradient(circle_at_50%_35%,rgba(103,232,249,0.2),rgba(0,0,0,0.78)_68%)] shadow-2xl ${persona.glowClass} ${onClick ? 'cursor-pointer' : ''}`}
@@ -131,7 +134,7 @@ export function AssistantAvatar({
       <span className="absolute inset-0 overflow-hidden rounded-full">
         <Image
           src={assets.avatar}
-          alt={`${persona.name} Q版头像`}
+          alt={`${tr(persona.name)}${tr(' Q版头像')}`}
           fill
           sizes={size === 'lg' ? '80px' : size === 'md' ? '56px' : '36px'}
           className={`object-cover object-[50%_20%] ${s.image}`}
@@ -155,16 +158,17 @@ export function AssistantHoverCard({
   personaId?: AssistantPersonaId
   memoryCount: number
 }) {
+  const tr = useTr()
   const persona = resolveAssistantPersona(personaId)
   return (
     <div className="pointer-events-none absolute bottom-full mb-3 w-44 translate-y-1 rounded-lg border border-cyan-300/18 bg-black/92 p-3 text-left opacity-0 shadow-2xl shadow-cyan-950/35 backdrop-blur-xl transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-      <p className="text-xs font-semibold text-white/85">{persona.name}</p>
-      <p className="mt-1 text-[11px] leading-relaxed text-white/42">{persona.role}</p>
+      <p className="text-xs font-semibold text-white/85">{tr(persona.name)}</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-white/42">{tr(persona.role)}</p>
       <div className="mt-2 flex items-center gap-1.5 rounded-md border border-cyan-300/14 bg-cyan-300/[0.06] px-2 py-1 text-[10px] text-cyan-100/68">
         <MessageCircle className="h-3 w-3" />
-        悬停可唤出对话
+        {tr('悬停可唤出对话')}
       </div>
-      <p className="mt-2 text-[10px] text-white/24">记忆片段：{memoryCount}</p>
+      <p className="mt-2 text-[10px] text-white/24">{tr('记忆片段：')}{memoryCount}</p>
     </div>
   )
 }
@@ -186,6 +190,7 @@ export function AssistantCompanionFigure({
   gaze?: { x: number; y: number }
   trackEyes?: boolean
 }) {
+  const tr = useTr()
   const persona = resolveAssistantPersona(personaId)
   const assets = characterAssets(persona.id)
   const resolvedMood: AssistantCompanionMood = mood ?? (active ? 'explain' : walking ? 'wave' : 'idle')
@@ -239,7 +244,7 @@ export function AssistantCompanionFigure({
         >
           <Image
             src={pose}
-            alt={`${persona.name} Q版二次元助手`}
+            alt={`${tr(persona.name)}${tr(' Q版二次元助手')}`}
             fill
             sizes="112px"
             className="object-contain drop-shadow-[0_16px_26px_rgba(34,211,238,0.22)]"
@@ -281,6 +286,7 @@ export function AssistantAnimePortrait({
   personaId?: AssistantPersonaId
   active?: boolean
 }) {
+  const tr = useTr()
   const persona = resolveAssistantPersona(personaId)
   const assets = characterAssets(persona.id)
 
@@ -293,7 +299,7 @@ export function AssistantAnimePortrait({
       >
         <Image
           src={assets.portrait}
-          alt={`${persona.name} 精致版二次元助手`}
+          alt={`${tr(persona.name)}${tr(' 精致版二次元助手')}`}
           fill
           sizes="144px"
           className="object-cover object-[50%_0%] drop-shadow-[0_16px_28px_rgba(34,211,238,0.2)]"
@@ -301,8 +307,8 @@ export function AssistantAnimePortrait({
         />
       </motion.div>
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/24 to-transparent px-3 pb-2 pt-10">
-        <p className="text-xs font-semibold text-white">{persona.name}</p>
-        <p className="mt-0.5 truncate text-[10px] text-cyan-100/55">{persona.role}</p>
+        <p className="text-xs font-semibold text-white">{tr(persona.name)}</p>
+        <p className="mt-0.5 truncate text-[10px] text-cyan-100/55">{tr(persona.role)}</p>
       </div>
     </div>
   )

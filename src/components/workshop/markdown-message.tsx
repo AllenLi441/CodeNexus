@@ -4,11 +4,13 @@ import { useState, type ReactNode } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Check, Copy } from 'lucide-react'
+import { useTr } from '@/contexts/language-context'
 
 // Multi-line code block: dark backdrop + cyan accents + copy button.
 // Visually aligned with `CodeBlockCard` in guide-panel.tsx so the entire
 // app speaks the same code-block dialect.
 function CodeFence({ code, language }: { code: string; language?: string }) {
+  const tr = useTr()
   const [copied, setCopied] = useState(false)
   async function handleCopy() {
     try {
@@ -31,7 +33,7 @@ function CodeFence({ code, language }: { code: string; language?: string }) {
           className="cn-focus-ring inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-white/35 transition-colors hover:bg-white/[0.06] hover:text-white/72"
         >
           {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-          {copied ? '已复制' : '复制'}
+          {copied ? tr('已复制') : tr('复制')}
         </button>
       </div>
       <pre className="cn-scrollbar overflow-x-auto whitespace-pre p-3 font-mono text-xs leading-relaxed text-cyan-50/80">

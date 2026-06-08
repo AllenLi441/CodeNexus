@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { toast } from 'sonner'
+import { useTr } from '@/contexts/language-context'
 
 const FRIENDLY = '⚠️ 后台一个异步任务报错了。再试一次通常就好。'
 
@@ -20,6 +21,7 @@ function reasonText(reason: unknown): string {
 //  - error: an uncaught synchronous error in a non-React callback
 // React render errors are caught by error.tsx / global-error.tsx, not here.
 export function ErrorTap() {
+  const tr = useTr()
   useEffect(() => {
     const onRejection = (event: PromiseRejectionEvent) => {
       // Sonner sometimes proxies its own rejections during navigation; skip
@@ -30,7 +32,7 @@ export function ErrorTap() {
       if (process.env.NODE_ENV !== 'production') {
         console.error('[CodeNexus unhandled rejection]', event.reason)
       }
-      toast.error(FRIENDLY, {
+      toast.error(tr(FRIENDLY), {
         description: text.slice(0, 240),
         duration: 5000,
       })
@@ -40,7 +42,7 @@ export function ErrorTap() {
       if (process.env.NODE_ENV !== 'production') {
         console.error('[CodeNexus uncaught error]', event.error)
       }
-      toast.error(FRIENDLY, {
+      toast.error(tr(FRIENDLY), {
         description: (event.error?.message ?? event.message ?? '').toString().slice(0, 240),
         duration: 5000,
       })
@@ -52,7 +54,7 @@ export function ErrorTap() {
       window.removeEventListener('unhandledrejection', onRejection)
       window.removeEventListener('error', onError)
     }
-  }, [])
+  }, [tr])
 
   return null
 }

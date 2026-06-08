@@ -7,6 +7,7 @@ import type { Level } from '@/lib/levels'
 import { getLevelMission, getLevelTeachingBlueprint } from '@/lib/course-engagement'
 import { getReviewItems, type LearningProfile } from '@/lib/learning-profile'
 import { CustomRoutePanel } from '@/components/workshop/custom-route-panel'
+import { useTr } from '@/contexts/language-context'
 
 // ── Inline text renderer (bold, code, newlines) ──────────────────────────────
 function RichText({ text }: { text: string }) {
@@ -37,6 +38,7 @@ function CodeBlockCard({
   code: string
   caption?: string
 }) {
+  const tr = useTr()
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
@@ -55,7 +57,7 @@ function CodeBlockCard({
             className="cn-focus-ring inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-white/30 transition-colors hover:bg-white/[0.06] hover:text-white/60"
           >
             <Copy className="h-3 w-3" />
-            {copied ? '已复制' : '复制'}
+            {copied ? tr('已复制') : tr('复制')}
           </button>
         </div>
       </div>
@@ -119,9 +121,10 @@ type GuidePanelProps = {
 }
 
 export function GuidePanel({ levelId, levels, languageName, onFillCode, onChangeLevel, completedLevelIds, learningProfile, guestMode, onProfileChange }: GuidePanelProps) {
+  const tr = useTr()
   const level: Level = levels.find((l) => l.id === levelId) ?? levels[0]
-  const mission = getLevelMission(languageName, level)
-  const teaching = getLevelTeachingBlueprint(languageName, level)
+  const mission = getLevelMission(languageName, level, tr)
+  const teaching = getLevelTeachingBlueprint(languageName, level, tr)
   const reviewItems = learningProfile ? getReviewItems(learningProfile) : []
   const dueCount = reviewItems.filter((item) => item.isDue).length
   const [openSection, setOpenSection] = useState<number | null>(null)
@@ -130,21 +133,21 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
     <div className="flex h-full flex-col overflow-hidden bg-[var(--code-bg)]">
       <div className="flex-shrink-0 border-b border-white/5 px-4 py-3">
         <div className="mb-0.5 font-mono text-[10px] font-medium uppercase tracking-widest text-cyan-300/45">
-          Assistant Protocol · {languageName} 小助手引导
+          Assistant Protocol · {languageName} {tr('小助手引导')}
         </div>
         <div className="flex items-center justify-between">
           <h2 className="text-white font-semibold text-sm leading-snug">
             <span className="text-white/40 mr-1">Lv.{level.id}</span>
-            {level.title}
+            {tr(level.title)}
           </h2>
           <span className="rounded-lg border border-cyan-300/25 bg-cyan-300/12 px-2 py-0.5 text-[10px] text-cyan-200">
-            {level.badge}
+            {tr(level.badge)}
           </span>
         </div>
 
         <p className="mt-1.5 flex items-start gap-1.5 text-xs text-cyan-200/60">
           <Crosshair className="mt-0.5 h-3 w-3 flex-shrink-0" />
-          <span>{level.objective}</span>
+          <span>{tr(level.objective)}</span>
         </p>
       </div>
 
@@ -170,8 +173,8 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
             </div>
             <p className="text-xs leading-relaxed text-white/58">{mission.brief}</p>
             <div className="mt-2 grid gap-1.5 text-[11px] leading-relaxed text-white/34">
-              <p><span className="text-cyan-100/62">限制：</span>{mission.constraint.replace(/^限制：/, '')}</p>
-              <p><span className="text-cyan-100/62">交付：</span>{mission.payoff.replace(/^交付：/, '')}</p>
+              <p><span className="text-cyan-100/62">{tr('限制：')}</span>{mission.constraint.replace(/^限制：/, '').replace(/^Constraint: /, '')}</p>
+              <p><span className="text-cyan-100/62">{tr('交付：')}</span>{mission.payoff.replace(/^交付：/, '').replace(/^Deliverable: /, '')}</p>
             </div>
           </div>
         </div>
@@ -180,7 +183,7 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
           <div className="space-y-3 rounded-lg border border-white/8 bg-white/[0.022] p-3">
             <div className="flex items-center gap-2">
               <BrainCircuit className="h-3.5 w-3.5 text-cyan-200/70" />
-              <p className="text-xs font-semibold text-white/72">这关真正要学</p>
+              <p className="text-xs font-semibold text-white/72">{tr('这关真正要学')}</p>
             </div>
             <p className="text-xs leading-relaxed text-white/45">{teaching.mentalModel}</p>
             <div className="grid gap-1.5">
@@ -199,11 +202,11 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <ScanSearch className="h-3.5 w-3.5 text-amber-100/70" />
-                <p className="text-xs font-semibold text-white/72">错题本 · 间隔复盘</p>
+                <p className="text-xs font-semibold text-white/72">{tr('错题本 · 间隔复盘')}</p>
               </div>
               {dueCount > 0 ? (
                 <span className="rounded-full border border-amber-300/30 bg-amber-300/12 px-1.5 py-0.5 font-mono text-[9px] text-amber-200">
-                  {dueCount} 个该复习
+                  {dueCount} {tr('个该复习')}
                 </span>
               ) : null}
             </div>
@@ -215,33 +218,33 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
                     className={`rounded-lg border px-2.5 py-2 ${spot.isDue ? 'border-amber-300/25 bg-amber-300/[0.06]' : 'border-white/8 bg-black/24'}`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-semibold text-amber-100/70">{spot.area}</p>
+                      <p className="text-[11px] font-semibold text-amber-100/70">{tr(spot.area)}</p>
                       {spot.isDue ? (
-                        <span className="rounded border border-amber-300/30 bg-amber-300/12 px-1.5 py-0.5 font-mono text-[9px] text-amber-200">该复习</span>
+                        <span className="rounded border border-amber-300/30 bg-amber-300/12 px-1.5 py-0.5 font-mono text-[9px] text-amber-200">{tr('该复习')}</span>
                       ) : (
-                        <span className="font-mono text-[9px] text-white/28">{spot.dueInDays} 天后</span>
+                        <span className="font-mono text-[9px] text-white/28">{spot.dueInDays} {tr('天后')}</span>
                       )}
                     </div>
                     <div className="mt-0.5 flex items-center gap-2">
                       <span className="font-mono text-[9px] tracking-tight text-cyan-200/50">
-                        掌握度 {'●'.repeat(spot.box)}{'○'.repeat(Math.max(0, 5 - spot.box))}
+                        {tr('掌握度')} {'●'.repeat(spot.box)}{'○'.repeat(Math.max(0, 5 - spot.box))}
                       </span>
-                      <span className="font-mono text-[9px] text-white/24">错 {spot.count} 次</span>
+                      <span className="font-mono text-[9px] text-white/24">{tr('错')} {spot.count} {tr('次')}</span>
                     </div>
-                    <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-white/34">{spot.latest.nextStep}</p>
+                    <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-white/34">{tr(spot.latest.nextStep)}</p>
                     <button
                       type="button"
                       onClick={() => onChangeLevel(spot.latest.levelId)}
                       className="mt-1 font-mono text-[10px] text-cyan-300/70 transition-colors hover:text-cyan-200"
                     >
-                      → 去 Lv.{spot.latest.levelId} 再练一次
+                      → {tr('去')} Lv.{spot.latest.levelId} {tr('再练一次')}
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
               <p className="text-[11px] leading-relaxed text-white/34">
-                还没有踩坑记录。以后卡住时，这里会把你常错的概念收进错题本，并按「间隔复盘」在合适的时候提醒你回来再练。
+                {tr('还没有踩坑记录。以后卡住时，这里会把你常错的概念收进错题本，并按「间隔复盘」在合适的时候提醒你回来再练。')}
               </p>
             )}
           </div>
@@ -251,7 +254,7 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
           <div className="space-y-2 rounded-lg border border-cyan-300/12 bg-cyan-300/[0.028] p-3">
             <div className="flex items-center gap-2">
               <ListChecks className="h-3.5 w-3.5 text-cyan-200/70" />
-              <p className="text-xs font-semibold text-white/72">实践路线</p>
+              <p className="text-xs font-semibold text-white/72">{tr('实践路线')}</p>
             </div>
             {teaching.practiceSteps.slice(0, 3).map((step, index) => (
               <p key={step} className="flex gap-2 text-[11px] leading-relaxed text-white/38">
@@ -272,7 +275,7 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
                 <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md bg-cyan-300/12 text-[10px] font-bold text-cyan-200">
                   {i + 1}
                 </span>
-                {section.heading}
+                {tr(section.heading)}
               </span>
               <motion.span
                 animate={{ rotate: openSection === i ? 180 : 0 }}
@@ -294,7 +297,7 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
                 >
                   <div className="px-4 pb-4 space-y-3">
                     <p className="text-xs text-white/50 leading-relaxed">
-                      <RichText text={section.body} />
+                      <RichText text={tr(section.body)} />
                     </p>
                     {section.codeBlock && (
                       <CodeBlockCard
@@ -305,13 +308,13 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
                     {section.tip && (
                       <div className="flex gap-2 bg-cyan-300/8 border border-cyan-300/20 rounded-lg px-3 py-2">
                         <Crosshair className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-cyan-200" />
-                        <p className="text-cyan-100/65 text-xs leading-relaxed">{section.tip}</p>
+                        <p className="text-cyan-100/65 text-xs leading-relaxed">{tr(section.tip)}</p>
                       </div>
                     )}
                     {section.warning && (
                       <div className="flex gap-2 bg-red-500/8 border border-red-500/20 rounded-lg px-3 py-2">
                         <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-red-300" />
-                        <p className="text-red-200/65 text-xs leading-relaxed">{section.warning}</p>
+                        <p className="text-red-200/65 text-xs leading-relaxed">{tr(section.warning)}</p>
                       </div>
                     )}
                   </div>
@@ -328,7 +331,7 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
             className="cn-focus-ring flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-white/12 py-2.5 text-xs text-white/25 transition-colors hover:border-cyan-300/25 hover:text-cyan-100/65"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            清空编辑器
+            {tr('清空编辑器')}
           </button>
         </div>
       </div>

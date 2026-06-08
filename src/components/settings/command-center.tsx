@@ -15,6 +15,9 @@ import {
 import { appleSpring, quickFade } from '@/lib/motion'
 import { AssistantAvatar } from '@/components/assistant/assistant-avatar'
 import { ASSISTANT_PERSONAS, clearAssistantMemory, livelinessLabel } from '@/lib/assistant-persona'
+import { AI_PROVIDER_PRESETS, type AiProvider } from '@/lib/ai-config'
+import { LanguageToggle } from '@/components/ui/language-toggle'
+import { useTr } from '@/contexts/language-context'
 
 type CommandCenterProps = {
   initialCodename: string
@@ -108,6 +111,7 @@ export function CommandCenter({
   compact = false,
 }: CommandCenterProps) {
   const router = useRouter()
+  const tr = useTr()
   const { settings, updateSettings } = useCommandSettings(initialSettings)
   const [isOpen, setIsOpen] = useState(false)
   const [codename, setCodename] = useState(initialCodename)
@@ -143,7 +147,7 @@ export function CommandCenter({
       })
 
       if (!res.ok) {
-        setError(res.error ?? '保存失败。')
+        setError(res.error ?? tr('保存失败。'))
         return
       }
 
@@ -159,7 +163,7 @@ export function CommandCenter({
         <>
           <motion.button
             type="button"
-            aria-label="关闭命令中心"
+            aria-label={tr('关闭命令中心')}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -186,10 +190,11 @@ export function CommandCenter({
                   <p className="text-sm font-semibold tracking-wide">Command Center</p>
                   <p className="mt-0.5 text-[10px] uppercase tracking-[0.24em] text-cyan-300/45">Nexus Control</p>
                 </div>
+                <LanguageToggle variant="badge" />
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  title="关闭"
+                  title={tr('关闭')}
                   className="cn-focus-ring flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition-colors hover:bg-white/[0.08] hover:text-white/70"
                 >
                   <X className="h-4 w-4" />
@@ -200,7 +205,7 @@ export function CommandCenter({
                 <div className="grid gap-5 lg:grid-cols-[1.05fr_1fr]">
                   <section className="space-y-4">
                     <div className="rounded-lg border border-white/8 bg-white/[0.025] p-4">
-                      <label htmlFor="codename" className="text-xs font-medium text-white/70">代号</label>
+                      <label htmlFor="codename" className="text-xs font-medium text-white/70">{tr('代号')}</label>
                       <input
                         id="codename"
                         value={codename}
@@ -210,18 +215,18 @@ export function CommandCenter({
                         }}
                         maxLength={24}
                         className="cn-focus-ring mt-2 h-11 w-full rounded-lg border border-white/10 bg-black/45 px-3 text-sm text-white outline-none transition-colors placeholder:text-white/20 focus:border-cyan-300/55"
-                        placeholder="输入你的 Nexus 代号"
+                        placeholder={tr('输入你的 Nexus 代号')}
                       />
-                      <p className="mt-2 text-[11px] leading-relaxed text-white/32">小助手会用这个代号称呼你。别起太长，代码已经够啰嗦了。</p>
+                      <p className="mt-2 text-[11px] leading-relaxed text-white/32">{tr('小助手会用这个代号称呼你。别起太长，代码已经够啰嗦了。')}</p>
                     </div>
 
                     <section className="space-y-3 rounded-lg border border-white/8 bg-white/[0.025] p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-xs font-medium text-white/70">
                           <SlidersHorizontal className="h-3.5 w-3.5 text-cyan-300/70" />
-                          嘲讽频率
+                          {tr('嘲讽频率')}
                         </div>
-                        <span className="text-xs text-cyan-200">{frequencyLabel(settings.tauntFrequency)}</span>
+                        <span className="text-xs text-cyan-200">{tr(frequencyLabel(settings.tauntFrequency))}</span>
                       </div>
                       <input
                         type="range"
@@ -232,16 +237,16 @@ export function CommandCenter({
                         className="w-full accent-cyan-300"
                       />
                       <div className="flex justify-between text-[10px] uppercase tracking-wider text-white/25">
-                        <span>冷静</span>
+                        <span>{tr('冷静')}</span>
                         <span>{settings.tauntFrequency}</span>
-                        <span>尖锐</span>
+                        <span>{tr('尖锐')}</span>
                       </div>
                     </section>
 
                     <section className="space-y-3 rounded-lg border border-white/8 bg-white/[0.025] p-4">
                       <div className="flex items-center gap-2 text-xs font-medium text-white/70">
                         <MessageSquare className="h-3.5 w-3.5 text-cyan-300/70" />
-                        聊天停靠
+                        {tr('聊天停靠')}
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         {([
@@ -258,14 +263,14 @@ export function CommandCenter({
                                 : 'border-white/10 bg-black/35 text-white/40 hover:border-white/22 hover:text-white/70'
                             }`}
                           >
-                            {option.label}
+                            {tr(option.label)}
                           </button>
                         ))}
                       </div>
                     </section>
 
                     <SliderControl
-                      label="聊天面板宽度"
+                      label={tr('聊天面板宽度')}
                       value={settings.chatPanelWidth}
                       min={320}
                       max={520}
@@ -275,7 +280,7 @@ export function CommandCenter({
                     />
 
                     <SliderControl
-                      label="停顿提醒时间"
+                      label={tr('停顿提醒时间')}
                       value={settings.idleMentorDelay}
                       min={15}
                       max={180}
@@ -285,16 +290,16 @@ export function CommandCenter({
                     />
 
                     <ToggleControl
-                      label="打开关卡时自动展开小助手"
+                      label={tr('打开关卡时自动展开小助手')}
                       checked={settings.autoOpenMentor}
                       onChange={(checked) => updateSettings({ autoOpenMentor: checked })}
-                      description="关闭后小助手缩成角标，只有卡住或点开时才出现。"
+                      description={tr('关闭后小助手缩成角标，只有卡住或点开时才出现。')}
                     />
 
                     <section className="space-y-3 rounded-lg border border-cyan-300/12 bg-cyan-300/[0.035] p-4">
                       <div className="flex items-center gap-2 text-xs font-medium text-white/72">
                         <UserRound className="h-3.5 w-3.5 text-cyan-300/70" />
-                        小助手人格
+                        {tr('小助手人格')}
                       </div>
                       <div className="grid gap-2">
                         {ASSISTANT_PERSONAS.map((persona) => {
@@ -312,8 +317,8 @@ export function CommandCenter({
                             >
                               <AssistantAvatar personaId={persona.id} size="sm" active={active} />
                               <span className="min-w-0 flex-1">
-                                <span className="block text-xs font-semibold">{persona.name} · {persona.pronoun}</span>
-                                <span className="mt-1 line-clamp-2 block text-[11px] leading-relaxed opacity-70">{persona.description}</span>
+                                <span className="block text-xs font-semibold">{tr(persona.name)} · {tr(persona.pronoun)}</span>
+                                <span className="mt-1 line-clamp-2 block text-[11px] leading-relaxed opacity-70">{tr(persona.description)}</span>
                               </span>
                             </button>
                           )
@@ -326,7 +331,7 @@ export function CommandCenter({
                     <section className="space-y-3 rounded-lg border border-white/8 bg-white/[0.025] p-4">
                       <div className="flex items-center gap-2 text-xs font-medium text-white/70">
                         <PanelRightOpen className="h-3.5 w-3.5 text-cyan-300/70" />
-                        课程入口显示
+                        {tr('课程入口显示')}
                       </div>
                       <div className="grid gap-2 sm:grid-cols-2">
                         {([
@@ -351,15 +356,15 @@ export function CommandCenter({
                                 : 'border-white/10 bg-black/35 text-white/42 hover:border-white/22 hover:text-white/70'
                             }`}
                           >
-                            <span className="block text-xs font-semibold">{option.label}</span>
-                            <span className="mt-1 block text-[11px] leading-relaxed opacity-65">{option.description}</span>
+                            <span className="block text-xs font-semibold">{tr(option.label)}</span>
+                            <span className="mt-1 block text-[11px] leading-relaxed opacity-65">{tr(option.description)}</span>
                           </button>
                         ))}
                       </div>
                     </section>
 
                     <section className="space-y-3 rounded-lg border border-white/8 bg-white/[0.025] p-4">
-                      <p className="text-xs font-medium text-white/70">字体协议</p>
+                      <p className="text-xs font-medium text-white/70">{tr('字体协议')}</p>
                       <div className="grid grid-cols-2 gap-2">
                         {([
                           { id: 'hacker', label: 'Hacker' },
@@ -382,7 +387,7 @@ export function CommandCenter({
                     </section>
 
                     <SliderControl
-                      label="编辑器字号"
+                      label={tr('编辑器字号')}
                       value={settings.editorFontSize}
                       min={12}
                       max={20}
@@ -392,7 +397,7 @@ export function CommandCenter({
                     />
 
                     <SliderControl
-                      label="终端字号"
+                      label={tr('终端字号')}
                       value={settings.terminalFontSize}
                       min={12}
                       max={20}
@@ -405,9 +410,9 @@ export function CommandCenter({
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 text-xs font-medium text-white/70">
                           <Bot className="h-3.5 w-3.5 text-cyan-300/70" />
-                          小助手活人感
+                          {tr('小助手活人感')}
                         </div>
-                        <span className="text-xs text-cyan-200">{livelinessLabel(settings.assistantLiveliness)}</span>
+                        <span className="text-xs text-cyan-200">{tr(livelinessLabel(settings.assistantLiveliness))}</span>
                       </div>
                       <input
                         type="range"
@@ -418,17 +423,17 @@ export function CommandCenter({
                         className="w-full accent-cyan-300"
                       />
                       <div className="flex justify-between text-[10px] uppercase tracking-wider text-white/25">
-                        <span>安静</span>
+                        <span>{tr('安静')}</span>
                         <span>{settings.assistantLiveliness}</span>
-                        <span>主动</span>
+                        <span>{tr('主动')}</span>
                       </div>
                     </section>
 
                     <ToggleControl
-                      label="小助手记忆"
+                      label={tr('小助手记忆')}
                       checked={settings.assistantMemory}
                       onChange={(checked) => updateSettings({ assistantMemory: checked })}
-                      description="开启后会在本机记录常见错误、最近关卡和聊天节奏，用来调整提醒。"
+                      description={tr('开启后会在本机记录常见错误、最近关卡和聊天节奏，用来调整提醒。')}
                     />
 
                     <button
@@ -439,14 +444,37 @@ export function CommandCenter({
                       }}
                       className="cn-focus-ring h-10 rounded-lg border border-white/10 px-3 text-xs font-semibold text-white/42 transition-colors hover:border-red-300/24 hover:text-red-100"
                     >
-                      清空本机小助手记忆
+                      {tr('清空本机小助手记忆')}
                     </button>
 
                     <section className="space-y-3 rounded-lg border border-cyan-300/12 bg-cyan-300/[0.035] p-4">
                       <div className="flex items-center gap-2 text-xs font-medium text-white/72">
                         <KeyRound className="h-3.5 w-3.5 text-cyan-300/70" />
-                        AI API 配置
+                        {tr('AI API 配置')}
                       </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(Object.keys(AI_PROVIDER_PRESETS) as AiProvider[]).map((id) => {
+                          const preset = AI_PROVIDER_PRESETS[id]
+                          const active = settings.aiProvider === id
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => updateSettings({ aiProvider: id, aiBaseUrl: preset.baseUrl, aiModel: preset.model })}
+                              className={`cn-focus-ring h-10 rounded-lg border text-xs font-semibold transition-colors ${
+                                active
+                                  ? 'border-cyan-300/60 bg-cyan-300/15 text-cyan-100'
+                                  : 'border-white/10 bg-black/35 text-white/40 hover:border-white/22 hover:text-white/70'
+                              }`}
+                            >
+                              {preset.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-white/35">
+                        {tr('登录用户免费使用平台提供的')} {AI_PROVIDER_PRESETS[settings.aiProvider].label}{tr('，可随时切换。试玩模式需在下面填入你自己的 Key；填了自己的 Key 也会覆盖平台模型，用你自己的额度。')}
+                      </p>
                       <input
                         type="password"
                         value={settings.aiApiKey}
@@ -454,7 +482,7 @@ export function CommandCenter({
                         spellCheck={false}
                         onChange={(event) => updateSettings({ aiApiKey: event.target.value })}
                         className="cn-focus-ring h-10 w-full rounded-lg border border-white/10 bg-black/45 px-3 font-mono text-xs text-white outline-none transition-colors placeholder:text-white/20 focus:border-cyan-300/55"
-                        placeholder="DeepSeek API Key"
+                        placeholder={`${AI_PROVIDER_PRESETS[settings.aiProvider].label} API Key${tr('（可选）')}`}
                       />
                       <div className="grid gap-2 sm:grid-cols-[1fr_0.72fr]">
                         <input
@@ -463,7 +491,7 @@ export function CommandCenter({
                           spellCheck={false}
                           onChange={(event) => updateSettings({ aiBaseUrl: event.target.value })}
                           className="cn-focus-ring h-10 min-w-0 rounded-lg border border-white/10 bg-black/45 px-3 font-mono text-xs text-white outline-none transition-colors placeholder:text-white/20 focus:border-cyan-300/55"
-                          placeholder="https://api.deepseek.com"
+                          placeholder={AI_PROVIDER_PRESETS[settings.aiProvider].baseUrl}
                         />
                         <input
                           value={settings.aiModel}
@@ -471,27 +499,27 @@ export function CommandCenter({
                           spellCheck={false}
                           onChange={(event) => updateSettings({ aiModel: event.target.value })}
                           className="cn-focus-ring h-10 min-w-0 rounded-lg border border-white/10 bg-black/45 px-3 font-mono text-xs text-white outline-none transition-colors placeholder:text-white/20 focus:border-cyan-300/55"
-                          placeholder="deepseek-chat"
+                          placeholder={AI_PROVIDER_PRESETS[settings.aiProvider].model}
                         />
                       </div>
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-[11px] leading-relaxed text-white/35">只保存在当前浏览器，不同步到账号。</p>
+                        <p className="text-[11px] leading-relaxed text-white/35">{tr('只保存在当前浏览器，不同步到账号。')}</p>
                         <button
                           type="button"
                           onClick={() => updateSettings({
                             aiApiKey: '',
-                            aiBaseUrl: DEFAULT_COMMAND_SETTINGS.aiBaseUrl,
-                            aiModel: DEFAULT_COMMAND_SETTINGS.aiModel,
+                            aiBaseUrl: AI_PROVIDER_PRESETS[settings.aiProvider].baseUrl,
+                            aiModel: AI_PROVIDER_PRESETS[settings.aiProvider].model,
                           })}
                           className="cn-focus-ring h-8 rounded-lg border border-white/10 px-3 text-[11px] font-semibold text-white/42 transition-colors hover:border-red-300/24 hover:text-red-100"
                         >
-                          清空
+                          {tr('清空')}
                         </button>
                       </div>
                     </section>
 
                     <SliderControl
-                      label="背景噪声亮度"
+                      label={tr('背景噪声亮度')}
                       value={settings.noiseBrightness}
                       min={0}
                       max={100}
@@ -501,14 +529,14 @@ export function CommandCenter({
                     />
 
                     <ToggleControl
-                      label="课程地图动画"
+                      label={tr('课程地图动画')}
                       checked={settings.mapAnimations}
                       onChange={(checked) => updateSettings({ mapAnimations: checked })}
-                      description="低性能机器可以关掉连线流动和节点脉冲。"
+                      description={tr('低性能机器可以关掉连线流动和节点脉冲。')}
                     />
 
                     <p className="rounded-lg border border-cyan-300/12 bg-cyan-300/[0.04] px-3 py-2 text-[11px] leading-relaxed text-white/35">
-                      当前噪声：{noisePercent}。所有设置会即时预览，点击保存后同步到账号。
+                      {tr('当前噪声：')}{noisePercent}{tr('。所有设置会即时预览，点击保存后同步到账号。')}
                     </p>
                   </section>
                 </div>
@@ -519,7 +547,7 @@ export function CommandCenter({
                   {error && <p className="rounded-lg border border-red-400/25 bg-red-400/8 px-3 py-2 text-xs text-red-200">{error}</p>}
                   {saved && (
                     <p className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/25 bg-emerald-400/8 px-3 py-2 text-xs text-emerald-200">
-                      <Check className="h-3.5 w-3.5" /> 已同步到 Supabase
+                      <Check className="h-3.5 w-3.5" /> {tr('已同步到 Supabase')}
                     </p>
                   )}
                 </div>
@@ -528,7 +556,7 @@ export function CommandCenter({
                   onClick={() => setIsOpen(false)}
                   className="cn-focus-ring h-11 rounded-lg border border-white/10 px-4 text-sm font-semibold text-white/55 transition-colors hover:border-white/20 hover:text-white"
                 >
-                  关闭
+                  {tr('关闭')}
                 </button>
                 <button
                   type="button"
@@ -537,7 +565,7 @@ export function CommandCenter({
                   className="cn-focus-ring flex h-11 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-6 text-sm font-semibold text-black transition-colors hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isPending ? <PanelRightOpen className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
-                  保存设置
+                  {tr('保存设置')}
                 </button>
               </div>
             </motion.section>
@@ -552,12 +580,12 @@ export function CommandCenter({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        title="打开命令中心"
+        title={tr('打开命令中心')}
         className={`cn-focus-ring inline-flex items-center justify-center border border-cyan-400/25 bg-cyan-400/8 text-cyan-200 transition-colors hover:border-cyan-300/60 hover:bg-cyan-300/15 ${
           compact ? 'h-9 w-9 rounded-lg' : 'h-9 gap-2 rounded-lg px-3 text-xs font-medium'
         }`}
       >
-        {compact ? <Settings2 className="h-4 w-4" /> : <><Settings2 className="h-4 w-4" /> 命令中心</>}
+        {compact ? <Settings2 className="h-4 w-4" /> : <><Settings2 className="h-4 w-4" /> {tr('命令中心')}</>}
       </button>
       {typeof document === 'undefined' ? modal : createPortal(modal, document.body)}
     </>

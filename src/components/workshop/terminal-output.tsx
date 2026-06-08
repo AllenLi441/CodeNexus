@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { Activity, Image as ImageIcon, Play } from 'lucide-react'
 import type { RunResult } from '@/lib/python/PyodideRunner'
+import { useTr } from '@/contexts/language-context'
 
 type TerminalEntry = {
   id: string
@@ -19,6 +20,7 @@ type TerminalOutputProps = {
 }
 
 export function TerminalOutput({ entries, isRunning, pyStatus, languageName = 'Python', commandLabel = 'python' }: TerminalOutputProps) {
+  const tr = useTr()
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -41,8 +43,8 @@ export function TerminalOutput({ entries, isRunning, pyStatus, languageName = 'P
         {entries.length === 0 && !isRunning && (
           <div className="flex items-center gap-1.5 text-xs text-white/20">
             <Play className="h-3.5 w-3.5 fill-cyan-300/60 text-cyan-300/60" />
-            点击右上角{' '}
-            <span className="text-cyan-200">运行</span> 执行代码
+            {tr('点击右上角')}{' '}
+            <span className="text-cyan-200">{tr('运行')}</span> {tr('执行代码')}
           </div>
         )}
 
@@ -75,19 +77,19 @@ export function TerminalOutput({ entries, isRunning, pyStatus, languageName = 'P
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`data:image/png;base64,${entry.result.imageBase64}`}
-                  alt="代码图形输出"
+                  alt={tr('代码图形输出')}
                   className="w-full max-w-md mx-auto block"
                 />
                 <p className="flex items-center justify-center gap-1.5 py-1.5 text-center text-[10px] text-white/20">
                   <ImageIcon className="h-3 w-3" />
-                  matplotlib 图形输出
+                  {tr('matplotlib 图形输出')}
                 </p>
               </div>
             )}
 
             {/* No output hint */}
             {!entry.result.output && !entry.result.error && !entry.result.imageBase64 && (
-              <span className="text-white/25 text-xs italic">（代码运行完毕，无输出）</span>
+              <span className="text-white/25 text-xs italic">{tr('（代码运行完毕，无输出）')}</span>
             )}
 
             {/* Speed tier — Allen's performance ego boost */}
@@ -117,7 +119,7 @@ export function TerminalOutput({ entries, isRunning, pyStatus, languageName = 'P
                 />
               ))}
             </span>
-            正在执行...
+            {tr('正在执行...')}
           </div>
         )}
 
