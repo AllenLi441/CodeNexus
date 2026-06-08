@@ -1,12 +1,26 @@
 export type MentorTrigger = 'idle' | 'error' | 'failed-test'
+export type MentorLang = 'zh' | 'en'
 
-export function tauntModeLabel(frequency: number) {
+export function tauntModeLabel(frequency: number, lang: MentorLang = 'zh') {
+  if (lang === 'en') {
+    if (frequency < 25) return 'Low snark: fewer jabs, more key hints.'
+    if (frequency > 74) return 'High snark: sharper tongue, but always about the code, never the person.'
+    return 'Standard snark: pointed, precise, no fluff.'
+  }
   if (frequency < 25) return '低嘲讽：少损人，多给关键提示。'
   if (frequency > 74) return '高嘲讽：嘴可以更毒，但必须对事不对人。'
   return '标准嘲讽：带刺、精确、别废话。'
 }
 
-export function mentorWelcome(codename: string, tauntFrequency: number) {
+export function mentorWelcome(codename: string, tauntFrequency: number, lang: MentorLang = 'zh') {
+  if (lang === 'en') {
+    const fire = tauntFrequency > 74
+      ? "I'll be blunt — gentle explanations rarely save your indentation."
+      : tauntFrequency < 25
+      ? "I'll go easy on the jabs today and focus on your logic."
+      : "I'll watch your logic and poke the errors that only look like hard work."
+    return `Online, **${codename}**.\n\nI'm **Nexus**. ${fire}\n\nPaste your code when you're stuck; if you idle too long, I'll pop in before your editor retires.`
+  }
   const fire = tauntFrequency > 74
     ? '我会说得直一点，毕竟温柔解释通常救不了缩进。'
     : tauntFrequency < 25
@@ -16,7 +30,10 @@ export function mentorWelcome(codename: string, tauntFrequency: number) {
   return `上线了，**${codename}**。\n\n我是 **Nexus 老炮**。${fire}\n\n代码卡住就贴过来；如果你停太久，我也会自己冒出来提醒你，免得编辑器先退休。`
 }
 
-export function mentorFallback() {
+export function mentorFallback(lang: MentorLang = 'zh') {
+  if (lang === 'en') {
+    return "The mentor is offline for a moment. Don't blame the network yet — read the first line of the error; the answer is often written right there."
+  }
   return '导师暂时离线。先别甩锅给网络，把报错第一行读完，很多问题已经把答案写脸上了。'
 }
 
@@ -24,8 +41,18 @@ function firstNonEmptyLine(code: string) {
   return code.split('\n').map((line) => line.trim()).find(Boolean) ?? ''
 }
 
-function likelyIntent(code: string, objective: string, languageName = 'Python') {
+function likelyIntent(code: string, objective: string, languageName = 'Python', lang: MentorLang = 'zh') {
   const head = firstNonEmptyLine(code)
+  if (lang === 'en') {
+    if (!head) return `The goal is: ${objective}`
+    if (/\bdef\s+\w+/.test(code)) return "Looks like you're writing a function. First line up three things: the name, the parameters, and the return value."
+    if (/\bfunction\s+\w+|static\s+\w+|Function\s+\w+/i.test(code)) return "Looks like you're writing a function. First line up three things: the name, the parameters, and the return value."
+    if (/\bfor\b|\bwhile\b/.test(code)) return "Looks like you're writing a loop. Check the range and the indentation first, or it'll just perform in place."
+    if (/\bif\b|\belif\b|\belse\b/.test(code)) return "Looks like you're writing a condition. Check the colon, the indentation, and whether your branches cover the target cases."
+    if (/\bprint\s*\(|console\.log|printf|Console\.WriteLine|System\.out\.println/.test(code)) return "Looks like an output task. Make the printed text match the target exactly — case and punctuation included."
+    if (languageName !== 'Python') return `You've started with \`${head.slice(0, 42)}\`. Don't carry over Python habits — follow ${languageName}'s entry point, types and statement rules toward the goal: ${objective}`
+    return `You've started with \`${head.slice(0, 42)}\`. Now align it with the goal: ${objective}`
+  }
   if (!head) return `目标是：${objective}`
   if (/\bdef\s+\w+/.test(code)) return '你像是在写函数。先确认函数名、参数、返回值三件事对齐。'
   if (/\bfunction\s+\w+|static\s+\w+|Function\s+\w+/i.test(code)) return '你像是在写函数。先确认函数名、参数、返回值三件事对齐。'
@@ -113,25 +140,28 @@ function scanStringsAndBrackets(code: string, opts: { commentChar: '#' | '//' | 
   return { parens, braces, unclosedString }
 }
 
-export function detectPythonLint(code: string): string | null {
+export function detectPythonLint(code: string, lang: MentorLang = 'zh'): string | null {
+  const en = lang === 'en'
   const trimmed = code.trim()
-  if (!trimmed) return '编辑器还是空的。空白确实不会报错，因为它什么也没干。'
+  if (!trimmed) return en ? "The editor is still empty. Blank code won't error — because it does nothing." : '编辑器还是空的。空白确实不会报错，因为它什么也没干。'
 
   const lines = code.split('\n')
   for (const rawLine of lines) {
     const line = rawLine.trim()
     if (!line || line.startsWith('#')) continue
     if (/^(if|elif|else|for|while|def|class|try|except|finally)\b/.test(line) && !line.endsWith(':')) {
-      return `\`${line.slice(0, 56)}\` 这一行大概率少了冒号。Python 对冒号的执念，比你想象得严重。`
+      return en
+        ? `\`${line.slice(0, 56)}\` is probably missing a colon. Python cares about colons more than you'd expect.`
+        : `\`${line.slice(0, 56)}\` 这一行大概率少了冒号。Python 对冒号的执念，比你想象得严重。`
     }
   }
 
   const scan = scanStringsAndBrackets(code, { commentChar: '#' })
   if (scan.unclosedString) {
-    return '有字符串没闭合。开了引号就要收，解释器记性比你好。'
+    return en ? "A string isn't closed. Open a quote, close a quote — the interpreter remembers better than you do." : '有字符串没闭合。开了引号就要收，解释器记性比你好。'
   }
   if (scan.parens !== 0) {
-    return '括号数量对不上。解释器不是读心术，它不会替你脑补右括号。'
+    return en ? "Your parentheses don't balance. The interpreter can't read minds — it won't imagine the closing one for you." : '括号数量对不上。解释器不是读心术，它不会替你脑补右括号。'
   }
 
   return null
@@ -316,19 +346,20 @@ export function detectRunawayPython(code: string): string | null {
   return null
 }
 
-function detectGenericLint(code: string, languageName: string): string | null {
+function detectGenericLint(code: string, languageName: string, lang: MentorLang = 'zh'): string | null {
+  const en = lang === 'en'
   const trimmed = code.trim()
-  if (!trimmed) return '编辑器还是空的。空白确实不会报错，因为它什么也没干。'
+  if (!trimmed) return en ? "The editor is still empty. Blank code won't error — because it does nothing." : '编辑器还是空的。空白确实不会报错，因为它什么也没干。'
 
   const scan = scanStringsAndBrackets(code, { commentChar: '//' })
   if (scan.unclosedString) {
-    return '有字符串没闭合。开了引号就要收，编译器记性比你好。'
+    return en ? "A string isn't closed. Open a quote, close a quote — the compiler remembers better than you do." : '有字符串没闭合。开了引号就要收，编译器记性比你好。'
   }
   if (scan.parens !== 0) {
-    return '括号数量对不上。编译器不是读心术，它不会替你脑补右括号。'
+    return en ? "Your parentheses don't balance. The compiler can't read minds — it won't imagine the closing one for you." : '括号数量对不上。编译器不是读心术，它不会替你脑补右括号。'
   }
   if (languageName !== 'Visual Basic' && scan.braces !== 0) {
-    return '花括号数量对不上。代码块没收口，后面全是连环事故。'
+    return en ? "Your braces don't balance. A block left open turns everything after it into a pile-up." : '花括号数量对不上。代码块没收口，后面全是连环事故。'
   }
 
   return null
@@ -343,6 +374,7 @@ export function composeMentorAnalysis({
   failedHint,
   tauntFrequency,
   languageName = 'Python',
+  language = 'zh',
 }: {
   codename: string
   code: string
@@ -352,9 +384,28 @@ export function composeMentorAnalysis({
   failedHint?: string
   tauntFrequency: number
   languageName?: string
+  language?: MentorLang
 }) {
-  const lint = languageName === 'Python' ? detectPythonLint(code) : detectGenericLint(code, languageName)
-  const intent = likelyIntent(code, objective, languageName)
+  const lint = languageName === 'Python' ? detectPythonLint(code, language) : detectGenericLint(code, languageName, language)
+  const intent = likelyIntent(code, objective, languageName, language)
+
+  if (language === 'en') {
+    const bite = tauntFrequency > 74
+      ? `**${codename}**, this code is starting to give off that "I almost get it" smell.`
+      : tauntFrequency < 25
+      ? `**${codename}**, hold on a second.`
+      : `**${codename}**, stop hammering the keyboard — it's not a wishing well.`
+
+    if (trigger === 'error') {
+      const firstErrorLine = error?.split('\n').find((line) => line.trim())?.trim()
+      return `${bite}\n\nCore of the error: ${firstErrorLine ? `\`${firstErrorLine.slice(0, 140)}\`` : 'the interpreter has stopped cooperating.'}\n\n${lint ?? intent}\n\nFix this one thing, then run. Don't change ten places at once — debugging isn't a lottery.`
+    }
+    if (trigger === 'failed-test') {
+      return `${bite}\n\nThe test didn't pass — running isn't the same as being correct. Key clue: ${failedHint ?? objective}\n\n${lint ?? intent}`
+    }
+    return `${bite}\n\nYou've been idle for 60 seconds. ${lint ?? intent}\n\nNext, do exactly one thing: write the smallest code that proves the goal.`
+  }
+
   const bite = tauntFrequency > 74
     ? `**${codename}**，这段代码已经开始散发"我差一点就懂了"的气味。`
     : tauntFrequency < 25

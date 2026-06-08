@@ -58,7 +58,7 @@ import {
   type LearningProfile,
 } from '@/lib/learning-profile'
 import { rememberAssistantEvent } from '@/lib/assistant-persona'
-import { useTr } from '@/contexts/language-context'
+import { useLanguage, useTr } from '@/contexts/language-context'
 import { LanguageToggle } from '@/components/ui/language-toggle'
 import Link from 'next/link'
 
@@ -161,6 +161,7 @@ export function PythonRunner({
 }: LanguageRunnerProps) {
   const router = useRouter()
   const tr = useTr()
+  const { lang } = useLanguage()
   const isGuestPlay = mode === 'guest-play'
   const { settings } = useCommandSettings(initialSettings)
   const language = useMemo(() => getLanguageModule(languageId), [languageId])
@@ -305,6 +306,7 @@ export function PythonRunner({
       failedHint: details.failedHint,
       tauntFrequency: settings.tauntFrequency,
       languageName: language.name,
+      language: lang,
     })
     const key = `${level.id}:${trigger}:${hint.slice(0, 160)}`
     if (hintShownThisSession.current.has(key)) return

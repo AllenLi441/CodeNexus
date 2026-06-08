@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import { PythonRunner } from '@/components/workshop/python-runner'
 import { GuestDashboard } from '@/components/dashboard/guest-dashboard'
 import { ProjectStudio } from '@/components/workshop/project-studio'
@@ -16,6 +17,8 @@ export default async function PlayPage({
   searchParams: Promise<{ language?: string; level?: string; project?: string }>
 }) {
   const { language: languageParam, level: levelParam, project: projectParam } = await searchParams
+  const lang = (await cookies()).get('zf-lang')?.value === 'en' ? 'en' : 'zh'
+  const codename = lang === 'en' ? 'Rookie' : '试玩新人'
   const language = getLanguageModule(languageParam)
   const levelId = Math.min(Math.max(parseInt(levelParam ?? '', 10) || 0, 1), language.levels.length)
   const projectAfter = parseInt(projectParam ?? '', 10)
@@ -24,7 +27,7 @@ export default async function PlayPage({
     return (
       <ProjectStudio
         languageId={language.id}
-        codename="试玩新人"
+        codename={codename}
         afterLevel={projectAfter}
         demoMode
       />
@@ -39,7 +42,7 @@ export default async function PlayPage({
     <PythonRunner
       mode="guest-play"
       languageId={language.id}
-      codename="试玩新人"
+      codename={codename}
       initialLevelId={levelId}
       initialProgress={[]}
       initialSettings={{

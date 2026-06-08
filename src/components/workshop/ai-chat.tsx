@@ -129,6 +129,7 @@ function buildInstantInsight({
   lastRunState,
   lastRunMessage,
   recentlyEdited,
+  lang = 'zh',
 }: {
   code: string
   languageName: string
@@ -138,7 +139,9 @@ function buildInstantInsight({
   lastRunState: LastRunState
   lastRunMessage?: string
   recentlyEdited: boolean
+  lang?: 'zh' | 'en'
 }): InstantInsight {
+  const en = lang === 'en'
   const trimmed = code.trim()
   const wantsOutput = /输出|打印|print|display|log/i.test(objective ?? '')
 
@@ -175,7 +178,9 @@ function buildInstantInsight({
       mood: 'alert',
       status: '发现运行错误',
       detail: msg,
-      autoHint: `终端报了这个错：\`${msg}\`\n\n先读第一行错误，改最小的一处就好。这种错几乎人人都踩过。`,
+      autoHint: en
+        ? `The terminal threw this error: \`${msg}\`\n\nRead the first line and change the smallest one thing. Almost everyone has hit this one.`
+        : `终端报了这个错：\`${msg}\`\n\n先读第一行错误，改最小的一处就好。这种错几乎人人都踩过。`,
     }
   }
 
@@ -204,17 +209,21 @@ function buildInstantInsight({
         mood: 'alert',
         status: '疑似死循环',
         detail: runaway,
-        autoHint: `停，${runaway}\n\n先加退出条件或者计数器。你要学循环，不是训练浏览器抗冻。`,
+        autoHint: en
+          ? `Stop — ${runaway}\n\nAdd an exit condition or a counter first. You're here to learn loops, not to stress-test the browser.`
+          : `停，${runaway}\n\n先加退出条件或者计数器。你要学循环，不是训练浏览器抗冻。`,
       }
     }
 
-    const lint = detectPythonLint(trimmed)
+    const lint = detectPythonLint(trimmed, lang)
     if (lint) {
       return {
         mood: 'alert',
         status: '语法有疑点',
         detail: lint,
-        autoHint: `我没点运行也看到了：${lint}\n\n先修这个，再按运行。别让终端替你发现肉眼能看到的问题。`,
+        autoHint: en
+          ? `I can see it without even running it: ${lint}\n\nFix this first, then hit run. Don't make the terminal find what your eyes already can.`
+          : `我没点运行也看到了：${lint}\n\n先修这个，再按运行。别让终端替你发现肉眼能看到的问题。`,
       }
     }
   } else {
@@ -224,7 +233,9 @@ function buildInstantInsight({
         mood: 'alert',
         status: '结构没闭合',
         detail: bracketIssue,
-        autoHint: `${languageName} 这段代码结构没收好：${bracketIssue}\n\n先让括号、花括号、引号成对。`,
+        autoHint: en
+          ? `Your ${languageName} structure isn't closed: ${bracketIssue}\n\nPair up the parentheses, braces and quotes first.`
+          : `${languageName} 这段代码结构没收好：${bracketIssue}\n\n先让括号、花括号、引号成对。`,
       }
     }
   }
@@ -260,14 +271,29 @@ function guestMentorReply({
   code,
   languageName,
   assistantName,
+  lang = 'zh',
 }: {
   text: string
   code: string
   languageName: string
   assistantName: string
+  lang?: 'zh' | 'en'
 }) {
   const lower = text.toLowerCase()
   const hasCode = code.trim().length > 0
+
+  if (lang === 'en') {
+    if (!hasCode) {
+      return `Trial mode gives short local hints by default. Want ${assistantName} hooked up to the cloud brain? Log in to use the platform model for free, or add your own API key (DeepSeek / Kimi) in the command center.\n\nThis level is simple: print a given line of text in ${languageName}. Write the smallest code first, then run.`
+    }
+    if (/答案|直接|代码|answer|solution/.test(lower)) {
+      return "Want to just copy the answer? Bold. First confirm three things: you used an output statement, your brackets are paired, and the string matches the target exactly."
+    }
+    if (/报错|error|错|不会|help|提示/.test(lower)) {
+      return "Read the first red line in the terminal. 80% of beginner problems aren't talent — they're quotes, brackets and capitalization throwing a party."
+    }
+    return "The local trial mentor only gives short hints. Log in to use the platform model for free, or add your own API key in the command center for live conversation. For now, don't drift: make the code output the target text and clear level one first."
+  }
 
   if (!hasCode) {
     return `试玩模式默认只给本地短提示。想让 ${assistantName} 真正接上云端大脑？登录后免费用平台模型，或在命令中心填入你自己的 API Key（DeepSeek / Kimi 都行）。\n\n这一关很简单：在编辑器里用 ${languageName} 打印一句指定文本。先写最小代码，再点运行。`
@@ -474,6 +500,7 @@ export function AIChat({
         liveliness: settings.assistantLiveliness,
         memoryEnabled: settings.assistantMemory,
         memory,
+        lang,
       }),
     },
   ])
@@ -545,13 +572,18 @@ export function AIChat({
                 liveliness: settings.assistantLiveliness,
                 memoryEnabled: settings.assistantMemory,
                 memory: storedMemory,
+                lang,
               }),
             }
           : message
       ))
     })
     return () => { cancelled = true }
-  }, [codename, persona.id, settings.assistantLiveliness, settings.assistantMemory])
+  }, [codename, persona.id, settings.assistantLiveliness, settings.assistantMemory, lang])
+
+  // Drop the cached ambient hint when the UI language changes, so it regenerates
+  // in the new language instead of showing stale mount-time text.
+  useEffect(() => { setAmbientHint(null) }, [lang])
 
   // Abort any in-flight request when the component unmounts.
   useEffect(() => () => abortRef.current?.abort(), [])
@@ -591,7 +623,8 @@ export function AIChat({
     lastRunState,
     lastRunMessage,
     recentlyEdited,
-  }), [briefingComplete, currentCode, isRunning, languageName, lastRunMessage, lastRunState, levelObjective, recentlyEdited])
+    lang,
+  }), [briefingComplete, currentCode, isRunning, languageName, lastRunMessage, lastRunState, levelObjective, recentlyEdited, lang])
 
   useEffect(() => {
     if (!lastEditAt) return
@@ -603,7 +636,7 @@ export function AIChat({
     if (isOpen || isSnoozed || settings.assistantLiveliness < 35) return
     const delay = settings.assistantLiveliness > 75 ? 5000 : 9000
     const id = setTimeout(() => {
-      setAmbientHint((current) => current ?? `${instantInsight.status}。${instantInsight.detail}`)
+      setAmbientHint((current) => current ?? (lang === 'en' ? `${tr(instantInsight.status)}. ${tr(instantInsight.detail)}` : `${tr(instantInsight.status)}。${tr(instantInsight.detail)}`))
     }, delay)
     return () => clearTimeout(id)
   }, [instantInsight.detail, instantInsight.status, isOpen, isSnoozed, settings.assistantLiveliness])
@@ -620,7 +653,9 @@ export function AIChat({
     if (!trimmed) return
     const id = setTimeout(() => {
       const firstLine = trimmed.split('\n').map((line) => line.trim()).find(Boolean)
-      setAmbientHint((current) => current ?? `我看到你开始写了：\`${firstLine?.slice(0, 48) ?? '代码'}\`。\n\n${instantInsight.detail}`)
+      setAmbientHint((current) => current ?? (lang === 'en'
+        ? `I see you've started: \`${firstLine?.slice(0, 48) ?? 'code'}\`.\n\n${tr(instantInsight.detail)}`
+        : `我看到你开始写了：\`${firstLine?.slice(0, 48) ?? '代码'}\`。\n\n${instantInsight.detail}`))
     }, settings.assistantLiveliness > 75 ? 6500 : 11000)
     return () => clearTimeout(id)
   }, [currentCode, instantInsight.autoHint, instantInsight.detail, isOpen, isSnoozed, settings.assistantLiveliness])
@@ -885,7 +920,7 @@ export function AIChat({
           languageName,
           assistantPersona: persona.id,
           assistantLiveliness: settings.assistantLiveliness,
-          assistantMemorySummary: settings.assistantMemory ? summarizeAssistantMemory(memory) : '',
+          assistantMemorySummary: settings.assistantMemory ? summarizeAssistantMemory(memory, lang) : '',
         }),
         signal: ctrl.signal,
       })
@@ -960,7 +995,7 @@ export function AIChat({
         {
           id: assistantId,
           role: 'assistant',
-          content: guestMentorReply({ text, code: currentCode, languageName, assistantName: persona.name }),
+          content: guestMentorReply({ text, code: currentCode, languageName, assistantName: persona.name, lang }),
         },
       ])
       setInput('')
@@ -1021,13 +1056,21 @@ export function AIChat({
       return
     }
 
-    const reactions = [
-      `${persona.name} 抬头看了你一眼。\n\n要正式对话就点“打开”；再点我会换个反应。`,
-      hasCode
-        ? `我在看你的代码。${instantInsight.status}：${instantInsight.detail}\n\n要我认真拆问题，点“观察当前代码”。`
-        : `编辑器还是空的。我可以陪你盯屏幕，但空白不会自己变成答案。\n\n先看完教学，再写第一行。`,
-      `鼠标现在在「${pointerZone}」。我知道你在那边晃悠。\n\n再点一下我就打开正式对话。`,
-    ]
+    const reactions = lang === 'en'
+      ? [
+          `${persona.nameEn} glances up at you.\n\nTap "Open" for a real conversation; tap me again for another reaction.`,
+          hasCode
+            ? `I'm reading your code. ${tr(instantInsight.status)}: ${tr(instantInsight.detail)}\n\nWant me to break the problem down? Tap "Inspect current code".`
+            : `The editor is still empty. I can watch the screen with you, but blank space won't turn into an answer on its own.\n\nFinish the lesson, then write your first line.`,
+          `Your cursor is over "${pointerZone}". I can see you wandering over there.\n\nTap me once more to open a real conversation.`,
+        ]
+      : [
+          `${persona.name} 抬头看了你一眼。\n\n要正式对话就点“打开”；再点我会换个反应。`,
+          hasCode
+            ? `我在看你的代码。${instantInsight.status}：${instantInsight.detail}\n\n要我认真拆问题，点“观察当前代码”。`
+            : `编辑器还是空的。我可以陪你盯屏幕，但空白不会自己变成答案。\n\n先看完教学，再写第一行。`,
+          `鼠标现在在「${pointerZone}」。我知道你在那边晃悠。\n\n再点一下我就打开正式对话。`,
+        ]
 
     setInteractionHint(reactions[nextStep - 1] ?? reactions[0])
   }
