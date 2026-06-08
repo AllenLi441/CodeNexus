@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
+// Remote compile+run (Wandbox fallback) needs headroom beyond the default 10s.
+export const maxDuration = 30
 
 type SupportedLanguage = 'c' | 'cpp' | 'java' | 'csharp' | 'javascript' | 'visual-basic'
 
@@ -102,6 +104,60 @@ function response(output: string, error: string, executionMs: number) {
   })
 }
 
+// Remote execution fallback. Vercel's serverless runtime has Node (so JS runs
+// locally) but NOT gcc/g++/javac/mono, so C/C++/Java/C# are compiled+run on a
+// remote sandbox. Defaults to the public Wandbox API (free, no key) and is
+// overridable via CODE_EXEC_WANDBOX_URL so the deployment can point at a
+// self-hosted instance for production reliability. VB is not on Wandbox.
+const WANDBOX_URL = process.env.CODE_EXEC_WANDBOX_URL?.trim() || 'https://wandbox.org/api/compile.json'
+const WANDBOX_COMPILER: Partial<Record<SupportedLanguage, string>> = {
+  c: 'gcc-12.3.0-c',
+  cpp: 'gcc-12.3.0',
+  java: 'openjdk-jdk-21+35',
+  csharp: 'mono-6.12.0.199',
+}
+
+async function runViaWandbox(languageId: SupportedLanguage, code: string) {
+  const compiler = WANDBOX_COMPILER[languageId]
+  if (!compiler) {
+    return response('', '这门语言暂时不支持在线编译运行（仅做结构检查）。真实运行需自托管执行后端。', 1)
+  }
+  // Wandbox writes the source to prog.java, so a `public class X` trips the
+  // "class X is public, should be in X.java" rule. A package-private class with
+  // main still runs identically — strip only the `public` before `class`.
+  const payloadCode = languageId === 'java' ? code.replace(/\bpublic\s+(?=class\b)/g, '') : code
+
+  const started = Date.now()
+  try {
+    const res = await fetch(WANDBOX_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ compiler, code: payloadCode, stdin: '' }),
+      signal: AbortSignal.timeout(15_000),
+    })
+    const executionMs = Date.now() - started
+    if (!res.ok) {
+      return response('', `在线编译服务返回 ${res.status}，稍后再试。`, executionMs)
+    }
+    const data = (await res.json()) as {
+      program_output?: string
+      program_error?: string
+      compiler_error?: string
+      status?: string
+    }
+    const compileErr = (data.compiler_error ?? '').trim()
+    const runOut = truncate(data.program_output ?? '')
+    const runErr = truncate(data.program_error ?? '')
+    // Non-zero status with no stdout → surface the compiler error as the failure.
+    if (compileErr && (data.status !== '0' || !runOut)) {
+      return response(runOut, compileErr, executionMs)
+    }
+    return response(runOut, runErr, executionMs)
+  } catch {
+    return response('', '在线编译服务暂时不可用（网络或超时）。稍后再试，或在部署环境配置自托管执行后端（CODE_EXEC_WANDBOX_URL）。', Date.now() - started)
+  }
+}
+
 async function runJavaScript(code: string, cwd: string) {
   const node = await firstAvailable(['node'])
   if (!node) return response('', '缺少 Node.js，无法真实运行 JavaScript。', 1)
@@ -113,7 +169,7 @@ async function runJavaScript(code: string, cwd: string) {
 
 async function runC(code: string, cwd: string) {
   const compiler = await firstAvailable(['clang', 'gcc'])
-  if (!compiler) return response('', '缺少 clang/gcc，无法真实编译 C。', 1)
+  if (!compiler) return runViaWandbox('c', code)
   const source = join(cwd, 'main.c')
   const binary = join(cwd, 'main')
   await writeFile(source, code, 'utf8')
@@ -127,7 +183,7 @@ async function runC(code: string, cwd: string) {
 
 async function runCpp(code: string, cwd: string) {
   const compiler = await firstAvailable(['clang++', 'g++'])
-  if (!compiler) return response('', '缺少 clang++/g++，无法真实编译 C++。', 1)
+  if (!compiler) return runViaWandbox('cpp', code)
   const source = join(cwd, 'main.cpp')
   const binary = join(cwd, 'main')
   await writeFile(source, code, 'utf8')
@@ -142,7 +198,7 @@ async function runCpp(code: string, cwd: string) {
 async function runJava(code: string, cwd: string) {
   const javac = await firstAvailable(['javac'])
   const java = await firstAvailable(['java'])
-  if (!javac || !java) return response('', '缺少 javac/java，无法真实编译 Java。', 1)
+  if (!javac || !java) return runViaWandbox('java', code)
   const source = join(cwd, 'Main.java')
   await writeFile(source, code, 'utf8')
 
@@ -155,9 +211,7 @@ async function runJava(code: string, cwd: string) {
 
 async function runCSharp(code: string, cwd: string) {
   const dotnet = await firstAvailable(['dotnet'])
-  if (!dotnet) {
-    return response('', '缺少 .NET SDK。安装 dotnet 后，C# 会走真实编译运行；现在不能假装已经跑了。', 1)
-  }
+  if (!dotnet) return runViaWandbox('csharp', code)
 
   const projectDir = join(cwd, 'CSharpRun')
   const create = await runCommand(dotnet, ['new', 'console', '--force', '--output', projectDir], cwd)
@@ -170,9 +224,7 @@ async function runCSharp(code: string, cwd: string) {
 
 async function runVisualBasic(code: string, cwd: string) {
   const dotnet = await firstAvailable(['dotnet'])
-  if (!dotnet) {
-    return response('', '缺少 .NET SDK / VB 编译器。安装 dotnet 后，Visual Basic 会走真实编译运行。', 1)
-  }
+  if (!dotnet) return runViaWandbox('visual-basic', code)
 
   const projectDir = join(cwd, 'VBRun')
   const create = await runCommand(dotnet, ['new', 'console', '-lang', 'VB', '--force', '--output', projectDir], cwd)
