@@ -60,7 +60,7 @@ export default async function PlayPage({
       initialSettings={{
         tauntFrequency: 62,
         fontMode: 'cyberpunk',
-        noiseBrightness: 48,
+        noiseBrightness: 0,
         chatDock: 'right',
         chatPanelWidth: 390,
         autoOpenMentor: false,

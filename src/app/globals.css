@@ -56,46 +56,58 @@
   --color-code-green: var(--code-green);
 }
 
+/* Restyle (direction A): desaturate Tailwind's cyan palette to a calm steel-blue
+   so the hundreds of existing text/border/bg-cyan-* usages cascade to the new
+   look without touching components. */
+@theme {
+  --color-cyan-50: oklch(0.975 0.008 210);
+  --color-cyan-100: oklch(0.95 0.015 210);
+  --color-cyan-200: oklch(0.91 0.03 210);
+  --color-cyan-300: oklch(0.86 0.05 210);
+  --color-cyan-400: oklch(0.78 0.065 212);
+  --color-cyan-950: oklch(0.30 0.035 220);
+}
+
 :root {
-  --background: oklch(0.97 0.004 240);
+  --background: oklch(0.985 0.002 240);
   --foreground: oklch(0.12 0.01 240);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.12 0.01 240);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.12 0.01 240);
-  /* Cyan — desaturated a touch so it reads professional, not neon/gaming */
-  --primary: oklch(0.62 0.13 212);
-  --primary-foreground: oklch(0.13 0.015 230);
-  --secondary: oklch(0.94 0.01 240);
+  /* Calm steel-blue accent — restrained dev-tool look, not neon */
+  --primary: oklch(0.55 0.08 220);
+  --primary-foreground: oklch(0.985 0.003 230);
+  --secondary: oklch(0.95 0.005 240);
   --secondary-foreground: oklch(0.25 0.01 240);
-  --muted: oklch(0.94 0.01 240);
+  --muted: oklch(0.95 0.005 240);
   --muted-foreground: oklch(0.46 0.01 240);
-  --accent: oklch(0.92 0.035 210);
-  --accent-foreground: oklch(0.26 0.12 210);
+  --accent: oklch(0.93 0.02 220);
+  --accent-foreground: oklch(0.28 0.06 220);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.99 0.003 27);
-  --border: oklch(0.88 0.01 240);
-  --input: oklch(0.88 0.01 240);
-  --ring: oklch(0.65 0.17 212);
-  --chart-1: oklch(0.65 0.17 212);
+  --border: oklch(0.89 0.005 240);
+  --input: oklch(0.89 0.005 240);
+  --ring: oklch(0.60 0.09 220);
+  --chart-1: oklch(0.60 0.09 220);
   --chart-2: oklch(0.65 0.18 180);
   --chart-3: oklch(0.64 0.15 150);
   --chart-4: oklch(0.68 0.20 40);
   --chart-5: oklch(0.60 0.22 320);
   --radius: 0.75rem;
-  --sidebar: oklch(0.96 0.008 240);
+  --sidebar: oklch(0.97 0.003 240);
   --sidebar-foreground: oklch(0.12 0.01 240);
-  --sidebar-primary: oklch(0.65 0.17 212);
-  --sidebar-primary-foreground: oklch(0.13 0.015 230);
-  --sidebar-accent: oklch(0.92 0.035 210);
-  --sidebar-accent-foreground: oklch(0.26 0.12 210);
-  --sidebar-border: oklch(0.88 0.01 240);
-  --sidebar-ring: oklch(0.65 0.17 212);
-  --brand: oklch(0.65 0.17 212);
-  --brand-foreground: oklch(0.13 0.015 230);
-  --nexus: oklch(0.87 0.11 207);
+  --sidebar-primary: oklch(0.55 0.08 220);
+  --sidebar-primary-foreground: oklch(0.985 0.003 230);
+  --sidebar-accent: oklch(0.93 0.02 220);
+  --sidebar-accent-foreground: oklch(0.28 0.06 220);
+  --sidebar-border: oklch(0.89 0.005 240);
+  --sidebar-ring: oklch(0.60 0.09 220);
+  --brand: oklch(0.55 0.08 220);
+  --brand-foreground: oklch(0.985 0.003 230);
+  --nexus: oklch(0.87 0.055 210);
   --code-green: oklch(0.84 0.21 150);
-  --cn-noise-opacity: 0.45;
+  --cn-noise-opacity: 0;
   /* Code surfaces — always dark, independent of page theme */
   --code-bg: oklch(0.13 0.015 280);
   --code-bg-elevated: oklch(0.17 0.018 280);
@@ -105,43 +117,43 @@
 }
 
 .dark {
-  /* Deep Nexus dark */
-  --background: oklch(0.11 0.005 240);
+  /* Neutral deep dark — restrained dev-tool look */
+  --background: oklch(0.11 0.004 240);
   --foreground: oklch(0.93 0.005 240);
-  --card: oklch(0.15 0.01 240);
+  --card: oklch(0.15 0.006 240);
   --card-foreground: oklch(0.93 0.005 240);
-  --popover: oklch(0.15 0.01 240);
+  --popover: oklch(0.15 0.006 240);
   --popover-foreground: oklch(0.93 0.005 240);
-  /* Cyan — desaturated a notch so it reads professional, not neon/gaming */
-  --primary: oklch(0.76 0.12 206);
+  /* Calm steel-blue accent — restrained dev-tool look, not neon */
+  --primary: oklch(0.76 0.07 212);
   --primary-foreground: oklch(0.13 0.015 230);
-  --secondary: oklch(0.20 0.02 240);
+  --secondary: oklch(0.20 0.01 240);
   --secondary-foreground: oklch(0.93 0.005 240);
-  --muted: oklch(0.20 0.02 240);
+  --muted: oklch(0.20 0.01 240);
   --muted-foreground: oklch(0.64 0.01 240);
-  --accent: oklch(0.22 0.05 210);
-  --accent-foreground: oklch(0.85 0.12 210);
+  --accent: oklch(0.21 0.025 220);
+  --accent-foreground: oklch(0.86 0.06 212);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.99 0.003 27);
   --border: oklch(1 0 0 / 7%);
   --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.80 0.15 206);
-  --chart-1: oklch(0.80 0.15 206);
+  --ring: oklch(0.78 0.08 212);
+  --chart-1: oklch(0.78 0.08 212);
   --chart-2: oklch(0.65 0.18 180);
   --chart-3: oklch(0.80 0.18 150);
   --chart-4: oklch(0.68 0.20 40);
   --chart-5: oklch(0.60 0.22 320);
-  --sidebar: oklch(0.13 0.01 240);
+  --sidebar: oklch(0.13 0.005 240);
   --sidebar-foreground: oklch(0.93 0.005 240);
-  --sidebar-primary: oklch(0.80 0.15 206);
+  --sidebar-primary: oklch(0.78 0.08 212);
   --sidebar-primary-foreground: oklch(0.13 0.015 230);
-  --sidebar-accent: oklch(0.22 0.05 210);
-  --sidebar-accent-foreground: oklch(0.85 0.12 210);
+  --sidebar-accent: oklch(0.21 0.025 220);
+  --sidebar-accent-foreground: oklch(0.86 0.06 212);
   --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: oklch(0.80 0.15 206);
-  --brand: oklch(0.80 0.15 206);
+  --sidebar-ring: oklch(0.78 0.08 212);
+  --brand: oklch(0.78 0.08 212);
   --brand-foreground: oklch(0.13 0.015 230);
-  --nexus: oklch(0.87 0.11 207);
+  --nexus: oklch(0.87 0.055 210);
   --code-green: oklch(0.84 0.21 150);
   /* Code surfaces — identical to :root, kept here so the dark set stays complete */
   --code-bg: oklch(0.13 0.015 280);
@@ -180,33 +192,35 @@ html[data-cn-font='cyberpunk'] body {
     transition-timing-function: var(--cn-ease-apple);
   }
 
+  /* Restyle: glass panels are now near-flat cards — light blur, no saturation pump */
   .glass {
     background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .glass-nexus {
-    background: rgba(103, 232, 249, 0.04);
-    backdrop-filter: blur(12px) saturate(160%);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    border: 1px solid rgba(103, 232, 249, 0.12);
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
   }
 
   .glass-dark {
     background: rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(20px) saturate(200%);
-    -webkit-backdrop-filter: blur(20px) saturate(200%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
+  /* Restyle: former neon glows are now soft neutral elevation */
   .glow-nexus {
-    box-shadow: 0 0 20px color-mix(in oklab, var(--nexus) 25%, transparent), 0 0 60px color-mix(in oklab, var(--nexus) 8%, transparent);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.20), 0 8px 24px rgba(0, 0, 0, 0.16);
   }
 
   .glow-green {
-    box-shadow: 0 0 20px color-mix(in oklab, var(--code-green) 20%, transparent), 0 0 40px color-mix(in oklab, var(--code-green) 6%, transparent);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 6px 18px rgba(0, 0, 0, 0.14);
   }
 
   .text-nexus {
@@ -239,18 +253,19 @@ html[data-cn-font='cyberpunk'] body {
     position: relative;
   }
 
+  /* Restyle: noise is OFF by default (--cn-noise-opacity: 0). The texture is kept
+     neutral (no cyan tint) for users who re-enable it in Command Center. */
   .cn-noise::before {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 0;
-    opacity: calc(var(--cn-noise-opacity, 0.45) * 0.18);
+    opacity: calc(var(--cn-noise-opacity, 0) * 0.14);
     background-image:
-      radial-gradient(circle at 20% 10%, rgba(103, 232, 249, 0.35) 0 1px, transparent 1.5px),
-      radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.28) 0 0.8px, transparent 1.4px),
-      linear-gradient(rgba(103, 232, 249, 0.08) 1px, transparent 1px);
-    background-size: 38px 38px, 53px 53px, 100% 7px;
+      radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.30) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.22) 0 0.8px, transparent 1.4px);
+    background-size: 38px 38px, 53px 53px;
     mix-blend-mode: screen;
   }
 
@@ -264,23 +279,21 @@ html[data-cn-font='cyberpunk'] body {
 
   .astro-flow .react-flow__controls-button {
     background: rgba(0, 0, 0, 0.82);
-    border-color: rgba(103, 232, 249, 0.16);
-    color: rgba(207, 250, 254, 0.88);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.85);
   }
 
   .astro-flow .react-flow__controls-button:hover {
-    background: rgba(103, 232, 249, 0.12);
+    background: rgba(255, 255, 255, 0.10);
   }
 
   .astro-flow .react-flow__node {
     transition: filter 360ms var(--cn-ease-apple);
   }
 
+  /* Restyle: grid backdrop removed — class kept so existing markup stays valid */
   .cn-grid-shell {
-    background-image:
-      linear-gradient(rgba(103, 232, 249, 0.055) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(103, 232, 249, 0.045) 1px, transparent 1px);
-    background-size: 32px 32px;
+    background-image: none;
   }
 
   .cn-assistant-layout {
@@ -330,24 +343,22 @@ html[data-cn-font='cyberpunk'] body {
   .cn-panel {
     background: color-mix(in oklab, var(--foreground) 2.6%, transparent);
     border: 1px solid var(--border);
-    /* Shadow carries a faint nexus hue rather than pure black */
     box-shadow:
       inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent),
-      0 10px 34px color-mix(in oklab, oklch(0.06 0.02 240) 60%, transparent);
+      0 8px 28px rgba(0, 0, 0, 0.32);
   }
 
   .cn-panel-cyan {
     background: color-mix(in oklab, var(--nexus) 6%, transparent);
     border: 1px solid color-mix(in oklab, var(--nexus) 18%, transparent);
-    /* Elevation tinted with the cyan accent so it reads as a brand surface */
     box-shadow:
       inset 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent),
-      0 12px 44px color-mix(in oklab, var(--nexus) 14%, transparent);
+      0 8px 28px rgba(0, 0, 0, 0.28);
   }
 
   .cn-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(103, 232, 249, 0.38) rgba(255, 255, 255, 0.04);
+    scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.04);
   }
 
   .cn-scrollbar::-webkit-scrollbar {
@@ -360,7 +371,7 @@ html[data-cn-font='cyberpunk'] body {
   }
 
   .cn-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(103, 232, 249, 0.34);
+    background: rgba(255, 255, 255, 0.22);
     border-radius: 999px;
   }
 
@@ -369,7 +380,7 @@ html[data-cn-font='cyberpunk'] body {
   }
 
   .cn-focus-ring:focus-visible {
-    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.9), 0 0 0 4px rgba(103, 232, 249, 0.72);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.9), 0 0 0 4px color-mix(in oklab, var(--ring) 80%, transparent);
   }
 
   html[data-cn-map-animations='off'] .astro-flow .react-flow__edge.animated path {

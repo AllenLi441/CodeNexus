@@ -367,8 +367,8 @@ export function CommandCenter({
                       <p className="text-xs font-medium text-white/70">{tr('字体协议')}</p>
                       <div className="grid grid-cols-2 gap-2">
                         {([
-                          { id: 'hacker', label: 'Hacker' },
-                          { id: 'cyberpunk', label: 'Cyberpunk' },
+                          { id: 'cyberpunk', label: 'Standard' },
+                          { id: 'hacker', label: 'Mono' },
                         ] as const).map((option) => (
                           <button
                             key={option.id}
