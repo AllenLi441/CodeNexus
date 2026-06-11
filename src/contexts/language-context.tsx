@@ -1,8 +1,9 @@
 'use client'
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useState, useTransition, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { type Lang, LANG_COOKIE, DEFAULT_LANG, TRANSLATIONS, translate } from '@/lib/i18n'
+import { persistLanguage } from '@/app/actions/language'
 
 // Use a loose type so both zh/en translations are assignable
 type AnyTranslation = typeof TRANSLATIONS.zh | typeof TRANSLATIONS.en
@@ -21,6 +22,7 @@ const LanguageContext = createContext<LanguageContextValue>({
 
 export function LanguageProvider({ children, initialLang }: { children: ReactNode; initialLang?: Lang }) {
   const router = useRouter()
+  const [, startTransition] = useTransition()
   const [lang, setLangState] = useState<Lang>(() => {
     if (initialLang) return initialLang
     if (typeof document === 'undefined') return DEFAULT_LANG
@@ -33,13 +35,19 @@ export function LanguageProvider({ children, initialLang }: { children: ReactNod
   })
 
   function setLang(newLang: Lang) {
+    if (newLang === lang) return
+    // 1) Instant client update for any text rendered via useTr().
     setLangState(newLang)
-    // Persist in cookie for 1 year
+    // 2) Write the cookie client-side too, so a hard reload / next navigation is
+    //    already in the new language even before the action round-trips.
     document.cookie = `${LANG_COOKIE}=${newLang};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`
-    // Re-render Server Components so server-rendered text (dashboard, wall, login,
-    // share, etc.) picks up the new cookie too. Client state (editor, Pyodide) is
-    // preserved across refresh.
-    router.refresh()
+    // 3) Commit the cookie server-side via a Server Action, THEN refresh — this is
+    //    what reliably re-renders Server-Component text (dashboard, wall, login,
+    //    share…) in Next 16. Client state (editor, Pyodide) is preserved.
+    startTransition(async () => {
+      await persistLanguage(newLang)
+      router.refresh()
+    })
   }
 
   return (
