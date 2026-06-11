@@ -782,7 +782,9 @@ export function AIChat({
 
   function inspectCurrentCode() {
     if (hasCode) {
-      void sendMessage('先观察我当前编辑器里的代码，别直接给完整答案。指出一个最关键的问题和下一步最小修改。')
+      void sendMessage(lang === 'en'
+        ? "Look at the code in my editor first — don't hand me the full answer. Point out the single most critical issue and the smallest next change."
+        : '先观察我当前编辑器里的代码，别直接给完整答案。指出一个最关键的问题和下一步最小修改。')
     } else {
       setAmbientHint(tr('编辑器还是空的。我能观察空气，但空气不会通关。先写一行最小代码。'))
     }
@@ -882,7 +884,7 @@ export function AIChat({
       setVoiceStatus('error')
       setPermissionMessage(event.error === 'no-speech'
         ? '没听到有效语音。靠近麦克风，或者直接打字。'
-        : `语音识别出错：${event.error ?? '未知错误'}。`)
+        : tr('语音识别出错：{err}。').replace('{err}', String(event.error ?? tr('未知错误'))))
     }
 
     recognition.onend = () => {
@@ -932,6 +934,11 @@ export function AIChat({
           assistantPersona: persona.id,
           assistantLiveliness: settings.assistantLiveliness,
           assistantMemorySummary: settings.assistantMemory ? summarizeAssistantMemory(memory, lang) : '',
+          // Lesson context — lets the mentor answer against the actual goal and
+          // the most recent run result instead of guessing from code alone.
+          levelObjective: levelObjective ?? '',
+          lastRunState: lastRunState ?? '',
+          lastRunMessage: lastRunMessage?.slice(0, 400) ?? '',
         }),
         signal: ctrl.signal,
       })
@@ -1024,7 +1031,7 @@ export function AIChat({
       setMemory(rememberAssistantEvent({
         type: 'chat',
         languageName,
-        note: `问了：${text.slice(0, 40)}`,
+        note: lang === 'en' ? `Asked: ${text.slice(0, 40)}` : `问了：${text.slice(0, 40)}`,
       }))
     }
 
@@ -1073,7 +1080,7 @@ export function AIChat({
           hasCode
             ? `I'm reading your code. ${tr(instantInsight.status)}: ${tr(instantInsight.detail)}\n\nWant me to break the problem down? Tap "Inspect current code".`
             : `The editor is still empty. I can watch the screen with you, but blank space won't turn into an answer on its own.\n\nFinish the lesson, then write your first line.`,
-          `Your cursor is over "${pointerZone}". I can see you wandering over there.\n\nTap me once more to open a real conversation.`,
+          `Your cursor is over "${tr(pointerZone)}". I can see you wandering over there.\n\nTap me once more to open a real conversation.`,
         ]
       : [
           `${persona.name} 抬头看了你一眼。\n\n要正式对话就点“打开”；再点我会换个反应。`,
@@ -1121,7 +1128,7 @@ export function AIChat({
               onClick={handleCompanionTap}
               onMouseEnter={() => {
                 if (settings.assistantLiveliness > 70 && !activeHint) {
-                  setAmbientHint(`${persona.name} 看着你的鼠标。点我一下，我会先弹互动；再点会换反应。`)
+                  setAmbientHint(tr('{name} 看着你的鼠标。点我一下，我会先弹互动；再点会换反应。').replace('{name}', tr(persona.name)))
                 }
               }}
               className="cn-focus-ring relative block"
@@ -1221,9 +1228,11 @@ export function AIChat({
                   {tr(instantInsight.status)}：{tr(instantInsight.detail)}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  <span className="rounded border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] text-cyan-100/70">
-                    {tr('精致立绘')}
-                  </span>
+                  {persona.id !== 'nexus' && (
+                    <span className="rounded border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] text-cyan-100/70">
+                      {tr('精致立绘')}
+                    </span>
+                  )}
                   {levelTitle && (
                     <span className="rounded border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] text-cyan-100/70">
                       {tr(levelTitle)}

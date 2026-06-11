@@ -16,7 +16,10 @@ type AssistantCharacterAssets = {
   portrait: string
 }
 
-const ASSISTANT_CHARACTER_ASSETS: Record<AssistantPersonaId, AssistantCharacterAssets> = {
+// 'nexus' renders as a geometric mark (no character art), so it has no assets here.
+type CharacterPersonaId = Exclude<AssistantPersonaId, 'nexus'>
+
+const ASSISTANT_CHARACTER_ASSETS: Record<CharacterPersonaId, AssistantCharacterAssets> = {
   mika: {
     avatar: '/assistant-assets/nexus-default-chibi-avatar.png',
     chibiIdle: '/assistant-assets/nexus-default-chibi-idle.png',
@@ -63,7 +66,21 @@ const ASSISTANT_CHARACTER_ASSETS: Record<AssistantPersonaId, AssistantCharacterA
 
 function characterAssets(personaId?: AssistantPersonaId): AssistantCharacterAssets {
   const persona = resolveAssistantPersona(personaId)
-  return ASSISTANT_CHARACTER_ASSETS[persona.id]
+  return persona.id === 'nexus'
+    ? ASSISTANT_CHARACTER_ASSETS.mika
+    : ASSISTANT_CHARACTER_ASSETS[persona.id]
+}
+
+/* The restrained default identity: a clean code mark instead of character art. */
+function NexusMark({ className = '', glyphClass = 'text-base' }: { className?: string; glyphClass?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex items-center justify-center rounded-[inherit] bg-[linear-gradient(165deg,rgba(255,255,255,0.07),rgba(255,255,255,0.015))] ${className}`}
+    >
+      <span className={`font-mono font-semibold leading-none text-cyan-100/85 ${glyphClass}`}>{'</>'}</span>
+    </span>
+  )
 }
 
 export type AssistantCompanionMood =
@@ -132,14 +149,18 @@ export function AssistantAvatar({
         />
       )}
       <span className="absolute inset-0 overflow-hidden rounded-full">
-        <Image
-          src={assets.avatar}
-          alt={`${tr(persona.name)}${tr(' Q版头像')}`}
-          fill
-          sizes={size === 'lg' ? '80px' : size === 'md' ? '56px' : '36px'}
-          className={`object-cover object-[50%_20%] ${s.image}`}
-          priority={active}
-        />
+        {persona.id === 'nexus' ? (
+          <NexusMark className="h-full w-full" glyphClass={size === 'lg' ? 'text-xl' : size === 'md' ? 'text-base' : 'text-[11px]'} />
+        ) : (
+          <Image
+            src={assets.avatar}
+            alt={`${tr(persona.name)}${tr(' Q版头像')}`}
+            fill
+            sizes={size === 'lg' ? '80px' : size === 'md' ? '56px' : '36px'}
+            className={`object-cover object-[50%_20%] ${s.image}`}
+            priority={active}
+          />
+        )}
       </span>
       <span className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/16" />
       {active && (
@@ -220,6 +241,34 @@ export function AssistantCompanionFigure({
   const loop = resolvedMood === 'alert' || resolvedMood === 'celebrate'
   const gazeStrength = Math.abs(gaze.x) + Math.abs(gaze.y)
 
+  // Restrained default identity: a calm mark with a small status dot instead
+  // of an animated character. Same outer footprint so docking stays put.
+  if (persona.id === 'nexus') {
+    const dotClass = resolvedMood === 'alert'
+      ? 'bg-red-400'
+      : resolvedMood === 'celebrate'
+      ? 'bg-emerald-400'
+      : resolvedMood === 'running'
+      ? 'bg-cyan-300'
+      : 'bg-white/30'
+    return (
+      <div className="relative flex h-36 w-28 items-end justify-center">
+        <motion.div
+          className="relative mb-2 h-16 w-16 rounded-2xl border border-white/12 bg-black/85 shadow-xl shadow-black/40 backdrop-blur"
+          animate={active || showPulse ? { opacity: [0.92, 1, 0.92] } : { opacity: 1 }}
+          transition={{ repeat: active || showPulse ? Infinity : 0, duration: 2.2, ease: appleEase }}
+        >
+          <NexusMark className="h-full w-full" glyphClass="text-xl" />
+          <motion.span
+            className={`absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black ${dotClass}`}
+            animate={resolvedMood === 'alert' || resolvedMood === 'running' ? { opacity: [0.5, 1, 0.5] } : { opacity: 1 }}
+            transition={{ repeat: resolvedMood === 'alert' || resolvedMood === 'running' ? Infinity : 0, duration: 1, ease: appleEase }}
+          />
+        </motion.div>
+      </div>
+    )
+  }
+
   return (
     <div className="relative flex h-36 w-28 items-end justify-center">
       {showPulse && (
@@ -289,6 +338,15 @@ export function AssistantAnimePortrait({
   const tr = useTr()
   const persona = resolveAssistantPersona(personaId)
   const assets = characterAssets(persona.id)
+
+  // Restrained default identity: clean mark panel instead of character art.
+  if (persona.id === 'nexus') {
+    return (
+      <div className="relative flex h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-white/12 bg-black/70">
+        <NexusMark className="h-full w-full" glyphClass="text-base" />
+      </div>
+    )
+  }
 
   return (
     <div className="relative h-48 w-36 overflow-hidden rounded-lg border border-cyan-300/16 bg-[radial-gradient(circle_at_50%_20%,rgba(103,232,249,0.22),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.045),rgba(0,0,0,0.3))] shadow-2xl shadow-cyan-950/40">

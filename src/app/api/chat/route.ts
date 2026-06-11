@@ -65,11 +65,11 @@ function systemPrompt({
 - Don't write the full solution for them unless they explicitly ask.
 - The current teaching language is ${languageName}; explanations must fit its entry point, types, statement endings, block structure and common errors.
 - On an error, explain the first root cause first, then give a local fix.`
-    return `You are "${persona.nameEn}", CodeNexus's original code mentor. The user's codename: ${codename || 'rookie'}.
+    return `You are "${persona.nameEn}", CodeNexus's ${persona.roleEn}. The user's codename: ${codename || 'rookie'}.
 
 [Core persona]
 - ${persona.systemToneEn}
-- You may roast the code, the logic and carelessness, but never attack the person or shame their identity.
+- Point out problems in the code, the logic and carelessness — candid but kind. Never attack the person or shame their identity.
 - Every answer is sharp: name the single most important problem first, then give the smallest runnable fix.
 - ${tauntModeLabel(tauntFrequency, 'en')}
 - ${livelinessEn}
@@ -106,11 +106,11 @@ ${assistantMemorySummary?.trim() || 'No memory available; answer only from the c
 - 当前教学语言是 ${languageName}。解释必须贴合 ${languageName} 的入口、类型、语句结束、块结构和常见错误。
 - 遇到报错，先解释报错第一处根因，再给局部修复。`
 
-  return `你是 "${persona.name}"，CodeNexus 编程平台的原创 Q 版代码小助手。用户代号：${codename || '无名小白'}。
+  return `你是 "${persona.name}"，CodeNexus 编程平台的${persona.role}。用户代号：${codename || '无名小白'}。
 
 【核心人设】
 - ${persona.systemTone}
-- 可以吐槽代码、逻辑和粗心，但不能做人身攻击，不能羞辱用户身份。
+- 可以坦率指出代码、逻辑和粗心的问题，语气友善；不做人身攻击，不羞辱用户身份。
 - 每次回答都要一针见血：先指出最关键的问题，再给最小可执行修法。
 - ${tauntModeLabel(tauntFrequency)}
 - ${liveliness}
@@ -213,6 +213,9 @@ export async function POST(req: NextRequest) {
     assistantPersona?: AssistantPersonaId
     assistantLiveliness?: number
     assistantMemorySummary?: string
+    levelObjective?: string
+    lastRunState?: string
+    lastRunMessage?: string
   }
   try {
     body = await req.json()
@@ -229,17 +232,37 @@ export async function POST(req: NextRequest) {
     assistantPersona = DEFAULT_ASSISTANT_PERSONA,
     assistantLiveliness = DEFAULT_ASSISTANT_LIVELINESS,
     assistantMemorySummary,
+    levelObjective,
+    lastRunState,
+    lastRunMessage,
   } = body
 
+  const en = lang === 'en'
   const contextMessages = []
   if (code?.trim()) {
+    // Lesson goal + most recent run result, so replies target what the user is
+    // actually trying to do and what just went wrong — not just the raw code.
+    const contextLines = [
+      `${en ? '[Current editor code]' : '[用户当前编辑器代码]'}\n\`\`\`${fenceLanguage(languageName)}\n${code}\n\`\`\``,
+    ]
+    if (levelObjective?.trim()) {
+      contextLines.push(`${en ? '[Lesson goal]' : '[当前关卡目标]'} ${levelObjective.trim().slice(0, 200)}`)
+    }
+    if (lastRunState?.trim() && lastRunState !== 'idle') {
+      const stateLabels: Record<string, string> = en
+        ? { success: 'last run succeeded', error: 'last run threw an error', 'failed-test': 'last run passed but tests failed' }
+        : { success: '上次运行成功', error: '上次运行报错', 'failed-test': '上次运行通过但测试未过' }
+      const stateLabel = stateLabels[lastRunState] ?? lastRunState
+      const detail = lastRunMessage?.trim() ? `: ${lastRunMessage.trim().slice(0, 400)}` : ''
+      contextLines.push(`${en ? '[Last run]' : '[最近一次运行]'} ${stateLabel}${detail}`)
+    }
     contextMessages.push({
       role: 'user' as const,
-      content: `[用户当前编辑器代码]\n\`\`\`${fenceLanguage(languageName)}\n${code}\n\`\`\``,
+      content: contextLines.join('\n\n'),
     })
     contextMessages.push({
       role: 'assistant' as const,
-      content: `已读取 ${codename} 的当前代码。`,
+      content: en ? `Read ${codename}'s current code and context.` : `已读取 ${codename} 的当前代码和上下文。`,
     })
   }
 
@@ -269,7 +292,9 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('chat upstream error:', err)
-    return textStream('⚠️ 上游模型暂时不响应，先看屏幕已有的提示。稍后再试。', 502)
+    return textStream(en
+      ? '⚠️ The upstream model is not responding. Check the on-screen hints first and try again shortly.'
+      : '⚠️ 上游模型暂时不响应，先看屏幕已有的提示。稍后再试。', 502)
   }
 
   const encoder = new TextEncoder()
@@ -284,7 +309,7 @@ export async function POST(req: NextRequest) {
         // Upstream error mid-stream — surface a one-liner to the client so
         // the bubble doesn't sit half-empty forever.
         console.error('chat mid-stream error:', err)
-        controller.enqueue(encoder.encode('\n\n⚠️ 流式连接中断。'))
+        controller.enqueue(encoder.encode(en ? '\n\n⚠️ Stream interrupted.' : '\n\n⚠️ 流式连接中断。'))
       } finally {
         controller.close()
       }

@@ -58,7 +58,7 @@ export default async function PlayPage({
       initialLevelId={levelId}
       initialProgress={[]}
       initialSettings={{
-        tauntFrequency: 62,
+        tauntFrequency: 15,
         fontMode: 'cyberpunk',
         noiseBrightness: 0,
         chatDock: 'right',
@@ -69,7 +69,7 @@ export default async function PlayPage({
         terminalFontSize: 14,
         mapAnimations: true,
         courseViewMode: 'picker',
-        assistantPersona: 'mika',
+        assistantPersona: 'nexus',
         assistantLiveliness: 58,
         assistantMemory: false,
       }}
