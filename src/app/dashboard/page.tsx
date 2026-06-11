@@ -79,16 +79,10 @@ export default async function DashboardPage({
 
   return (
     <div className="min-h-[100dvh] overflow-hidden bg-background text-foreground cn-noise">
-      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-background/84 backdrop-blur-xl">
+      <header className="cn-frost-bar sticky top-0 z-20 border-b border-hairline">
         <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:px-4">
           <BrandHeader dark />
           <div className="flex items-center gap-2">
-            <Link
-              href="/wall"
-              className="cn-focus-ring hidden h-9 items-center justify-center rounded-lg border border-hairline px-3 text-sm font-semibold text-ink-mute transition-colors hover:border-cyan-300/28 hover:text-cyan-100 sm:inline-flex"
-            >
-              {translate('吐槽墙', lang)}
-            </Link>
             <LanguageToggle variant="badge" />
             <CommandCenter initialCodename={displayName} initialSettings={initialSettings} compact />
             <form action={logout}>

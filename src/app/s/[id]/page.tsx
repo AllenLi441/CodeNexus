@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight, Eye, MessageSquareQuote, Play } from 'lucide-react'
+import { Eye, MessageSquareQuote, Play } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { LEVEL_MAP } from '@/lib/levels'
 import { BrandHeader } from '@/components/layout/logo'
@@ -178,13 +178,6 @@ export default async function SnippetPage({ params }: Props) {
               >
                 <Play className="h-3.5 w-3.5" />
                 {translate('免费试玩', lang)}
-              </Link>
-              <Link
-                href="/wall"
-                className="cn-focus-ring flex w-full items-center justify-center gap-2 rounded-lg border border-hairline py-2.5 text-center text-sm font-semibold text-ink-soft transition-colors hover:border-cyan-300/28 hover:text-cyan-100"
-              >
-                {translate('看吐槽墙', lang)}
-                <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           </div>

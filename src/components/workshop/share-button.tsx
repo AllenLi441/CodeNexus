@@ -47,9 +47,7 @@ export function ShareButton({
   const [isLoading, setIsLoading] = useState(false)
   const [title, setTitle] = useState('')
   const [mentorQuote, setMentorQuote] = useState(() => defaultMentorQuote(languageName, levelId, tr(levelTitle), !!lastImage, lang))
-  const [publishToWall, setPublishToWall] = useState(true)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
-  const [wallPublic, setWallPublic] = useState(false)
   const [copied, setCopied] = useState(false)
   const [copyTextDone, setCopyTextDone] = useState(false)
 
@@ -70,16 +68,11 @@ export function ShareButton({
           hasGraphic: !!lastImage,
           mentorQuote,
           codename,
-          publishToWall,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Share failed')
       setShareUrl(data.url)
-      setWallPublic(Boolean(data.wallPublic))
-      if (data.warning === 'mentor_wall_migration_missing') {
-        toast.warning(tr('分享已生成，但吐槽墙暂时不可用，这次先不会上墙。'))
-      }
       onShared()
     } catch (err) {
       toast.error(`${tr('分享失败')}：${err instanceof Error ? err.message : tr('未知错误')}`)
@@ -114,10 +107,8 @@ export function ShareButton({
   function handleClose() {
     setIsOpen(false)
     setShareUrl(null)
-    setWallPublic(false)
     setTitle('')
     setMentorQuote(defaultMentorQuote(languageName, levelId, tr(levelTitle), !!lastImage, lang))
-    setPublishToWall(true)
     setCopied(false)
     setCopyTextDone(false)
   }
@@ -194,24 +185,6 @@ export function ShareButton({
                     <p className="text-right font-mono text-[10px] text-white/22">{mentorQuote.length}/280</p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setPublishToWall(!publishToWall)}
-                    className="cn-focus-ring flex w-full items-start gap-3 rounded-lg border border-cyan-300/14 bg-cyan-300/[0.035] px-3 py-2 text-left transition-colors hover:border-cyan-300/26"
-                  >
-                    <span className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
-                      publishToWall ? 'border-cyan-300/70 bg-cyan-300 text-black' : 'border-white/18 bg-black/35'
-                    }`}>
-                      {publishToWall && <Check className="h-3 w-3" />}
-                    </span>
-                    <span>
-                      <span className="block text-xs font-semibold text-white/72">{tr('公开到 /wall 吐槽墙')}</span>
-                      <span className="mt-0.5 block text-[11px] leading-relaxed text-white/34">
-                        {tr('分享链接本来就是公开的；勾选后会进入精选墙，别人能从那里点回你的代码卡。')}
-                      </span>
-                    </span>
-                  </button>
-
                   {lastImage && (
                     <div className="flex items-center gap-2 rounded-lg border border-emerald-500/15 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-300/70">
                       <ImageIcon className="h-3.5 w-3.5" />
@@ -245,7 +218,7 @@ export function ShareButton({
                     </div>
                     <p className="font-semibold text-white">{tr('链接已生成')}</p>
                     <p className="mt-1 text-xs text-white/40">
-                      {wallPublic ? tr('已进入公开吐槽墙，也可以单独分享链接。') : tr('分享给朋友，让他们看看你的代码。')}
+                      {tr('分享给朋友，让他们看看你的代码。')}
                     </p>
                   </div>
 

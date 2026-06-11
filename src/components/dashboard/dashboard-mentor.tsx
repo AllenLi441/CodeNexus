@@ -121,9 +121,42 @@ function tutorialSteps(stage: MentorStage, languageName: string, assistantName: 
   ]
 }
 
+const MENTOR_SEEN_KEY = 'codenexus.mentor-seen.v1'
+
+function readMentorSeen(): Record<string, boolean> {
+  if (typeof window === 'undefined') return {}
+  try {
+    return JSON.parse(window.localStorage.getItem(MENTOR_SEEN_KEY) || '{}') as Record<string, boolean>
+  } catch {
+    return {}
+  }
+}
+
 export function DashboardMentor({ codename, languageName, languageRoute, stage, nextLevelId, settings }: DashboardMentorProps) {
   const tr = useTr()
-  const [isOpen, setIsOpen] = useState(stage !== 'normal')
+  // Auto-open only the first time the user reaches each stage. After they
+  // dismiss it once, remember that so it never re-pops on later visits.
+  // Decide during render (client-only) instead of in an effect to avoid a
+  // cascading re-render; the flag makes it run exactly once.
+  const [isOpen, setIsOpen] = useState(false)
+  const [autoOpenChecked, setAutoOpenChecked] = useState(false)
+  if (!autoOpenChecked && typeof window !== 'undefined') {
+    setAutoOpenChecked(true)
+    if (stage !== 'normal' && !readMentorSeen()[stage]) setIsOpen(true)
+  }
+
+  function dismiss() {
+    setIsOpen(false)
+    if (typeof window === 'undefined') return
+    try {
+      const seen = readMentorSeen()
+      seen[stage] = true
+      window.localStorage.setItem(MENTOR_SEEN_KEY, JSON.stringify(seen))
+    } catch {
+      // best-effort; dismissal memory is non-critical
+    }
+  }
+
   const [stepIndex, setStepIndex] = useState(0)
   const persona = resolveAssistantPersona(settings.assistantPersona)
   const copy = mentorCopy(stage, codename, languageName, languageRoute, persona.name, tr)
@@ -142,7 +175,7 @@ export function DashboardMentor({ codename, languageName, languageRoute, stage, 
           animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
           exit={{ opacity: 0, y: 18, scale: 0.98, filter: 'blur(8px)' }}
           transition={appleSpring}
-          className="fixed bottom-4 left-3 right-3 z-40 max-h-[calc(100dvh-32px)] overflow-hidden rounded-lg border border-cyan-300/22 bg-black/94 text-white shadow-[0_28px_100px_rgba(0,0,0,0.68),0_0_70px_rgba(34,211,238,0.14)] backdrop-blur-2xl sm:bottom-6 sm:left-auto sm:right-6 sm:w-[min(520px,calc(100vw-32px))]"
+          className="cn-frost-strong fixed bottom-4 left-3 right-3 z-40 max-h-[calc(100dvh-32px)] overflow-hidden rounded-lg border border-hairline text-white sm:bottom-6 sm:left-auto sm:right-6 sm:w-[min(520px,calc(100vw-32px))]"
         >
           <div className="flex items-center gap-3 border-b border-white/8 bg-white/[0.035] px-4 py-3">
             <AssistantAvatar personaId={persona.id} size="sm" active={(settings.assistantLiveliness ?? 55) > 55} />
@@ -152,7 +185,7 @@ export function DashboardMentor({ codename, languageName, languageRoute, stage, 
             </div>
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={dismiss}
               title={tr('关闭导师')}
               className="cn-focus-ring flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition-colors hover:bg-white/8 hover:text-white/75"
             >
@@ -246,6 +279,7 @@ export function DashboardMentor({ codename, languageName, languageRoute, stage, 
               ) : (
                 <Link
                   href={copy.primaryHref}
+                  onClick={dismiss}
                   className="cn-focus-ring flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-3 text-sm font-semibold text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-200"
                 >
                   {stage === 'new-user' ? <Play className="h-4 w-4" /> : <Map className="h-4 w-4" />}
@@ -257,13 +291,14 @@ export function DashboardMentor({ codename, languageName, languageRoute, stage, 
             <div className="flex gap-2">
               <Link
                 href={copy.secondaryHref}
+                onClick={dismiss}
                 className="cn-focus-ring flex h-10 flex-1 items-center justify-center rounded-lg border border-white/10 px-3 text-sm font-semibold text-white/58 transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-300/28 hover:text-cyan-100"
               >
                 {tr(copy.secondaryLabel)}
               </Link>
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={dismiss}
                 className="cn-focus-ring flex h-10 flex-1 items-center justify-center rounded-lg border border-white/10 px-3 text-sm font-semibold text-white/38 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:text-white/65"
               >
                 {tr('我自己看看')}

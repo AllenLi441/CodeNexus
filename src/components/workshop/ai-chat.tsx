@@ -1144,7 +1144,7 @@ export function AIChat({
                 trackEyes
               />
             </button>
-            <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 translate-y-1 rounded-lg border border-cyan-300/18 bg-black/94 p-3 text-left opacity-0 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+            <div className="cn-frost pointer-events-none absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 translate-y-1 rounded-lg p-3 text-left opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
               <p className="text-xs font-semibold text-white/86">{tr(persona.name)}</p>
               <p className="mt-1 text-[11px] leading-relaxed text-white/42">
                 {tr(instantInsight.status)}。{hasCode ? tr('已读当前代码。') : tr('正在等你写第一行。')}
@@ -1201,7 +1201,7 @@ export function AIChat({
             onKeyDown={(e) => {
               if (e.key === 'Escape') setIsOpen(false)
             }}
-            className={`fixed inset-x-0 bottom-0 top-auto z-40 flex max-h-[42dvh] min-h-[280px] max-w-none flex-col border-t border-cyan-300/14 bg-black/96 shadow-2xl shadow-cyan-950/40 backdrop-blur-2xl xl:inset-x-auto xl:bottom-0 xl:top-0 xl:min-h-0 xl:w-[var(--cn-assistant-panel-width)] xl:max-h-none xl:border-t-0 ${panelSideClass}`}
+            className={`cn-frost-strong fixed inset-x-0 bottom-0 top-auto z-40 flex max-h-[42dvh] min-h-[280px] max-w-none flex-col border-t border-hairline xl:inset-x-auto xl:bottom-0 xl:top-0 xl:min-h-0 xl:w-[var(--cn-assistant-panel-width)] xl:max-h-none xl:border-t-0 ${panelSideClass}`}
             style={assistantPanelStyle}
           >
             <div className="flex flex-shrink-0 gap-3 border-b border-white/8 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.16),transparent_36%)] px-4 py-4">

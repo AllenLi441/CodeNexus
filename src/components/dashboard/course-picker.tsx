@@ -108,7 +108,13 @@ export function CoursePicker({
   const tr = useTr()
   const initialLanguage = getLanguageModule(activeLanguageId)
   const [languageId, setLanguageId] = useState(initialLanguage.id)
-  const [mapId, setMapId] = useState<string | null>(FOUNDATION_MAP_ID)
+  // Remember the last branch the user opened (per language), so coming back from
+  // a lesson lands on that branch instead of resetting to the foundation.
+  const branchKey = `codenexus.picker-branch.${initialLanguage.id}`
+  const [mapId, setMapId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return FOUNDATION_MAP_ID
+    return window.sessionStorage.getItem(branchKey) || FOUNDATION_MAP_ID
+  })
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
@@ -137,6 +143,7 @@ export function CoursePicker({
   function chooseMap(id: string) {
     setMapId(id)
     setSelectedNodeId(null)
+    try { window.sessionStorage.setItem(branchKey, id) } catch { /* non-critical */ }
   }
 
   function chooseNode(node: CourseNode) {
@@ -178,6 +185,7 @@ export function CoursePicker({
                     setMapId(item.map.id)
                     setSelectedNodeId(item.node.id)
                     setQuery('')
+                    try { window.sessionStorage.setItem(branchKey, item.map.id) } catch { /* non-critical */ }
                   }}
                   className="cn-focus-ring block w-full border-b border-white/6 px-3 py-2 text-left transition-colors last:border-0 hover:bg-cyan-300/8"
                 >

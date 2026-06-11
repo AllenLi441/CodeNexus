@@ -35,7 +35,6 @@ export async function POST(req: NextRequest) {
     hasGraphic,
     mentorQuote,
     codename,
-    publishToWall,
   } = body
 
   if (!code || typeof code !== 'string') {
@@ -47,7 +46,8 @@ export async function POST(req: NextRequest) {
   const cleanTitle = cleanText(title, 200)
   const cleanLanguage = cleanText(language, 40) ?? 'Python'
   const cleanOutputText = cleanText(outputText, 10_000)
-  const wallPublic = Boolean(publishToWall && cleanMentorQuote)
+  // Public wall removed — shares are now private links only (/s/[id]).
+  const wallPublic = false
 
   // Generate unique ID (retry on collision, very unlikely)
   let id = generateId()

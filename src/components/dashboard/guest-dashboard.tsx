@@ -55,7 +55,7 @@ export async function GuestDashboard({ activeLanguageId = 'python' }: { activeLa
         <div className="absolute left-0 right-0 top-28 h-[560px] opacity-45 [background-image:linear-gradient(rgba(103,232,249,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(103,232,249,0.06)_1px,transparent_1px)] [background-size:72px_72px] [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_72%,transparent)]" />
       </div>
 
-      <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-background/78 backdrop-blur-2xl">
+      <header className="cn-frost-bar sticky top-0 z-20 border-b border-hairline">
         <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
           <BrandHeader dark />
           <div className="flex items-center gap-2">
@@ -63,12 +63,6 @@ export async function GuestDashboard({ activeLanguageId = 'python' }: { activeLa
             <span className="hidden rounded-lg border border-cyan-300/18 bg-cyan-300/[0.06] px-3 py-2 font-mono text-xs text-cyan-100/68 md:inline-flex">
               {translate('学习', lang)}
             </span>
-            <Link
-              href="/wall"
-              className="cn-focus-ring hidden h-9 items-center justify-center rounded-lg border border-hairline px-3 text-sm font-semibold text-ink-mute transition-colors hover:border-cyan-300/28 hover:text-cyan-100 sm:inline-flex"
-            >
-              {translate('吐槽墙', lang)}
-            </Link>
             <Link
               href="/login"
               className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-hairline px-3 text-sm font-semibold text-ink-soft transition-colors hover:border-cyan-300/28 hover:text-cyan-100"

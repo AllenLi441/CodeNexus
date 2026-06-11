@@ -16,11 +16,20 @@ const QuestMap = dynamic(
   }
 )
 
+// Below this width the ReactFlow star map is too cramped, so we fall back to the
+// picker. Kept at the tablet breakpoint (was 1279px, which wrongly forced the
+// picker on most laptops even when the user explicitly chose the map view).
+const COMPACT_QUERY = '(max-width: 767px)'
+
 function useCompactCourseLayout() {
-  const [compact, setCompact] = useState(true)
+  // Read the real viewport on the first client render so a user who chose the
+  // map view doesn't see a flash of the picker before it switches.
+  const [compact, setCompact] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia(COMPACT_QUERY).matches
+  )
 
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 1279px)')
+    const media = window.matchMedia(COMPACT_QUERY)
     const update = () => setCompact(media.matches)
     update()
     media.addEventListener('change', update)

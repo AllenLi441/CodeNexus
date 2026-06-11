@@ -192,26 +192,58 @@ html[data-cn-font='cyberpunk'] body {
     transition-timing-function: var(--cn-ease-apple);
   }
 
-  /* Restyle: glass panels are now near-flat cards — light blur, no saturation pump */
-  .glass {
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  /* ── Apple-style frosted material ─────────────────────────────────────────
+     Premium but restrained: real backdrop blur + a touch of saturation so
+     content behind reads as frosted glass, a hairline border, and a 1px inner
+     top highlight (the detail that makes Apple's materials look lit, not flat).
+     Use .cn-frost on floating surfaces (headers, panels, modals, popovers). */
+  .cn-frost {
+    background: color-mix(in oklab, var(--card) 62%, transparent);
+    backdrop-filter: blur(26px) saturate(165%);
+    -webkit-backdrop-filter: blur(26px) saturate(165%);
+    border: 1px solid color-mix(in oklab, var(--foreground) 9%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, white 9%, transparent),
+      0 16px 50px rgba(0, 0, 0, 0.42);
+  }
+  /* Stronger blur for full overlays (command center, mobile sheets) */
+  .cn-frost-strong {
+    background: color-mix(in oklab, var(--card) 70%, transparent);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, white 10%, transparent),
+      0 28px 90px rgba(0, 0, 0, 0.55);
+  }
+  /* Thin toolbar frost for sticky headers sitting over scrolling content */
+  .cn-frost-bar {
+    background: color-mix(in oklab, var(--background) 72%, transparent);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
   }
 
+  /* Legacy aliases (kept so any stray .glass usage still renders as frost) */
+  .glass,
   .glass-nexus {
-    background: rgba(255, 255, 255, 0.035);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: color-mix(in oklab, var(--card) 60%, transparent);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid color-mix(in oklab, var(--foreground) 9%, transparent);
   }
 
   .glass-dark {
-    background: rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
     border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* Respect users / devices that can't do backdrop-filter: fall back to a solid
+     surface so frosted panels never become unreadable. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .cn-frost, .cn-frost-strong, .glass, .glass-nexus { background: var(--card); }
+    .cn-frost-bar { background: var(--background); }
   }
 
   /* Restyle: former neon glows are now soft neutral elevation */

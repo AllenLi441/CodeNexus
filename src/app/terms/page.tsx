@@ -29,7 +29,7 @@ const CONTENT = {
       {
         heading: '你的内容',
         paragraphs: [
-          '你在平台上编写的代码归你所有。当你生成分享链接或发布到公开吐槽墙时，对应内容会对所有人可见；你授权我们为提供服务而展示这些内容。',
+          '你在平台上编写的代码归你所有。当你生成分享链接时，拿到链接的人都能查看对应内容；你授权我们为提供服务而展示这些内容。',
         ],
       },
       {
@@ -65,7 +65,7 @@ const CONTENT = {
       {
         heading: 'Your content',
         paragraphs: [
-          'Code you write on the platform belongs to you. When you create a share link or publish to the public wall, that content becomes visible to everyone; you grant us the right to display it as part of the service.',
+          'Code you write on the platform belongs to you. When you create a share link, anyone with that link can view the content; you grant us the right to display it as part of the service.',
         ],
       },
       {

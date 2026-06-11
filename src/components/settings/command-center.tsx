@@ -180,7 +180,7 @@ export function CommandCenter({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 18, scale: 0.985 }}
               transition={appleSpring}
-              className="pointer-events-auto flex h-[92dvh] w-full flex-col overflow-hidden rounded-t-lg border border-cyan-300/20 bg-[#020407] text-white shadow-[0_32px_140px_rgba(0,0,0,0.72),0_0_80px_rgba(34,211,238,0.12)] sm:h-[min(900px,calc(100dvh-32px))] sm:w-[min(1080px,calc(100vw-32px))] sm:rounded-lg"
+              className="cn-frost-strong pointer-events-auto flex h-[92dvh] w-full flex-col overflow-hidden rounded-t-lg border border-hairline text-white sm:h-[min(900px,calc(100dvh-32px))] sm:w-[min(1080px,calc(100vw-32px))] sm:rounded-lg"
             >
               <div className="flex items-center gap-4 border-b border-white/8 bg-white/[0.025] px-5 py-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-300/25 bg-cyan-300/10 text-cyan-200">
