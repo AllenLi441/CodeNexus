@@ -544,10 +544,10 @@ export function CommandCenter({
 
               <div className="flex flex-col gap-3 border-t border-white/8 bg-[#05080b] p-4 sm:flex-row sm:items-center">
                 <div className="min-h-0 flex-1">
-                  {error && <p className="rounded-lg border border-red-400/25 bg-red-400/8 px-3 py-2 text-xs text-red-200">{error}</p>}
+                  {error && <p className="rounded-lg border border-red-400/25 bg-red-400/8 px-3 py-2 text-xs text-red-200">{tr(error)}</p>}
                   {saved && (
                     <p className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/25 bg-emerald-400/8 px-3 py-2 text-xs text-emerald-200">
-                      <Check className="h-3.5 w-3.5" /> {tr('已同步到 Supabase')}
+                      <Check className="h-3.5 w-3.5" /> {tr('设置已保存')}
                     </p>
                   )}
                 </div>

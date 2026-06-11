@@ -37,7 +37,7 @@ export type ProfileRow = {
 const DEFAULT_PROFILE: ProfileRow = {
   nickname: null,
   mentor_taunt_frequency: 55,
-  mentor_font_mode: 'hacker',
+  mentor_font_mode: 'cyberpunk',
   noise_brightness: 45,
   chat_dock: 'right',
   chat_panel_width: 380,
@@ -57,7 +57,7 @@ function asNumber(value: unknown, fallback: number) {
 }
 
 function asFontMode(value: unknown): FontMode {
-  return value === 'cyberpunk' ? 'cyberpunk' : 'hacker'
+  return value === 'hacker' ? 'hacker' : 'cyberpunk'
 }
 
 function asDock(value: unknown): 'left' | 'right' {

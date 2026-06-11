@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Copy, ExternalLink, Image as ImageIcon, Link2, Loader2, MessageSquareQuote, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { useTr } from '@/contexts/language-context'
+import { useLanguage, useTr } from '@/contexts/language-context'
 
 type ShareButtonProps = {
   code: string
@@ -18,7 +18,13 @@ type ShareButtonProps = {
   onShared: () => void  // callback to award 'sharer' achievement
 }
 
-function defaultMentorQuote(languageName: string, levelId: number, levelTitle: string, hasGraphic: boolean) {
+function defaultMentorQuote(languageName: string, levelId: number, levelTitle: string, hasGraphic: boolean, lang: 'zh' | 'en') {
+  if (lang === 'en') {
+    if (hasGraphic) {
+      return `Nexus: You actually drew the chart — ${languageName} Lv.${levelId} finally gave the terminal something to look at.`
+    }
+    return `Nexus: ${languageName} Lv.${levelId} "${levelTitle}" cleared. The code runs — the keyboard abuse paid off.`
+  }
   if (hasGraphic) {
     return `Nexus 老炮：图都画出来了，${languageName} Lv.${levelId} 这次总算不是只会让终端干瞪眼。`
   }
@@ -36,10 +42,11 @@ export function ShareButton({
   onShared,
 }: ShareButtonProps) {
   const tr = useTr()
+  const { lang } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [title, setTitle] = useState('')
-  const [mentorQuote, setMentorQuote] = useState(() => defaultMentorQuote(languageName, levelId, levelTitle, !!lastImage))
+  const [mentorQuote, setMentorQuote] = useState(() => defaultMentorQuote(languageName, levelId, tr(levelTitle), !!lastImage, lang))
   const [publishToWall, setPublishToWall] = useState(true)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [wallPublic, setWallPublic] = useState(false)
@@ -71,7 +78,7 @@ export function ShareButton({
       setShareUrl(data.url)
       setWallPublic(Boolean(data.wallPublic))
       if (data.warning === 'mentor_wall_migration_missing') {
-        toast.warning(tr('分享已生成，但吐槽墙字段还没迁移，暂时不会上墙。'))
+        toast.warning(tr('分享已生成，但吐槽墙暂时不可用，这次先不会上墙。'))
       }
       onShared()
     } catch (err) {
@@ -109,7 +116,7 @@ export function ShareButton({
     setShareUrl(null)
     setWallPublic(false)
     setTitle('')
-    setMentorQuote(defaultMentorQuote(languageName, levelId, levelTitle, !!lastImage))
+    setMentorQuote(defaultMentorQuote(languageName, levelId, tr(levelTitle), !!lastImage, lang))
     setPublishToWall(true)
     setCopied(false)
     setCopyTextDone(false)

@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { BrandHeader } from '@/components/layout/logo'
-import { useTr } from '@/contexts/language-context'
+import { useLanguage, useTr } from '@/contexts/language-context'
 import { getProjectCheckpoint, localizeProjectTitle } from '@/lib/learning-profile'
 import { getLanguageModule } from '@/lib/language-modules'
 import { buildProjectCardMarkdown, projectCardFileName } from '@/lib/project-card'
@@ -82,6 +82,7 @@ async function copyText(value: string) {
 
 export function ProjectStudio({ languageId, codename, afterLevel, demoMode = false }: ProjectStudioProps) {
   const tr = useTr()
+  const { lang } = useLanguage()
   const language = useMemo(() => getLanguageModule(languageId), [languageId])
   const project = getProjectCheckpoint(language.name, afterLevel)
   const storageKey = `cn:project:${language.id}:${afterLevel}`
@@ -96,7 +97,7 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
     ? Math.round(((completedChecks + completedTextFields) / totalRequirements) * 100)
     : 0
   const cardMarkdown = useMemo(() => buildProjectCardMarkdown({
-    title: draft.title || project?.title || '阶段作品',
+    title: draft.title || tr(project?.title ?? '阶段作品'),
     codename,
     languageName: language.name,
     stage: project?.stage ?? Math.ceil(afterLevel / 5),
@@ -104,8 +105,8 @@ export function ProjectStudio({ languageId, codename, afterLevel, demoMode = fal
     approach: draft.approach,
     output: draft.output,
     reflection: draft.reflection,
-    skills: project?.skills ?? [],
-  }), [afterLevel, codename, draft, language.name, project])
+    skills: (project?.skills ?? []).map((skill) => tr(skill)),
+  }, lang), [afterLevel, codename, draft, language.name, project, lang, tr])
 
   useEffect(() => {
     let cancelled = false

@@ -33,7 +33,9 @@ export type CommandSettings = {
 
 export const DEFAULT_COMMAND_SETTINGS: CommandSettings = {
   tauntFrequency: 55,
-  fontMode: 'hacker',
+  // 'cyberpunk' is the proportional sans stack (with CJK fallbacks) — the
+  // professional default. 'hacker' (global monospace) stays as an opt-in.
+  fontMode: 'cyberpunk',
   noiseBrightness: 45,
   chatDock: 'right',
   chatPanelWidth: 380,
@@ -68,7 +70,7 @@ function clampNumber(value: number, min: number, max: number, fallback: number) 
 export function normalizeCommandSettings(settings?: Partial<CommandSettings> | null): CommandSettings {
   return {
     tauntFrequency: clampPercent(settings?.tauntFrequency ?? DEFAULT_COMMAND_SETTINGS.tauntFrequency),
-    fontMode: settings?.fontMode === 'cyberpunk' ? 'cyberpunk' : 'hacker',
+    fontMode: settings?.fontMode === 'hacker' ? 'hacker' : 'cyberpunk',
     noiseBrightness: clampPercent(settings?.noiseBrightness ?? DEFAULT_COMMAND_SETTINGS.noiseBrightness),
     chatDock: settings?.chatDock === 'left' ? 'left' : 'right',
     chatPanelWidth: clampNumber(settings?.chatPanelWidth ?? DEFAULT_COMMAND_SETTINGS.chatPanelWidth, 320, 520, DEFAULT_COMMAND_SETTINGS.chatPanelWidth),

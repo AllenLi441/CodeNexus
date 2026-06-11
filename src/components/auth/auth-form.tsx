@@ -33,21 +33,11 @@ const PRODUCT_POINTS = [
 ]
 
 function isServiceOfflineError(message?: string) {
-  return Boolean(message?.includes('认证服务暂时连接不上') || message?.includes('Supabase 项目可能处于暂停'))
-}
-
-function getSupabaseDashboardUrl() {
-  try {
-    const host = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').hostname
-    const ref = host.split('.')[0]
-    return ref ? `https://supabase.com/dashboard/project/${ref}` : null
-  } catch {
-    return null
-  }
+  return Boolean(message?.includes('认证服务暂时连接不上'))
 }
 
 export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: string }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const tr = useTr()
   const isLogin = mode === 'login'
   const strings = isLogin ? t.auth.login : t.auth.register
@@ -96,7 +86,6 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
 
   const errorMessage = state?.error ?? initialError
   const serviceOffline = isServiceOfflineError(errorMessage)
-  const supabaseDashboardUrl = serviceOffline ? getSupabaseDashboardUrl() : null
 
   return (
     <div className="relative min-h-[100dvh] overflow-hidden bg-background text-foreground cn-noise">
@@ -226,22 +215,7 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
                       )}
                       <div className="space-y-1">
                         <p className="font-semibold">{serviceOffline ? tr('认证服务离线') : tr('登录请求失败')}</p>
-                        <p className="leading-6 opacity-80">{errorMessage}</p>
-                        {serviceOffline && (
-                          <p className="text-xs leading-5 opacity-64">
-                            {tr('这个需要在 Supabase Dashboard 恢复项目 ZeroForge。恢复后不用改代码，刷新再登录即可。')}
-                          </p>
-                        )}
-                        {supabaseDashboardUrl && (
-                          <a
-                            href={supabaseDashboardUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-2 inline-flex text-xs font-semibold text-amber-100 underline underline-offset-4 hover:text-white"
-                          >
-                            {tr('打开 Supabase 项目')}
-                          </a>
-                        )}
+                        <p className="leading-6 opacity-80">{errorMessage ? tr(errorMessage) : null}</p>
                       </div>
                     </div>
                   </div>
@@ -294,7 +268,24 @@ export function AuthForm({ mode, initialError }: { mode: Mode; initialError?: st
             </div>
           </div>
 
-          <p className="mt-5 px-2 text-center text-xs leading-relaxed text-white/34">{t.auth.terms}</p>
+          <p className="mt-5 px-2 text-center text-xs leading-relaxed text-white/34">
+            {lang === 'en' ? (
+              <>
+                By signing up, you agree to our{' '}
+                <Link href="/terms" className="underline underline-offset-2 transition-colors hover:text-white/60">Terms of Service</Link>
+                {' '}and{' '}
+                <Link href="/privacy" className="underline underline-offset-2 transition-colors hover:text-white/60">Privacy Policy</Link>.
+              </>
+            ) : (
+              <>
+                注册即表示同意我们的
+                <Link href="/terms" className="underline underline-offset-2 transition-colors hover:text-white/60">服务条款</Link>
+                与
+                <Link href="/privacy" className="underline underline-offset-2 transition-colors hover:text-white/60">隐私政策</Link>
+                。
+              </>
+            )}
+          </p>
         </section>
       </main>
     </div>

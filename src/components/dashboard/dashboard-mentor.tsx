@@ -60,8 +60,8 @@ function mentorCopy(stage: MentorStage, codename: string, languageName: string, 
   return {
     kicker: 'FIRST RUN · NEXUS GUIDE',
     title: tr('{codename}，欢迎接入。{assistant} 先带你走一圈。').replace('{codename}', codename).replace('{assistant}', assistantName),
-    body: tr('这里不是单纯看视频，也不是把答案喂进编辑器。你会先听小助理讲清楚概念，再自己写代码，用真实运行和测试确认你真的会了。'),
-    bullets: ['先选语言，再选分支，再选课程', '每关先看小助理教学，再打开空编辑器实践', '运行失败时，小助理会根据当前代码和报错给下一步提示'],
+    body: tr('这里不是单纯看视频，也不是把答案喂进编辑器。你会先听小助手讲清楚概念，再自己写代码，用真实运行和测试确认你真的会了。'),
+    bullets: ['先选语言，再选分支，再选课程', '每关先看小助手教学，再打开空编辑器实践', '运行失败时，小助手会根据当前代码和报错给下一步提示'],
     primaryLabel: '接入第一关',
     primaryHref: `/learn/${languageRoute}?level=1`,
     secondaryLabel: '先看分支',
@@ -82,7 +82,7 @@ function tutorialSteps(stage: MentorStage, languageName: string, assistantName: 
         icon: Sparkles,
         title: '每条分支都要有作品感',
         body: tr('后面的课程不应该只是“又学一个语法”。目标是做出能运行、能截图、能解释给别人听的小项目。'),
-        bullets: ['分支课程先看路线，不要乱跳', '遇到报错让小助理读上下文', '完成后把代码和结果变成作品素材'],
+        bullets: ['分支课程先看路线，不要乱跳', '遇到报错让小助手读上下文', '完成后把代码和结果变成作品素材'],
       },
     ]
   }
@@ -103,7 +103,7 @@ function tutorialSteps(stage: MentorStage, languageName: string, assistantName: 
     {
       icon: Code2,
       title: '写代码时，我会看上下文',
-      body: tr('你不用每次点运行我才知道发生了什么。停顿、语法异常、运行错误、测试失败都会进入小助理上下文。'),
+      body: tr('你不用每次点运行我才知道发生了什么。停顿、语法异常、运行错误、测试失败都会进入小助手上下文。'),
       bullets: ['空编辑器会提醒你先写最小代码', '报错时优先读第一行错误', '测试失败时先对齐目标输出或核心结构'],
     },
     {
@@ -115,8 +115,8 @@ function tutorialSteps(stage: MentorStage, languageName: string, assistantName: 
     {
       icon: Settings2,
       title: '把工作台调成你的习惯',
-      body: tr('右上角命令中心可以改代号、小助理人格、字体、面板宽度和活人感。它是学习工具，不是固定死的考试界面。'),
-      bullets: ['不喜欢小助理多话，可以降低活人感', '想换角色，可以在命令中心切换', '移动端也可以用，只是建议第一轮学习先用桌面更舒服'],
+      body: tr('右上角命令中心可以改代号、小助手人格、字体、面板宽度和活人感。它是学习工具，不是固定死的考试界面。'),
+      bullets: ['不喜欢小助手多话，可以降低活人感', '想换角色，可以在命令中心切换', '移动端也可以用，只是建议第一轮学习先用桌面更舒服'],
     },
   ]
 }
@@ -174,7 +174,7 @@ export function DashboardMentor({ codename, languageName, languageRoute, stage, 
                   </div>
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-300/42">
-                      {tr('小助理教程')} {stepIndex + 1}/{steps.length}
+                      {tr('小助手教程')} {stepIndex + 1}/{steps.length}
                     </p>
                     <h3 className="mt-1 text-sm font-semibold text-white/86">{tr(step.title)}</h3>
                   </div>

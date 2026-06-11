@@ -6,6 +6,7 @@ import { python } from '@codemirror/lang-python'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
 import type { EditorLanguage } from '@/lib/language-modules'
+import { useTr } from '@/contexts/language-context'
 
 /* Code surfaces stay dark regardless of page theme — high contrast, eye-friendly. */
 const nexusTheme = EditorView.theme({
@@ -46,6 +47,7 @@ type CodeEditorProps = {
 export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
   function CodeEditor({ value, onChange, language = 'python' }, ref) {
     const cmRef = useRef<ReactCodeMirrorRef>(null)
+    const tr = useTr()
 
     useImperativeHandle(ref, () => ({
       insertAtCursor(text: string, backChars = 0) {
@@ -68,7 +70,11 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
         value={value}
         height="100%"
         theme={oneDark}
-        extensions={[...(language === 'python' ? [python()] : []), nexusTheme]}
+        extensions={[
+          ...(language === 'python' ? [python()] : []),
+          nexusTheme,
+          EditorView.contentAttributes.of({ 'aria-label': tr('代码编辑器') }),
+        ]}
         onChange={onChange}
         basicSetup={{
           lineNumbers: true,

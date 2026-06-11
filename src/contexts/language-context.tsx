@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import { type Lang, LANG_COOKIE, DEFAULT_LANG, TRANSLATIONS, translate } from '@/lib/i18n'
 
 // Use a loose type so both zh/en translations are assignable
@@ -19,6 +20,7 @@ const LanguageContext = createContext<LanguageContextValue>({
 })
 
 export function LanguageProvider({ children, initialLang }: { children: ReactNode; initialLang?: Lang }) {
+  const router = useRouter()
   const [lang, setLangState] = useState<Lang>(() => {
     if (initialLang) return initialLang
     if (typeof document === 'undefined') return DEFAULT_LANG
@@ -34,6 +36,10 @@ export function LanguageProvider({ children, initialLang }: { children: ReactNod
     setLangState(newLang)
     // Persist in cookie for 1 year
     document.cookie = `${LANG_COOKIE}=${newLang};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`
+    // Re-render Server Components so server-rendered text (dashboard, wall, login,
+    // share, etc.) picks up the new cookie too. Client state (editor, Pyodide) is
+    // preserved across refresh.
+    router.refresh()
   }
 
   return (

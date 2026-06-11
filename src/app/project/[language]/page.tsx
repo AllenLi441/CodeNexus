@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/supabase/server'
 import { fetchUserProgress } from '@/app/actions/progress'
 import { ProjectStudio } from '@/components/workshop/project-studio'
 import { getProjectCheckpoint } from '@/lib/learning-profile'
+import { getServerLang } from '@/lib/i18n-server'
 import {
   LANGUAGE_MODULES,
   getLanguageModule,
@@ -38,7 +39,7 @@ export default async function ProjectPage({
     redirect(`/dashboard?language=${language.route}`)
   }
 
-  const codename = profile.nickname?.trim() || (user.user_metadata?.display_name as string | undefined)?.trim() || '无名小白'
+  const codename = profile.nickname?.trim() || (user.user_metadata?.display_name as string | undefined)?.trim() || ((await getServerLang()) === 'en' ? 'Rookie' : '无名小白')
 
   return (
     <ProjectStudio

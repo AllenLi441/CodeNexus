@@ -285,7 +285,8 @@ function hasHugeMagnitude(expr: string): boolean {
  * timeout + worker.terminate() (audit SBX-2). This catches the high-frequency
  * beginner cases so they fail fast with a helpful message instead of a dead tab.
  */
-export function detectRunawayPython(code: string): string | null {
+export function detectRunawayPython(code: string, lang: MentorLang = 'zh'): string | null {
+  const en = lang === 'en'
   const stripped = stripPythonLiteralsAndComments(code)
   const lines = stripped.split('\n')
 
@@ -300,7 +301,9 @@ export function detectRunawayPython(code: string): string | null {
       const tail = whileMatch[2].trim()
       if (/\b(break|return|raise)\b|(?:\bsys\s*\.\s*exit\s*\()/.test(tail)) continue
       if (!tail && hasExplicitLoopExit(lines, i, indentation(rawLine))) continue
-      return '检测到明显无退出条件的循环。`while True` / `while 1` / `while 2` / `while not False` 这类恒真条件会把浏览器主线程冻住；先加退出条件或 `break`，再运行。'
+      return en
+        ? 'Detected a loop with no clear exit condition. Always-true conditions like `while True` / `while 1` / `while 2` / `while not False` freeze the browser thread — add an exit condition or a `break` before running.'
+        : '检测到明显无退出条件的循环。`while True` / `while 1` / `while 2` / `while not False` 这类恒真条件会把浏览器主线程冻住；先加退出条件或 `break`，再运行。'
     }
 
     const countMatch = line.match(/^for\s+.+\s+in\s+itertools\s*\.\s*count\s*\([^)]*\)\s*:\s*(.*)$/)
@@ -308,18 +311,24 @@ export function detectRunawayPython(code: string): string | null {
       const tail = countMatch[1].trim()
       if (/\b(break|return|raise)\b|(?:\bsys\s*\.\s*exit\s*\()/.test(tail)) continue
       if (!tail && hasExplicitLoopExit(lines, i, indentation(rawLine))) continue
-      return '检测到 `itertools.count()` 无限计数循环，但没看到退出口。别把浏览器当跑分机器，先写 `break` 或边界条件。'
+      return en
+        ? 'Detected an `itertools.count()` infinite counter with no exit in sight. The browser isn’t a benchmark rig — add a `break` or a boundary condition first.'
+        : '检测到 `itertools.count()` 无限计数循环，但没看到退出口。别把浏览器当跑分机器，先写 `break` 或边界条件。'
     }
 
     // range(<astronomically large>) → loop bomb that freezes the tab
     const rangeMatch = line.match(/\brange\s*\(([^)]*)\)/)
     if (rangeMatch && hasHugeMagnitude(rangeMatch[1])) {
-      return '检测到 `range()` 里是个天文数字，这个循环会把页面冻死。浏览器不是超算，先把范围改小。'
+      return en
+        ? 'Detected an astronomically large number inside `range()` — this loop will freeze the page. The browser isn’t a supercomputer; shrink the range first.'
+        : '检测到 `range()` 里是个天文数字，这个循环会把页面冻死。浏览器不是超算，先把范围改小。'
     }
 
     // [..]*HUGE / (..)*HUGE → memory bomb that OOM-crashes the tab
     if (/(?:\]|\))\s*\*/.test(line) && hasHugeMagnitude(line)) {
-      return '检测到用巨大的倍数复制列表/序列，会瞬间吃光浏览器内存、直接崩页；先把倍数改小。'
+      return en
+        ? 'Detected a list/sequence being multiplied by a huge factor — that instantly eats all browser memory and crashes the tab. Shrink the multiplier first.'
+        : '检测到用巨大的倍数复制列表/序列，会瞬间吃光浏览器内存、直接崩页；先把倍数改小。'
     }
   }
 
@@ -339,7 +348,9 @@ export function detectRunawayPython(code: string): string | null {
     const callsSelf = new RegExp(`\\b${name}\\s*\\(`).test(bodyText)
     const hasBaseCase = /\b(return|if|elif|while|for|raise|break|yield|assert)\b/.test(bodyText)
     if (callsSelf && !hasBaseCase) {
-      return `检测到函数 \`${name}\` 直接调用自己却没有任何 \`return\`/\`if\` 退出条件，会无限递归把浏览器撑爆；先写一个 base case（终止条件）。`
+      return en
+        ? `Detected that function \`${name}\` calls itself with no \`return\`/\`if\` exit at all — infinite recursion will blow up the browser. Write a base case first.`
+        : `检测到函数 \`${name}\` 直接调用自己却没有任何 \`return\`/\`if\` 退出条件，会无限递归把浏览器撑爆；先写一个 base case（终止条件）。`
     }
   }
 

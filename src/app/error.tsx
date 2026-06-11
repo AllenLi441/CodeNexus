@@ -50,7 +50,7 @@ export default function Error({
             {tr('重试')}
           </button>
           <Link
-            href="/dashboard"
+            href="/"
             className="cn-focus-ring flex items-center gap-2 rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-ink-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-300/35 hover:text-cyan-100"
           >
             <Home className="h-4 w-4" />

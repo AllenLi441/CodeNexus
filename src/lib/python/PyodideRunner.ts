@@ -9,6 +9,9 @@ export { ZF_IMAGE_PREFIX };
 // Wall-clock cap on a single execution (measured from exec-start, so the one-off
 // Pyodide download is NOT counted against it). On timeout we terminate the
 // worker — the only reliable way to stop a synchronous WASM busy-loop.
+// NOTE: the timeout message interpolates `${EXEC_TIMEOUT_MS / 1000} 秒` into a
+// string whose EN translation is keyed on the literal "6 秒" in
+// src/lib/i18n-en.ts. If you change this value, update that EN_MAP key too.
 const EXEC_TIMEOUT_MS = 6000;
 
 export type RunResult = {

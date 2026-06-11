@@ -8,7 +8,12 @@
  *                  | {type:'init-error',message} | {type:'run-error',id,message}
  */
 const PYODIDE_VERSION = "0.26.4";
-const CDN = "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/";
+// Mirror order matters: jsDelivr's fastly endpoint tends to be reachable from
+// mainland China when the default endpoint isn't, so it backs up the primary.
+const CDN_MIRRORS = [
+  "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/",
+  "https://fastly.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/",
+];
 
 let py = null;
 let graphicsLoaded = false;
@@ -35,9 +40,19 @@ const RUNNER_SCRIPT = [
 async function ensurePy() {
   if (py) return py;
   postMessage({ type: "progress", msg: "正在下载 Python 引擎..." });
-  importScripts(CDN + "pyodide.js");
-  postMessage({ type: "progress", msg: "正在初始化 WASM 运行时..." });
-  py = await self.loadPyodide({ indexURL: CDN });
+  let lastError = null;
+  for (const cdn of CDN_MIRRORS) {
+    try {
+      importScripts(cdn + "pyodide.js");
+      postMessage({ type: "progress", msg: "正在初始化 WASM 运行时..." });
+      py = await self.loadPyodide({ indexURL: cdn });
+      break;
+    } catch (err) {
+      lastError = err;
+      py = null;
+    }
+  }
+  if (!py) throw lastError || new Error("Pyodide CDN unreachable");
   postMessage({ type: "progress", msg: "预热标准库..." });
   await py.runPythonAsync("import sys, io, traceback, math, random, json, base64");
   return py;

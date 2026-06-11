@@ -557,42 +557,42 @@ export function getLanguageRouteSnapshot(languageName: string): LanguageRouteSna
         role: '系统 / 内存 / 嵌入式路线',
         starterProject: '命令行计算器、日志解析器、数组处理工具',
         advancedProject: '简化版 shell 工具、传感器数据解析模块',
-        runtimeNote: '当前走本地 clang/gcc 真实编译运行；没有工具链时会提示安装。',
+        runtimeNote: '真实编译运行：本地有 gcc/clang 时就地编译，否则走远程沙箱。',
       }
     case 'C++':
       return {
         role: '高性能 / 游戏引擎 / 复杂工程路线',
         starterProject: 'vector 数据处理器、资源管理小模块',
         advancedProject: '小游戏核心循环、实时模拟器、性能敏感组件',
-        runtimeNote: '当前走本地 clang++/g++ 真实编译运行；没有工具链时会提示安装。',
+        runtimeNote: '真实编译运行：本地有 g++/clang++ 时就地编译，否则走远程沙箱。',
       }
     case 'Java':
       return {
         role: '后端 / Android / 企业系统路线',
         starterProject: '用户模型、集合处理、简单服务逻辑',
         advancedProject: 'REST API、权限系统、订单/库存业务模块',
-        runtimeNote: '当前走本地 javac/java 真实编译运行；类名需要保持 Main。',
+        runtimeNote: '真实编译运行（本地 JDK 或远程沙箱）；类名需要保持 Main。',
       }
     case 'C#':
       return {
         role: '.NET / Unity / 桌面工具路线',
         starterProject: '控制台工具、属性模型、List 数据处理',
         advancedProject: 'Unity 小游戏、.NET API、桌面业务工具',
-        runtimeNote: '当前走本地 .NET SDK 真实运行；未安装 dotnet 时会提示缺少运行时。',
+        runtimeNote: '真实编译运行：本地有 .NET SDK 时就地运行，否则走远程沙箱。',
       }
     case 'JavaScript':
       return {
         role: 'Web / Node / 全栈产品路线',
         starterProject: '交互按钮、数组转换、异步数据请求',
         advancedProject: 'API Dashboard、Todo 产品、Node 自动化脚本',
-        runtimeNote: '当前走本地 Node.js 真实运行，输出和报错来自 Node。',
+        runtimeNote: '由服务端 Node.js 真实运行，输出和报错来自 Node。',
       }
     case 'Visual Basic':
       return {
         role: 'Office 自动化 / 桌面业务系统路线',
         starterProject: '表格处理、业务表单、批量操作脚本',
         advancedProject: 'Excel 自动化、老系统维护工具、内部流程助手',
-        runtimeNote: '当前走本地 .NET / VB 工具链真实运行；未安装 dotnet 时会提示缺少运行时。',
+        runtimeNote: '本地 .NET / VB 工具链可真实运行；云端环境暂不支持在线编译。',
       }
     default:
       return {
@@ -604,24 +604,44 @@ export function getLanguageRouteSnapshot(languageName: string): LanguageRouteSna
   }
 }
 
-export function getRuntimeModeCopy(languageName: string, runtime: 'python-pyodide' | 'server-exec' | 'static-check') {
+export function getRuntimeModeCopy(
+  languageName: string,
+  runtime: 'python-pyodide' | 'server-exec' | 'static-check',
+  tr: Tr = identityTr,
+  languageId?: string
+) {
   if (runtime === 'python-pyodide') {
     return {
-      title: '真实运行模式',
-      body: `${languageName} 代码会在浏览器内执行，输出和错误来自真实解释器。`,
+      title: tr('真实运行模式'),
+      body: tr('{lang} 代码会在浏览器内执行，输出和错误来自真实解释器。').replace('{lang}', languageName),
     }
   }
 
   if (runtime === 'server-exec') {
+    // The shared sandbox copy is only true for languages the remote sandbox
+    // actually compiles (C/C++/Java/C#). JS runs on our server's Node.js, and
+    // VB has no cloud toolchain yet — say so instead of overpromising.
+    if (languageId === 'visual-basic') {
+      return {
+        title: tr('云端运行准备中'),
+        body: tr('{lang} 的在线编译环境暂未开通，点击运行会返回提示。课程讲解与练习不受影响。').replace('{lang}', languageName),
+      }
+    }
+    if (languageId === 'javascript') {
+      return {
+        title: tr('真实运行模式'),
+        body: tr('{lang} 代码会发送到服务器由 Node.js 真实运行，输出和报错来自真实运行时。代码会离开本机，请不要包含隐私信息。').replace('{lang}', languageName),
+      }
+    }
     return {
-      title: '真实编译运行',
-      body: `${languageName} 代码会发送到本地执行器编译/运行，输出和报错来自真实工具链。没有安装对应编译器时，会明确提示缺少什么。`,
+      title: tr('真实编译运行'),
+      body: tr('{lang} 代码会发送到远程沙箱编译运行，输出和报错来自真实工具链。代码会离开本机，请不要包含隐私信息。').replace('{lang}', languageName),
     }
   }
 
   return {
-    title: '结构化练习检查器',
-    body: `${languageName} 当前先验证入口、类型、块结构和核心意图。它不是完整编译器，但足够帮你练语法骨架；真正工程运行会在后续沙箱/编译器接入。`,
+    title: tr('结构化练习检查器'),
+    body: tr('{lang} 当前先验证入口、类型、块结构和核心意图。它不是完整编译器，但足够帮你练语法骨架；真正工程运行会在后续沙箱/编译器接入。').replace('{lang}', languageName),
   }
 }
 

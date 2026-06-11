@@ -21,6 +21,10 @@ type RunPayload = {
 const execFileAsync = promisify(execFile)
 const MAX_CODE_LENGTH = 50_000
 const MAX_OUTPUT_LENGTH = 12_000
+// NOTE: the timeout message interpolates `${TIMEOUT_MS / 1000}s` into a string
+// whose EN translation is keyed on the literal "8s" in src/lib/i18n-en.ts. If you
+// change this value, update that EN_MAP key or the English message will fall back
+// to Chinese.
 const TIMEOUT_MS = 8_000
 
 // 30 runs / minute / user. Each run can be a real compile, so this is a hard
@@ -30,7 +34,8 @@ const RUN_WINDOW_MS = 60_000
 
 function truncate(value: string) {
   if (value.length <= MAX_OUTPUT_LENGTH) return value
-  return `${value.slice(0, MAX_OUTPUT_LENGTH)}\n... 输出已截断`
+  // Embedded in mixed program output, so keep the marker language-neutral.
+  return `${value.slice(0, MAX_OUTPUT_LENGTH)}\n... (output truncated / 输出已截断)`
 }
 
 async function commandExists(command: string) {
@@ -120,7 +125,7 @@ const WANDBOX_COMPILER: Partial<Record<SupportedLanguage, string>> = {
 async function runViaWandbox(languageId: SupportedLanguage, code: string) {
   const compiler = WANDBOX_COMPILER[languageId]
   if (!compiler) {
-    return response('', '这门语言暂时不支持在线编译运行（仅做结构检查）。真实运行需自托管执行后端。', 1)
+    return response('', '这门语言暂时不支持在线编译运行。', 1)
   }
   // Wandbox writes the source to prog.java, so a `public class X` trips the
   // "class X is public, should be in X.java" rule. A package-private class with
@@ -137,7 +142,8 @@ async function runViaWandbox(languageId: SupportedLanguage, code: string) {
     })
     const executionMs = Date.now() - started
     if (!res.ok) {
-      return response('', `在线编译服务返回 ${res.status}，稍后再试。`, executionMs)
+      console.error('[run-code] remote sandbox returned', res.status)
+      return response('', '在线编译服务暂时不可用，稍后再试。', executionMs)
     }
     const data = (await res.json()) as {
       program_output?: string
@@ -153,8 +159,9 @@ async function runViaWandbox(languageId: SupportedLanguage, code: string) {
       return response(runOut, compileErr, executionMs)
     }
     return response(runOut, runErr, executionMs)
-  } catch {
-    return response('', '在线编译服务暂时不可用（网络或超时）。稍后再试，或在部署环境配置自托管执行后端（CODE_EXEC_WANDBOX_URL）。', Date.now() - started)
+  } catch (err) {
+    console.error('[run-code] remote sandbox unreachable:', err instanceof Error ? err.message : err)
+    return response('', '在线编译服务暂时不可用，稍后再试。', Date.now() - started)
   }
 }
 
@@ -248,7 +255,7 @@ export async function POST(req: NextRequest) {
   if (!limit.ok) {
     const seconds = Math.max(1, Math.ceil(limit.retryAfterMs / 1000))
     return NextResponse.json(
-      { error: `运行太频繁，${seconds} 秒后再试。` },
+      { error: '运行太频繁，请稍后再试。' },
       { status: 429, headers: { 'Retry-After': String(seconds) } },
     )
   }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -14,6 +14,7 @@ import {
   Position,
   ReactFlow,
 } from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
 import {
   ArrowLeft,
   BookOpen,
@@ -59,6 +60,7 @@ type CourseNodeData = {
   isSelected: boolean
   isLaunching: boolean
   animations: boolean
+  onLaunch: (courseNode: CourseNode, status: QuestStatus) => void
 }
 
 type CourseFlowNode = Node<CourseNodeData, 'branchCourse'>
@@ -207,6 +209,7 @@ function BranchCourseNode({ data }: NodeProps<CourseFlowNode>) {
       transition={data.animations ? data.isLaunching ? { duration: 0.48, ease: appleEase } : { repeat: Infinity, duration: 2.8, ease: appleEase } : quickFade}
     >
       {data.status === 'completed' && <Check className="absolute inset-0 m-auto h-3 w-3 text-black/75" strokeWidth={3.5} />}
+      {data.status === 'locked' && <Lock className="absolute inset-0 m-auto h-2.5 w-2.5 text-white/55" />}
       {data.isSelected && <span className="absolute inset-[-7px] rounded-full border border-cyan-200/55" />}
       {data.isLaunching && (
         <motion.span
@@ -264,7 +267,19 @@ function BranchCourseNode({ data }: NodeProps<CourseFlowNode>) {
   return (
     <>
       <Handle type="target" position={Position.Left} className="opacity-0" isConnectable={false} />
-      <div className={data.status === 'locked' ? 'cursor-not-allowed' : 'cursor-pointer'}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`${tr(data.map.shortTitle)} · ${tr(data.courseNode.title)} · ${statusLabel}`}
+        aria-disabled={data.status === 'locked'}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            data.onLaunch(data.courseNode, data.status)
+          }
+        }}
+        className={`cn-focus-ring rounded-lg ${data.status === 'locked' ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+      >
         {compact ? compactNode : card}
       </div>
       <Handle type="source" position={Position.Right} className="opacity-0" isConnectable={false} />
@@ -332,6 +347,29 @@ export function QuestMap({
     setLaunchingId(null)
   }
 
+  // Shared launch path for pointer (ReactFlow onNodeClick) and keyboard
+  // (Enter/Space on the node card).
+  const launchNode = useCallback((courseNode: CourseNode, status: QuestStatus) => {
+    setSelectedNodeId(courseNode.id)
+    if (status === 'locked' || launchingId) return
+    if (!courseNode.levelId && courseNode.unlockAfterLevel && courseNode.kind === 'project') {
+      setLaunchingId(courseNode.id)
+      setLaunchLabel(`${tr('阶段作品')} · ${tr(courseNode.title)}`)
+      if (launchTimerRef.current) clearTimeout(launchTimerRef.current)
+      launchTimerRef.current = setTimeout(() => {
+        router.push(demoMode ? `/play?language=${language.route}&project=${courseNode.unlockAfterLevel}` : `/project/${language.route}?after=${courseNode.unlockAfterLevel}`)
+      }, settings.mapAnimations ? 620 : 180)
+      return
+    }
+    if (!courseNode.levelId) return
+    setLaunchingId(courseNode.id)
+    setLaunchLabel(`Lv.${courseNode.levelId} · ${tr(courseNode.title)}`)
+    if (launchTimerRef.current) clearTimeout(launchTimerRef.current)
+    launchTimerRef.current = setTimeout(() => {
+      router.push(demoMode ? `/play?language=${language.route}&level=${courseNode.levelId}` : `/learn/${language.route}?level=${courseNode.levelId}`)
+    }, settings.mapAnimations ? 620 : 180)
+  }, [launchingId, tr, router, demoMode, language.route, settings.mapAnimations])
+
   const nodes = useMemo<CourseFlowNode[]>(() => currentMap.nodes.map((courseNode, index) => {
     const status = getCourseStatus(courseNode, currentMap, progress, foundationComplete, language, unlockAll)
     const effectiveStatus = (demoMode || unlockAll) && status === 'locked' ? 'available' : status
@@ -347,10 +385,11 @@ export function QuestMap({
         isSelected: selectedNodeId === courseNode.id,
         isLaunching: launchingId === courseNode.id,
         animations: settings.mapAnimations,
+        onLaunch: launchNode,
       },
       draggable: false,
     }
-  }), [currentMap, progress, foundationComplete, language, zoom, selectedNodeId, launchingId, settings.mapAnimations, demoMode, unlockAll])
+  }), [currentMap, progress, foundationComplete, language, zoom, selectedNodeId, launchingId, settings.mapAnimations, demoMode, unlockAll, launchNode])
 
   const edges = useMemo<Edge[]>(() => currentMap.nodes.slice(0, -1).map((courseNode, index) => {
     const next = currentMap.nodes[index + 1]
@@ -398,9 +437,12 @@ export function QuestMap({
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') setSearchQuery('')
+              }}
               aria-label={tr('搜索全部课程')}
               placeholder={tr('搜索全部课程')}
-                className="cn-focus-ring h-9 w-full rounded-lg border border-white/10 bg-white/[0.035] pl-9 pr-3 text-xs text-white outline-none transition-colors placeholder:text-white/22 focus:border-cyan-300/45 sm:w-72"
+              className="cn-focus-ring h-9 w-full rounded-lg border border-white/10 bg-white/[0.035] pl-9 pr-3 text-xs text-white outline-none transition-colors placeholder:text-white/22 focus:border-cyan-300/45 sm:w-72"
             />
             {searchResults.length > 0 && (
               <div className="cn-scrollbar absolute right-0 top-10 z-20 max-h-80 w-[min(380px,calc(100vw-48px))] overflow-y-auto rounded-lg border border-cyan-300/18 bg-black/95 shadow-2xl shadow-black/60 backdrop-blur-xl">
@@ -487,26 +529,7 @@ export function QuestMap({
           onMove={(_, viewport) => setZoom(viewport.zoom)}
           onNodeClick={(_, node) => {
             const courseFlowNode = node as CourseFlowNode
-            const status = courseFlowNode.data.status
-            const courseNode = courseFlowNode.data.courseNode
-            setSelectedNodeId(courseNode.id)
-            if (status === 'locked' || launchingId) return
-            if (!courseNode.levelId && courseNode.unlockAfterLevel && courseNode.kind === 'project') {
-              setLaunchingId(courseNode.id)
-              setLaunchLabel(`${tr('阶段作品')} · ${tr(courseNode.title)}`)
-              if (launchTimerRef.current) clearTimeout(launchTimerRef.current)
-              launchTimerRef.current = setTimeout(() => {
-                router.push(demoMode ? `/play?language=${language.route}&project=${courseNode.unlockAfterLevel}` : `/project/${language.route}?after=${courseNode.unlockAfterLevel}`)
-              }, settings.mapAnimations ? 620 : 180)
-              return
-            }
-            if (!courseNode.levelId) return
-            setLaunchingId(courseNode.id)
-            setLaunchLabel(`Lv.${courseNode.levelId} · ${tr(courseNode.title)}`)
-            if (launchTimerRef.current) clearTimeout(launchTimerRef.current)
-            launchTimerRef.current = setTimeout(() => {
-              router.push(demoMode ? `/play?language=${language.route}&level=${courseNode.levelId}` : `/learn/${language.route}?level=${courseNode.levelId}`)
-            }, settings.mapAnimations ? 620 : 180)
+            launchNode(courseFlowNode.data.courseNode, courseFlowNode.data.status)
           }}
           panOnDrag
           zoomOnScroll

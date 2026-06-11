@@ -167,7 +167,12 @@ export async function POST(req: NextRequest) {
   const lang = req.headers.get('x-codenexus-lang') === 'en' ? 'en' : 'zh'
 
   if (isGuest && !byoKey) {
-    return textStream('⚠️ 试玩模式要先在命令中心填入你自己的 API Key（DeepSeek / Kimi 都行）才能和小助手对话。登录后可直接使用平台提供的模型。', 401)
+    return textStream(
+      lang === 'en'
+        ? '⚠️ In trial mode, add your own API key (DeepSeek or Kimi) in the Command Center to chat with the assistant. Sign in to use the platform-provided model directly.'
+        : '⚠️ 试玩模式要先在命令中心填入你自己的 API Key（DeepSeek / Kimi 都行）才能和小助手对话。登录后可直接使用平台提供的模型。',
+      401,
+    )
   }
 
   // Rate limit: per-user for members, per-IP for guests.
@@ -176,7 +181,9 @@ export async function POST(req: NextRequest) {
   if (!limit.ok) {
     const seconds = Math.max(1, Math.ceil(limit.retryAfterMs / 1000))
     return textStream(
-      `⚠️ 问得太快了。${seconds} 秒后再问，或者先把屏幕上的提示读完——很多答案它已经写脸上了。`,
+      lang === 'en'
+        ? `⚠️ Too many questions at once. Ask again in ${seconds}s — and read the hints on screen first, half the answers are already there.`
+        : `⚠️ 问得太快了。${seconds} 秒后再问，或者先把屏幕上的提示读完——很多答案它已经写脸上了。`,
       429,
       seconds,
     )
@@ -184,12 +191,14 @@ export async function POST(req: NextRequest) {
 
   const ai = resolveAiClient(req, { allowServerKey: !isGuest })
   if (!ai) {
-    return textStream(
-      isGuest
-        ? '⚠️ 试玩模式需要你自己的 API Key。去命令中心填 DeepSeek 或 Kimi 的 Key。'
-        : '⚠️ 小助手缺少 API Key。平台暂未配置服务端模型，或去命令中心填你自己的 Key。',
-      503,
-    )
+    const msg = isGuest
+      ? lang === 'en'
+        ? '⚠️ Trial mode needs your own API key. Add a DeepSeek or Kimi key in the Command Center.'
+        : '⚠️ 试玩模式需要你自己的 API Key。去命令中心填 DeepSeek 或 Kimi 的 Key。'
+      : lang === 'en'
+        ? '⚠️ The assistant is missing an API key. No server-side model is configured — add your own key in the Command Center.'
+        : '⚠️ 小助手缺少 API Key。平台暂未配置服务端模型，或去命令中心填你自己的 Key。'
+    return textStream(msg, 503)
   }
   if ('error' in ai) {
     return textStream(ai.error, 400)
@@ -208,13 +217,13 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
-    return textStream('⚠️ 请求格式无效。', 400)
+    return textStream(lang === 'en' ? '⚠️ Invalid request format.' : '⚠️ 请求格式无效。', 400)
   }
 
   const {
     messages,
     code,
-    codename = '无名小白',
+    codename = lang === 'en' ? 'Rookie' : '无名小白',
     tauntFrequency = 55,
     languageName = 'Python',
     assistantPersona = DEFAULT_ASSISTANT_PERSONA,

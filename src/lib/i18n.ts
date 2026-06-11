@@ -39,7 +39,6 @@ const t = {
       confirmSub: '点击邮件中的链接后即可开始学习。',
       backToRegister: '← 返回注册页',
       noEmailHint: '没有收到邮件？检查垃圾邮件文件夹，或等待几分钟后重试。',
-      terms: '注册即表示同意我们的服务条款和隐私政策。你的数据安全存储在 Supabase。',
     },
     nav: {
       logout: '退出',
@@ -104,7 +103,6 @@ const t = {
       confirmSub: 'Click the link in the email to get started.',
       backToRegister: '← Back to sign up',
       noEmailHint: "Didn't receive it? Check your spam folder or try again in a few minutes.",
-      terms: 'By signing up, you agree to our Terms of Service and Privacy Policy. Your data is securely stored in Supabase.',
     },
     nav: {
       logout: 'Log out',

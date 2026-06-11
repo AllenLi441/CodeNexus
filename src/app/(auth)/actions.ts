@@ -20,10 +20,21 @@ function readableAuthError(error: unknown) {
     cause?.code === 'ECONNREFUSED' ||
     cause?.code === 'ETIMEDOUT'
   ) {
-    return '认证服务暂时连接不上。Supabase 项目可能处于暂停/Inactive 状态，先到 Supabase Dashboard 恢复项目后再登录。'
+    console.error('[auth] service unreachable:', message, cause?.code)
+    return '认证服务暂时连接不上，请稍后再试。'
   }
 
-  return message
+  // Map known Supabase errors to stable strings the i18n layer can translate;
+  // log and genericize the rest instead of echoing vendor internals to users.
+  const lower = message.toLowerCase()
+  if (lower.includes('invalid login credentials')) return '邮箱或密码不对。'
+  if (lower.includes('already registered')) return '这个邮箱已经注册过了。'
+  if (lower.includes('email not confirmed')) return '邮箱还没验证，先去收件箱点确认链接。'
+  if (lower.includes('rate limit')) return '尝试次数过多，请稍后再试。'
+  if (lower.includes('password should be')) return '密码至少需要 6 位字符。'
+
+  console.error('[auth] unmapped auth error:', message)
+  return '请求失败，请稍后再试。'
 }
 
 async function getRequestOrigin() {

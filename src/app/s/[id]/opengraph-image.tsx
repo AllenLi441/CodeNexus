@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { createClient } from '@/lib/supabase/server'
 import { LEVEL_MAP } from '@/lib/levels'
+import { SITE_HOST } from '@/lib/site'
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
@@ -212,7 +213,7 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
           免费试玩 →
         </div>
         <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>
-          codenexus.app
+          {SITE_HOST}
         </div>
       </div>
     </div>,

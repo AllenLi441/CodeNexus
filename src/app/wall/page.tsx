@@ -4,16 +4,23 @@ import { ArrowRight, Eye, MessageSquareQuote, Play, TerminalSquare } from 'lucid
 import { createClient } from '@/lib/supabase/server'
 import { LEVEL_MAP } from '@/lib/levels'
 import { BrandHeader } from '@/components/layout/logo'
+import { SiteFooter } from '@/components/layout/site-footer'
 import { getServerLang } from '@/lib/i18n-server'
 import { translate } from '@/lib/i18n'
 
-export const metadata: Metadata = {
-  title: 'Nexus 吐槽墙 | CodeNexus',
-  description: '看看别人被 CodeNexus AI 编程导师精准扎心的公开分享。',
-  openGraph: {
-    title: 'Nexus 吐槽墙 | CodeNexus',
-    description: 'AI 编程导师的毒舌语录和用户通关代码精选。',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getServerLang()
+  return lang === 'en'
+    ? {
+        title: 'Nexus Roast Wall',
+        description: 'Public shares from learners who earned a sharp-tongued review from the CodeNexus AI mentor.',
+        openGraph: { url: '/wall' },
+      }
+    : {
+        title: 'Nexus 吐槽墙',
+        description: '看看别人被 CodeNexus AI 编程导师精准扎心的公开分享。',
+        openGraph: { url: '/wall' },
+      }
 }
 
 type WallItem = {
@@ -40,10 +47,11 @@ export default async function WallPage() {
     .order('created_at', { ascending: false })
     .limit(48)
 
+  if (error) console.error('[wall] failed to load shares:', error.message)
   const items = (data ?? []) as WallItem[]
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground cn-noise">
+    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground cn-noise">
       <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-background/84 backdrop-blur-xl">
         <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:px-4">
           <BrandHeader dark />
@@ -66,7 +74,7 @@ export default async function WallPage() {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-3 py-8 sm:px-4 sm:py-10">
+      <main className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-3 py-8 sm:px-4 sm:py-10">
         <section className="mb-6">
           <p className="font-mono text-[10px] uppercase tracking-[0.34em] text-cyan-300/45">Nexus Wall</p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
@@ -79,9 +87,9 @@ export default async function WallPage() {
 
         {error ? (
           <section className="rounded-lg border border-amber-300/18 bg-amber-300/[0.06] p-5">
-            <p className="text-sm font-semibold text-amber-100">{translate('吐槽墙字段还没迁移。', lang)}</p>
+            <p className="text-sm font-semibold text-amber-100">{translate('吐槽墙暂时打不开。', lang)}</p>
             <p className="mt-2 text-xs leading-relaxed text-amber-100/62">
-              {translate('请先执行 `supabase/migrations/007_mentor_wall_shares.sql`，否则公开墙无法读取导师语录字段。', lang)}
+              {translate('服务出了点小状况，稍后再来看看。', lang)}
             </p>
           </section>
         ) : items.length === 0 ? (
@@ -149,6 +157,8 @@ export default async function WallPage() {
           </section>
         )}
       </main>
+
+      <SiteFooter lang={lang} />
     </div>
   )
 }

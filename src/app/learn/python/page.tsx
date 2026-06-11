@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { PythonRunner } from '@/components/workshop/python-runner'
 import { fetchUserProgress } from '@/app/actions/progress'
 import { getLanguageModule } from '@/lib/language-modules'
+import { getServerLang } from '@/lib/i18n-server'
 
 export default async function LearnPythonPage({
   searchParams,
@@ -17,7 +18,7 @@ export default async function LearnPythonPage({
   const { progress, profile } = await fetchUserProgress()
   const language = getLanguageModule('python')
   const initialLevelId = Math.min(Math.max(parseInt(levelParam ?? '1', 10) || 1, 1), language.levels.length)
-  const codename = profile.nickname?.trim() || (user.user_metadata?.display_name as string | undefined)?.trim() || '无名小白'
+  const codename = profile.nickname?.trim() || (user.user_metadata?.display_name as string | undefined)?.trim() || ((await getServerLang()) === 'en' ? 'Rookie' : '无名小白')
 
   return (
     <PythonRunner

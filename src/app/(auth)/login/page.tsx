@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
 import { AuthForm } from '@/components/auth/auth-form'
 import { getServerLang } from '@/lib/i18n-server'
 import { translate } from '@/lib/i18n'
+
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await getServerLang()
+  return { title: lang === 'en' ? 'Log in' : '登录' }
+}
 
 export default async function LoginPage({
   searchParams,

@@ -58,11 +58,13 @@ function staticLevel({
           heading: '拆题方式',
           body: `先把目标压成一句话：${objective}。\n\n再把代码拆成三段：入口在哪里、数据在哪里、结果怎么交出去。每次只写能证明目标的一小段，跑通后再补结构。`,
           tip: '不要一边写一边猜。先确认本关要证明什么，再写最小可运行版本。',
+          auto: 'breakdown' as const,
         },
         {
           heading: '通关检查',
           body: tests.map((item, index) => `${index + 1}. ${item.description}`).join('\n'),
           warning: '如果测试没过，先看第一个失败提示。别同时改三处，不然你连自己修好了什么都不知道。',
+          auto: 'checklist' as const,
         },
       ]
 

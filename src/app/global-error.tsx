@@ -1,6 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+
+// Renders outside all providers, so read the language cookie directly.
+function readLangCookie(): 'zh' | 'en' {
+  if (typeof document === 'undefined') return 'zh'
+  return /(?:^|;\s*)zf-lang=en(?:;|$)/.test(document.cookie) ? 'en' : 'zh'
+}
 
 export default function GlobalError({
   error,
@@ -9,12 +15,14 @@ export default function GlobalError({
   error: Error & { digest?: string }
   unstable_retry: () => void
 }) {
+  const [lang] = useState(readLangCookie)
+  const isEn = lang === 'en'
   useEffect(() => {
     console.error('[CodeNexus] global error:', error)
   }, [error])
 
   return (
-    <html lang="zh-CN">
+    <html lang={isEn ? 'en' : 'zh-CN'}>
       <body
         style={{
           margin: 0,
@@ -52,7 +60,7 @@ export default function GlobalError({
             Critical Fault
           </p>
           <h1 style={{ fontSize: 18, fontWeight: 600, margin: '8px 0 16px' }}>
-            Nexus 主控台离线
+            {isEn ? 'Something went wrong' : '出了点问题'}
           </h1>
           <p
             style={{
@@ -62,7 +70,9 @@ export default function GlobalError({
               marginBottom: 20,
             }}
           >
-            根布局崩了。先重试；问题持续就刷新整个标签页。
+            {isEn
+              ? 'An unexpected error occurred. Try again; if it persists, reload the tab.'
+              : '遇到一个意外错误。先重试；问题持续就刷新整个标签页。'}
           </p>
           <button
             type="button"
@@ -78,7 +88,7 @@ export default function GlobalError({
               cursor: 'pointer',
             }}
           >
-            重试
+            {isEn ? 'Retry' : '重试'}
           </button>
         </div>
       </body>

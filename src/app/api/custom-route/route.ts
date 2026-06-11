@@ -20,7 +20,29 @@ function levelMenu() {
   return LEVELS.map((level) => `${level.id}. ${level.title}`).join('\n')
 }
 
-function routeSystemPrompt(languageName: string) {
+function routeSystemPrompt(languageName: string, lang: 'zh' | 'en') {
+  if (lang === 'en') {
+    return `You are CodeNexus's learning-route planner. The user will tell you what they want to build.
+Your task: break that goal into 4-6 learning milestones, from easy to hard, so a ${languageName} beginner can follow them step by step and gradually build it.
+
+Existing levels you may link to (link by numeric id so the user can jump in and practice; only pick from the list below, choose the closest match, use null if nothing fits):
+${levelMenu()}
+
+Output ONLY JSON, no extra text or explanation, strictly in this structure:
+{
+  "steps": [
+    {
+      "title": "milestone title (max 8 words)",
+      "why": "why this step matters for the user's goal (one conversational sentence)",
+      "concept": "the core concept of this step (2-5 words)",
+      "task": "one small task they can do right now (one specific sentence)",
+      "levelId": numeric level id, or null
+    }
+  ]
+}
+
+Requirements: 4 to 6 steps; ordered easy to hard; title / why / task in English, specific, never vague; don't just restate the user's goal.`
+  }
   return `你是 CodeNexus 的学习路线规划师。用户会告诉你 TA "想做一个什么东西"。
 你的任务：把这个目标拆成 4-6 个由浅入深的学习里程碑，让一个 ${languageName} 初学者照着一步步走，就能逐渐做出来。
 
@@ -44,41 +66,52 @@ ${levelMenu()}
 }
 
 export async function POST(req: NextRequest) {
+  const lang = req.headers.get('x-codenexus-lang') === 'en' ? 'en' : 'zh'
+  const isEn = lang === 'en'
+
   // Only signed-in learners spend model tokens.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
-  if (!user) return json({ error: '请先登录，再让我帮你定制路线。' }, 401)
+  if (!user) {
+    return json({ error: isEn ? 'Sign in first and I’ll build your custom route.' : '请先登录，再让我帮你定制路线。' }, 401)
+  }
 
   const limit = checkRateLimit(`route:${user.id}`, ROUTE_LIMIT, ROUTE_WINDOW_MS)
   if (!limit.ok) {
     const seconds = Math.max(1, Math.ceil(limit.retryAfterMs / 1000))
-    return json({ error: `定制得太快了，${seconds} 秒后再来一次。` }, 429)
+    return json({ error: isEn ? `Too fast — try again in ${seconds}s.` : `定制得太快了，${seconds} 秒后再来一次。` }, 429)
   }
 
   const ai = resolveAiClient(req)
-  if (!ai) return json({ error: '小助手缺少 API Key。去命令中心填你自己的 DeepSeek Key，或在部署环境配置 DEEPSEEK_API_KEY。' }, 503)
+  if (!ai) {
+    return json({
+      error: isEn
+        ? 'The assistant is missing an API key. Add your own DeepSeek key in the Command Center.'
+        : '小助手缺少 API Key。去命令中心填你自己的 DeepSeek Key。',
+    }, 503)
+  }
   if ('error' in ai) return json({ error: ai.error }, 400)
 
   let body: { goal?: string; languageName?: string }
   try {
     body = await req.json()
   } catch {
-    return json({ error: '请求格式无效。' }, 400)
+    return json({ error: isEn ? 'Invalid request format.' : '请求格式无效。' }, 400)
   }
 
   const goal = typeof body.goal === 'string' ? body.goal.trim().slice(0, 200) : ''
   const languageName = typeof body.languageName === 'string' && body.languageName.trim()
     ? body.languageName.trim().slice(0, 40)
     : 'Python'
-  if (!goal) return json({ error: '先说说你想做个什么吧。' }, 400)
+  if (!goal) return json({ error: isEn ? 'Tell me what you want to build first.' : '先说说你想做个什么吧。' }, 400)
 
   let completion
   try {
     completion = await ai.client.chat.completions.create({
       model: ai.model,
       messages: [
-        { role: 'system', content: routeSystemPrompt(languageName) },
-        { role: 'user', content: `我想做的是：${goal}` },
+        { role: 'system', content: routeSystemPrompt(languageName, lang) },
+        { role: 'user', content: isEn ? `What I want to build: ${goal}` : `我想做的是：${goal}` },
       ],
       response_format: { type: 'json_object' },
       max_tokens: 900,
@@ -86,7 +119,7 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('custom-route upstream error:', err)
-    return json({ error: '上游模型暂时不响应，稍后再试。' }, 502)
+    return json({ error: isEn ? 'The upstream model isn’t responding. Try again shortly.' : '上游模型暂时不响应，稍后再试。' }, 502)
   }
 
   const raw = completion.choices[0]?.message?.content ?? ''
@@ -123,7 +156,7 @@ export async function POST(req: NextRequest) {
     })
 
   if (steps.length < 2) {
-    return json({ error: '这次没能生成清晰的路线，换个说法再试试。' }, 422)
+    return json({ error: isEn ? 'Couldn’t generate a clear route this time — try rephrasing.' : '这次没能生成清晰的路线，换个说法再试试。' }, 422)
   }
 
   return json({ steps })

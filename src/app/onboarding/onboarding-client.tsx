@@ -11,7 +11,7 @@ import { useTr } from '@/contexts/language-context'
 
 type Phase = 'boot' | 'chat' | 'input' | 'confirmed' | 'redirecting'
 
-const INTRO = `CodeNexus 工作台已上线。\n\n我是你的代码小助理。这里不是让你被动刷视频，也不是把答案塞进编辑器骗自己学会了。\n\n你会按这个节奏学习：先选一门语言，再选领域分支，进入课程后先听我讲“这关能干什么、为什么要学、最容易错在哪”，然后打开空编辑器自己写最小代码。\n\n运行后我会看终端、测试结果和你当前代码。报错不用慌，我们只抓第一个关键问题；停太久也没关系，我会提醒你下一步该动哪一行。\n\n**目标不是通关动画，是让你真的做出能运行、能解释、以后能扩成作品的东西。**`
+const INTRO = `CodeNexus 工作台已上线。\n\n我是你的代码小助手。这里不是让你被动刷视频，也不是把答案塞进编辑器骗自己学会了。\n\n你会按这个节奏学习：先选一门语言，再选领域分支，进入课程后先听我讲“这关能干什么、为什么要学、最容易错在哪”，然后打开空编辑器自己写最小代码。\n\n运行后我会看终端、测试结果和你当前代码。报错不用慌，我们只抓第一个关键问题；停太久也没关系，我会提醒你下一步该动哪一行。\n\n**目标不是通关动画，是让你真的做出能运行、能解释、以后能扩成作品的东西。**`
 
 function confirmMsg(name: string, assistantName: string, tr: (zh: string) => string) {
   return `${tr('好，')}**${name}**${tr('，代号入库。')}\n\n**${assistantName}** ${tr('会跟着你进入工作台：先介绍主界面，再带你进入第一关。你不用一开始就懂全部功能，先完成第一段可运行代码。')}\n\n${tr('进去吧。第一关的目标很小：让程序说出第一句话。但这一步会打开后面所有课程的门。')}`
@@ -382,7 +382,7 @@ export function OnboardingClient({ redirectTo = '/dashboard' }: { redirectTo?: s
 
               {saveError && (
                 <p className="rounded-lg border border-red-400/25 bg-red-400/[0.08] px-3 py-2 text-center text-xs text-red-200">
-                  {saveError}
+                  {tr(saveError)}
                 </p>
               )}
 

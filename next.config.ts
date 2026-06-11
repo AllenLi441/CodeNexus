@@ -11,11 +11,13 @@ const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   // Hide internal paths from third-party referrers.
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  // We never need camera / mic / geolocation. Lock them down so a bug
-  // can't accidentally request them.
+  // Always-HTTPS once visited; the site lives behind TLS on Vercel.
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+  // The assistant's voice input / camera features need same-origin mic+camera;
+  // keep them blocked for embedded third-party content.
   {
     key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+    value: 'camera=(self), microphone=(self), geolocation=(), interest-cohort=()',
   },
 ] as const
 

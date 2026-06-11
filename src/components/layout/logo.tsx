@@ -1,4 +1,7 @@
+'use client'
+
 import { cn } from '@/lib/utils'
+import { useTr } from '@/contexts/language-context'
 
 export function CodeNexusLogo({ className, size = 32 }: { className?: string; size?: number }) {
   return (
@@ -49,13 +52,14 @@ export function CodeNexusLogo({ className, size = 32 }: { className?: string; si
 }
 
 export function BrandHeader({ dark = false }: { dark?: boolean }) {
+  const tr = useTr()
   return (
     <div className={cn('flex min-w-0 items-center gap-2', dark ? 'text-foreground' : 'text-primary')}>
       <CodeNexusLogo className="flex-shrink-0 text-primary" size={28} />
       <div className="min-w-0 leading-none">
         <span className="block truncate text-lg font-bold tracking-tight">CodeNexus</span>
         <span className={cn('text-xs block -mt-0.5', dark ? 'text-muted-foreground' : 'text-muted-foreground')}>
-          AI 编程中枢
+          {tr('AI 编程中枢')}
         </span>
       </div>
     </div>

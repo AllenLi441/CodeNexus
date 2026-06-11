@@ -92,7 +92,8 @@ function hasOutputIntent(code: string) {
   return /\b(print|console\.log|System\.out\.print|printf|cout|Console\.WriteLine|Debug\.Print)\b/.test(code)
 }
 
-function detectBracketIssue(code: string) {
+function detectBracketIssue(code: string, lang: 'zh' | 'en' = 'zh') {
+  const en = lang === 'en'
   const pairs: Record<string, string> = { ')': '(', ']': '[', '}': '{' }
   const opens = new Set(Object.values(pairs))
   const stack: string[] = []
@@ -115,9 +116,16 @@ function detectBracketIssue(code: string) {
       continue
     }
     if (opens.has(ch)) stack.push(ch)
-    if (ch in pairs && stack.pop() !== pairs[ch]) return '括号配对不对，解释器会先在这里翻车。'
+    if (ch in pairs && stack.pop() !== pairs[ch]) {
+      return en
+        ? 'The brackets don’t pair up — the interpreter will crash right here.'
+        : '括号配对不对，解释器会先在这里翻车。'
+    }
   }
-  return stack.length > 0 ? '括号还没收口，先把结构闭合。' : null
+  if (stack.length > 0) {
+    return en ? 'A bracket is still open — close the structure first.' : '括号还没收口，先把结构闭合。'
+  }
+  return null
 }
 
 function buildInstantInsight({
@@ -203,7 +211,7 @@ function buildInstantInsight({
   }
 
   if (languageName === 'Python') {
-    const runaway = detectRunawayPython(trimmed)
+    const runaway = detectRunawayPython(trimmed, lang)
     if (runaway) {
       return {
         mood: 'alert',
@@ -227,7 +235,7 @@ function buildInstantInsight({
       }
     }
   } else {
-    const bracketIssue = detectBracketIssue(trimmed)
+    const bracketIssue = detectBracketIssue(trimmed, lang)
     if (bracketIssue) {
       return {
         mood: 'alert',
@@ -416,7 +424,7 @@ function AssistantToolbar({ onCopy, onRetry, copied }: {
 }) {
   const tr = useTr()
   return (
-    <div className="mt-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+    <div className="mt-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100">
       <button
         type="button"
         onClick={onCopy}
@@ -484,6 +492,13 @@ export function AIChat({
   const [memory, setMemory] = useState<AssistantMemorySnapshot>(EMPTY_ASSISTANT_MEMORY)
   const [isOpen, setIsOpen] = useState(settings.autoOpenMentor)
   const [ambientHint, setAmbientHint] = useState<string | null>(null)
+  // Drop the cached ambient hint when the UI language changes, so it regenerates
+  // in the new language instead of showing stale mount-time text.
+  const [hintLang, setHintLang] = useState(lang)
+  if (hintLang !== lang) {
+    setHintLang(lang)
+    setAmbientHint(null)
+  }
   const [interactionHint, setInteractionHint] = useState<string | null>(null)
   const [snoozedUntil, setSnoozedUntil] = useState(0)
   const [, scheduleEditPulseRefresh] = useState(0)
@@ -580,10 +595,6 @@ export function AIChat({
     })
     return () => { cancelled = true }
   }, [codename, persona.id, settings.assistantLiveliness, settings.assistantMemory, lang])
-
-  // Drop the cached ambient hint when the UI language changes, so it regenerates
-  // in the new language instead of showing stale mount-time text.
-  useEffect(() => { setAmbientHint(null) }, [lang])
 
   // Abort any in-flight request when the component unmounts.
   useEffect(() => () => abortRef.current?.abort(), [])
@@ -842,7 +853,7 @@ export function AIChat({
 
     recognitionRef.current?.abort()
     const recognition = new Recognition()
-    recognition.lang = 'zh-CN'
+    recognition.lang = lang === 'en' ? 'en-US' : 'zh-CN'
     recognition.continuous = false
     recognition.interimResults = true
     recognition.maxAlternatives = 1
@@ -1126,7 +1137,7 @@ export function AIChat({
                 trackEyes
               />
             </button>
-            <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 translate-y-1 rounded-lg border border-cyan-300/18 bg-black/94 p-3 text-left opacity-0 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+            <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 translate-y-1 rounded-lg border border-cyan-300/18 bg-black/94 p-3 text-left opacity-0 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
               <p className="text-xs font-semibold text-white/86">{tr(persona.name)}</p>
               <p className="mt-1 text-[11px] leading-relaxed text-white/42">
                 {tr(instantInsight.status)}。{hasCode ? tr('已读当前代码。') : tr('正在等你写第一行。')}
@@ -1161,8 +1172,11 @@ export function AIChat({
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
+                role="status"
                 className="absolute right-1 top-1 h-3.5 w-3.5 rounded-full border-2 border-black bg-red-400"
-              />
+              >
+                <span className="sr-only">{tr('有新提示')}</span>
+              </motion.span>
             )}
           </motion.div>
         )}
@@ -1175,6 +1189,11 @@ export function AIChat({
             animate={{ opacity: 1, x: 0, y: 0 }}
             exit={panelExit}
             transition={appleSpring}
+            role="dialog"
+            aria-label={tr(persona.name)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setIsOpen(false)
+            }}
             className={`fixed inset-x-0 bottom-0 top-auto z-40 flex max-h-[42dvh] min-h-[280px] max-w-none flex-col border-t border-cyan-300/14 bg-black/96 shadow-2xl shadow-cyan-950/40 backdrop-blur-2xl xl:inset-x-auto xl:bottom-0 xl:top-0 xl:min-h-0 xl:w-[var(--cn-assistant-panel-width)] xl:max-h-none xl:border-t-0 ${panelSideClass}`}
             style={assistantPanelStyle}
           >
@@ -1192,6 +1211,7 @@ export function AIChat({
                     type="button"
                     onClick={() => setIsOpen(false)}
                     title={tr('关闭小助手')}
+                    aria-label={tr('关闭小助手')}
                     className="cn-focus-ring flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-white/30 transition-colors hover:bg-white/[0.06] hover:text-white/65"
                   >
                     <X className="h-4 w-4" />
@@ -1302,7 +1322,7 @@ export function AIChat({
                   <span className="truncate">{tr(mediaPermissionCopy('camera', mediaAccess.camera))}</span>
                 </button>
               </div>
-              <p className="mb-2 inline-flex items-start gap-1.5 text-[10px] leading-relaxed text-white/28">
+              <p role="status" className="mb-2 inline-flex items-start gap-1.5 text-[10px] leading-relaxed text-white/28">
                 <ShieldCheck className="mt-0.5 h-3 w-3 flex-shrink-0 text-cyan-200/42" />
                 <span>{tr(permissionMessage)}</span>
               </p>
@@ -1318,6 +1338,7 @@ export function AIChat({
                     }
                   }}
                   placeholder={`${tr('问')}${tr(persona.name)}${tr('，别憋着。')}`}
+                  aria-label={tr('向小助手提问')}
                   disabled={isStreaming}
                   rows={1}
                   className="max-h-24 flex-1 resize-none bg-transparent text-sm leading-relaxed text-white/85 outline-none placeholder:text-white/20 disabled:opacity-50"
@@ -1327,6 +1348,7 @@ export function AIChat({
                     size="sm"
                     onClick={stopStreaming}
                     title={tr('停止生成')}
+                    aria-label={tr('停止生成')}
                     className="cn-focus-ring h-8 w-8 flex-shrink-0 rounded-lg bg-red-400/90 p-0 text-white hover:bg-red-400"
                   >
                     <Square className="h-3.5 w-3.5" fill="currentColor" />
@@ -1336,6 +1358,7 @@ export function AIChat({
                     size="sm"
                     onClick={() => sendMessage()}
                     disabled={!input.trim()}
+                    aria-label={tr('发送')}
                     className="cn-focus-ring h-8 w-8 flex-shrink-0 rounded-lg bg-cyan-300 p-0 text-black hover:bg-cyan-200 disabled:opacity-30"
                   >
                     <Send className="h-3.5 w-3.5" />

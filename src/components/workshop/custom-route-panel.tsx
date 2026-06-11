@@ -11,7 +11,7 @@ import {
   type LearningProfile,
 } from '@/lib/learning-profile'
 import { useCommandSettings } from '@/hooks/use-command-settings'
-import { useTr } from '@/contexts/language-context'
+import { useLanguage, useTr } from '@/contexts/language-context'
 
 // Honest preview shown to logged-out visitors so they see what they'd get,
 // without any fake generation or live level links.
@@ -36,6 +36,7 @@ const CARD = 'rounded-lg border border-white/8 bg-black/28 p-3'
 
 export function CustomRoutePanel({ route, levels, languageName, guestMode, onChangeLevel, onProfileChange }: Props) {
   const tr = useTr()
+  const { lang } = useLanguage()
   const { settings } = useCommandSettings()
   const [goal, setGoal] = useState('')
   const [loading, setLoading] = useState(false)
@@ -51,6 +52,7 @@ export function CustomRoutePanel({ route, levels, languageName, guestMode, onCha
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-codenexus-lang': lang,
           ...(settings.aiApiKey
             ? {
                 'x-codenexus-ai-key': settings.aiApiKey,

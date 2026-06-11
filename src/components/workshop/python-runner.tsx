@@ -66,7 +66,7 @@ const CodeEditor = dynamic(() => import('./code-editor').then((m) => m.CodeEdito
   ssr: false,
   loading: () => (
     <div className="h-full flex items-center justify-center bg-[var(--code-bg-elevated)]">
-      <div className="text-white/20 text-sm font-mono animate-pulse">载入编辑器...</div>
+      <div className="text-white/20 text-sm font-mono animate-pulse">Loading editor…</div>
     </div>
   ),
 })
@@ -103,7 +103,7 @@ function commandLabel(language: LearningLanguage) {
   return 'python'
 }
 
-function runStaticCode(language: LearningLanguage, level: Level, code: string): RunResult {
+function runStaticCode(language: LearningLanguage, level: Level, code: string, tr: (zh: string) => string): RunResult {
   const started = performance.now()
   const executionMs = Math.max(1, Math.round(performance.now() - started))
   const trimmed = code.trim()
@@ -111,28 +111,28 @@ function runStaticCode(language: LearningLanguage, level: Level, code: string): 
   if (!trimmed) {
     return {
       output: '',
-      error: `${language.name} 静态检查器：编辑器还是空的。先写代码，别让空气参加考试。`,
+      error: tr('{lang} 静态检查器：编辑器还是空的。先写代码，别让空气参加考试。').replace('{lang}', language.name),
       imageBase64: null,
       executionMs,
-      speedTier: { emoji: '✓', label: `${executionMs}ms`, percentile: '静态检查' },
+      speedTier: { emoji: '✓', label: `${executionMs}ms`, percentile: tr('静态检查') },
     }
   }
 
   return {
     output: [
-      `⚠️ ${language.name} · 结构检查模式（未真正运行代码）`,
-      `目标：${level.objective}`,
-      '说明：当前非 Python 语言只检查源代码里的结构和关键字，不会真正编译或运行 —— 所以"通过"不代表程序真的能跑通。',
-      '想要真实编译运行（gcc / javac / dotnet 等）并按输出判题，请登录后使用「在线运行」。',
+      tr('⚠️ {lang} · 结构检查模式（未真正运行代码）').replace('{lang}', language.name),
+      `${tr('目标：')}${tr(level.objective)}`,
+      tr('说明：当前非 Python 语言只检查源代码里的结构和关键字，不会真正编译或运行 —— 所以"通过"不代表程序真的能跑通。'),
+      tr('想要真实编译运行（gcc / javac / dotnet 等）并按输出判题，请登录后使用「在线运行」。'),
     ].join('\n'),
     error: '',
     imageBase64: null,
     executionMs,
-    speedTier: { emoji: '✓', label: `${executionMs}ms`, percentile: '结构检查' },
+    speedTier: { emoji: '✓', label: `${executionMs}ms`, percentile: tr('结构检查') },
   }
 }
 
-async function runServerCode(language: LearningLanguage, code: string): Promise<RunResult> {
+async function runServerCode(language: LearningLanguage, code: string, tr: (zh: string) => string): Promise<RunResult> {
   const res = await fetch('/api/run-code', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -142,7 +142,7 @@ async function runServerCode(language: LearningLanguage, code: string): Promise<
   if (!res.ok) {
     return {
       output: '',
-      error: payload?.error ?? `${language.name} 这次没跑起来。看一眼下面的报错，改一处再试。`,
+      error: payload?.error ?? tr('{lang} 这次没跑起来。看一眼下面的报错，改一处再试。').replace('{lang}', language.name),
       imageBase64: null,
       executionMs: 1,
       speedTier: { emoji: '✓', label: '1ms', percentile: 'runner error' },
@@ -167,7 +167,7 @@ export function PythonRunner({
   const language = useMemo(() => getLanguageModule(languageId), [languageId])
   const levels = language.levels
   const levelMap = useMemo(() => new Map(levels.map((item) => [item.id, item])), [levels])
-  const runtimeCopy = useMemo(() => getRuntimeModeCopy(language.name, language.runtime), [language.name, language.runtime])
+  const runtimeCopy = useMemo(() => getRuntimeModeCopy(language.name, language.runtime, tr, language.id), [language.name, language.runtime, tr, language.id])
   const [assistantOpen, setAssistantOpen] = useState(() => settings.autoOpenMentor)
 
   // ── Level ────────────────────────────────────────────────────────────────────
@@ -233,7 +233,8 @@ export function PythonRunner({
   const [mobileTab, setMobileTab] = useState<MobileTab>('briefing')
 
   // ── Runaway-execution detection ──────────────────────────────────────────────
-  // Pyodide runs in the main thread, so `while True: pass` freezes the tab.
+  // Pyodide runs in a Web Worker with its own 6s hard kill (PyodideRunner.ts);
+  // this 8s flag is a belt-and-braces rescue UI in case that kill ever fails.
   // The `runawayDetected` flag is *set* from a timeout (external event — fine
   // inside useEffect) and *reset* by the run handler when execution starts/
   // finishes. Following React 19's "no setState directly in effect bodies"
@@ -254,7 +255,7 @@ export function PythonRunner({
     setPyStatus('loading')
     setLoadProgress(10)
     initPyodide((msg) => {
-      setStatusMsg(msg)
+      setStatusMsg(tr(msg))
       setLoadProgress((p) => Math.min(p + 25, 90))
     })
       .then(() => { setPyStatus('ready'); setStatusMsg(`Python ${tr('已就绪')}`); setLoadProgress(100) })
@@ -356,7 +357,7 @@ export function PythonRunner({
       if (cancelled) return
       setGraphicsLoading(true)
       try {
-        await loadGraphicsPackages((msg) => setStatusMsg(msg))
+        await loadGraphicsPackages((msg) => setStatusMsg(tr(msg)))
       } finally {
         if (!cancelled) setGraphicsLoading(false)
       }
@@ -488,7 +489,7 @@ export function PythonRunner({
   const handleRun = useCallback(async () => {
     if (!briefingComplete || isRunning || pyStatus !== 'ready' || graphicsLoading) return
     if (language.runtime === 'python-pyodide') {
-      const runawayReason = detectRunawayPython(code)
+      const runawayReason = detectRunawayPython(code, lang)
       if (runawayReason) {
         const result: RunResult = {
           output: '',
@@ -528,8 +529,8 @@ export function PythonRunner({
       const result = language.runtime === 'python-pyodide'
         ? await runCode(code)
         : language.runtime === 'server-exec' && !isGuestPlay
-        ? await runServerCode(language, code)
-        : runStaticCode(language, level, code)
+        ? await runServerCode(language, code, tr)
+        : runStaticCode(language, level, code, tr)
       const entry: TerminalEntry = {
         id: Date.now().toString(),
         timestamp: new Date().toLocaleTimeString('zh-CN', {
@@ -705,7 +706,7 @@ export function PythonRunner({
       setIsRunning(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [briefingComplete, code, isRunning, pyStatus, graphicsLoading, level, completedLevelIds, proactiveHint, language, levels, isGuestPlay])
+  }, [briefingComplete, code, isRunning, pyStatus, graphicsLoading, level, completedLevelIds, proactiveHint, language, levels, isGuestPlay, lang, tr])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1074,10 +1075,9 @@ export function PythonRunner({
       </div>
 
       {/* ── Runaway-execution rescue ─────────────────────────────────────────
-          Pyodide is on the main thread; an infinite loop freezes the tab.
-          After 8s of running we reveal a force-stop button that reloads the
-          page. The editor draft is auto-saved to localStorage so users don't
-          lose code. */}
+          The worker normally hard-kills runs at 6s; if that ever fails, after
+          8s we reveal a force-stop button that reloads the page. The editor
+          draft is auto-saved to localStorage so users don't lose code. */}
       <AnimatePresence>
         {runawayDetected && (
           <motion.div

@@ -46,7 +46,7 @@ function CodeSample({ section, languageName, tr }: { section: LessonSection; lan
       <div className="flex items-center justify-between border-b border-white/8 bg-white/[0.025] px-3 py-2">
         <span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-200/55">
           <Code2 className="h-3.5 w-3.5" />
-          {section.codeBlock.caption ?? 'Example'}
+          {tr(section.codeBlock.caption ?? '参考结构')}
         </span>
         {section.codeBlock.fillable && (
           <span className="rounded border border-cyan-300/18 px-2 py-0.5 text-[10px] text-cyan-100/50">
@@ -65,13 +65,22 @@ function ArticleSection({
   section,
   index,
   languageName,
+  level,
   tr,
 }: {
   section: LessonSection
   index: number
   languageName: string
+  level: Level
   tr: (zh: string) => string
 }) {
+  // Auto-generated sections interpolate the objective/tests, so their stored
+  // bodies can never match EN_MAP — rebuild them from translatable parts.
+  const body = section.auto === 'breakdown'
+    ? `${tr('先把目标压成一句话：')}${tr(level.objective)}${tr('。')}\n\n${tr('再把代码拆成三段：入口在哪里、数据在哪里、结果怎么交出去。每次只写能证明目标的一小段，跑通后再补结构。')}`
+    : section.auto === 'checklist'
+    ? level.tests.map((test, i) => `${i + 1}. ${tr(test.description)}`).join('\n')
+    : tr(section.body)
   return (
     <section id={`chapter-${index + 1}`} className="scroll-mt-24 border-t border-white/8 py-7 first:border-t-0 first:pt-0">
       <div className="mb-3 flex items-start gap-3">
@@ -85,7 +94,7 @@ function ArticleSection({
       </div>
 
       <div className="text-sm leading-7 text-white/62">
-        <MarkdownMessage text={tr(section.body)} />
+        <MarkdownMessage text={body} />
       </div>
 
       <CodeSample section={section} languageName={languageName} tr={tr} />
@@ -210,6 +219,7 @@ export function LessonBriefing({ level, languageName, codename, onStart }: Lesso
                 section={section}
                 index={index}
                 languageName={languageName}
+                level={level}
                 tr={tr}
               />
             ))}

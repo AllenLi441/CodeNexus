@@ -14,6 +14,7 @@ import {
   TerminalSquare,
 } from 'lucide-react'
 import { BrandHeader } from '@/components/layout/logo'
+import { SiteFooter } from '@/components/layout/site-footer'
 import { LanguageToggle } from '@/components/ui/language-toggle'
 import { CourseDisplaySwitcher } from '@/components/dashboard/course-display-switcher'
 import { NewUserTutorial } from '@/components/dashboard/new-user-tutorial'
@@ -25,7 +26,7 @@ import { translate } from '@/lib/i18n'
 
 const GUEST_SETTINGS = {
   tauntFrequency: 62,
-  fontMode: 'hacker' as const,
+  fontMode: 'cyberpunk' as const,
   noiseBrightness: 48,
   chatDock: 'right' as const,
   chatPanelWidth: 390,
@@ -185,7 +186,7 @@ export async function GuestDashboard({ activeLanguageId = 'python' }: { activeLa
 
         <div className="pb-7 lg:pb-9">
           <NewUserTutorial
-            codename="试玩新人"
+            codename={lang === 'en' ? 'Rookie' : '试玩新人'}
             languageName={activeLanguage.name}
             languageRoute={activeLanguage.route}
             startHref={`/play?language=${activeLanguage.route}&level=1`}
@@ -224,6 +225,8 @@ export async function GuestDashboard({ activeLanguageId = 'python' }: { activeLa
           />
         </section>
       </main>
+
+      <SiteFooter lang={lang} />
     </div>
   )
 }

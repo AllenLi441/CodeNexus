@@ -12,6 +12,9 @@ export type LessonSection = {
   codeBlock?: CodeBlock
   tip?: string
   warning?: string
+  // Marks data-layer auto-generated sections so the renderer can rebuild the
+  // body from translatable parts (interpolated strings can't match EN_MAP).
+  auto?: 'breakdown' | 'checklist'
 }
 
 export type TestCase = {

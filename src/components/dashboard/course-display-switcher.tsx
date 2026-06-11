@@ -1,10 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import type { ProgressRow } from '@/app/actions/progress'
 import { CoursePicker } from '@/components/dashboard/course-picker'
-import { QuestMap } from '@/components/dashboard/quest-map'
 import { useCommandSettings, type CommandSettings } from '@/hooks/use-command-settings'
+
+// QuestMap pulls in the whole ReactFlow library but only renders in 'map' view
+// on wide screens — load it on demand so the default picker view doesn't pay.
+const QuestMap = dynamic(
+  () => import('@/components/dashboard/quest-map').then((m) => m.QuestMap),
+  {
+    ssr: false,
+    loading: () => <div className="h-[480px] animate-pulse rounded-lg border border-white/8 bg-black/40" />,
+  }
+)
 
 function useCompactCourseLayout() {
   const [compact, setCompact] = useState(true)

@@ -57,7 +57,7 @@ export async function updateCommandSettings(payload: CommandSettingsPayload): Pr
     return { ok: false, error: '代号至少 2 个字符。' }
   }
 
-  const fontMode: FontMode = payload.fontMode === 'cyberpunk' ? 'cyberpunk' : 'hacker'
+  const fontMode: FontMode = payload.fontMode === 'hacker' ? 'hacker' : 'cyberpunk'
   const tauntFrequency = clampPercent(payload.tauntFrequency)
   const noiseBrightness = clampPercent(payload.noiseBrightness)
   const chatDock = payload.chatDock === 'left' ? 'left' : 'right'

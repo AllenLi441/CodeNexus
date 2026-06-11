@@ -4,6 +4,7 @@ import { ArrowRight, Eye, MessageSquareQuote, Play } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { LEVEL_MAP } from '@/lib/levels'
 import { BrandHeader } from '@/components/layout/logo'
+import { SiteFooter } from '@/components/layout/site-footer'
 import { getServerLang } from '@/lib/i18n-server'
 import { translate } from '@/lib/i18n'
 import type { Metadata } from 'next'
@@ -19,16 +20,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq('id', id)
     .single()
 
-  const title = data?.title ?? `CodeNexus 代码片段 #${id}`
+  const lang = await getServerLang()
+  const isEn = lang === 'en'
+  const title = data?.title ?? (isEn ? `CodeNexus snippet #${id}` : `CodeNexus 代码片段 #${id}`)
   const language = data?.language ?? 'Python'
   const level = data?.level_id ? LEVEL_MAP.get(data.level_id) : null
   const quote = typeof data?.mentor_quote === 'string' ? data.mentor_quote : null
+  const viewLine = isEn ? `View this ${language} code on CodeNexus` : `在 CodeNexus 查看这段 ${language} 代码`
   const desc = level
-    ? quote ?? `${level.badge} · ${level.title} — 在 CodeNexus 查看这段 ${language} 代码`
-    : quote ?? `在 CodeNexus 查看这段 ${language} 代码`
+    ? quote ?? `${translate(level.badge, lang)} · ${translate(level.title, lang)} — ${viewLine}`
+    : quote ?? viewLine
 
   return {
-    title: `${title} — CodeNexus`,
+    // Root layout applies the '%s | CodeNexus' template — no manual suffix here.
+    title,
     description: desc,
     openGraph: {
       title,
@@ -62,7 +67,7 @@ export default async function SnippetPage({ params }: Props) {
   const truncated = codeLines.length > 40
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground cn-noise">
+    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground cn-noise">
       {/* Topbar */}
       <header className="sticky top-0 z-20 border-b border-cyan-300/12 bg-background/84 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
@@ -74,7 +79,7 @@ export default async function SnippetPage({ params }: Props) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-10">
+      <main className="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 py-10">
         {/* Meta */}
         <div className="space-y-2">
           {level && (
@@ -185,6 +190,8 @@ export default async function SnippetPage({ params }: Props) {
           </div>
         </div>
       </main>
+
+      <SiteFooter lang={lang} />
     </div>
   )
 }

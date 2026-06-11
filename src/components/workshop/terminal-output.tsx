@@ -39,7 +39,7 @@ export function TerminalOutput({ entries, isRunning, pyStatus, languageName = 'P
         <span className="ml-auto text-[10px] text-white/20">{pyStatus}</span>
       </div>
 
-      <div className="cn-scrollbar flex-1 space-y-4 overflow-y-auto p-4">
+      <div className="cn-scrollbar flex-1 space-y-4 overflow-y-auto p-4" role="log" aria-live="polite">
         {entries.length === 0 && !isRunning && (
           <div className="flex items-center gap-1.5 text-xs text-white/20">
             <Play className="h-3.5 w-3.5 fill-cyan-300/60 text-cyan-300/60" />
@@ -64,10 +64,11 @@ export function TerminalOutput({ entries, isRunning, pyStatus, languageName = 'P
               </pre>
             )}
 
-            {/* stderr */}
+            {/* stderr — tr() translates known runner messages and passes real
+                tracebacks through unchanged */}
             {entry.result.error && (
               <pre className="text-[var(--code-stderr)] whitespace-pre-wrap break-words leading-[1.65] text-sm">
-                {entry.result.error}
+                {tr(entry.result.error)}
               </pre>
             )}
 
@@ -96,7 +97,7 @@ export function TerminalOutput({ entries, isRunning, pyStatus, languageName = 'P
             <div className="flex items-center justify-end gap-2">
               {entry.result.speedTier.percentile && (
                 <span className="text-[10px] text-indigo-400/50">
-                  {entry.result.speedTier.percentile}
+                  {tr(entry.result.speedTier.percentile)}
                 </span>
               )}
               <span className="inline-flex items-center gap-1 text-[10px] text-white/20">
