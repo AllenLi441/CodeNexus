@@ -21,8 +21,7 @@ import {
   nextModuleLevelId,
 } from '@/lib/language-modules'
 import { getLanguageRouteSnapshot } from '@/lib/course-engagement'
-import { getServerLang } from '@/lib/i18n-server'
-import { translate } from '@/lib/i18n'
+import { T } from '@/components/i18n/t'
 
 export default async function DashboardPage({
   searchParams,
@@ -30,7 +29,6 @@ export default async function DashboardPage({
   searchParams: Promise<{ language?: string }>
 }) {
   const { language: languageParam } = await searchParams
-  const lang = await getServerLang()
   const user = await getCurrentUser()
   if (!user) redirect('/login')
 
@@ -88,7 +86,7 @@ export default async function DashboardPage({
             <form action={logout}>
               <Button type="submit" variant="ghost" size="sm" className="gap-2 text-ink-mute hover:text-foreground">
                 <LogOut className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{translate('退出', lang)}</span>
+                <span className="hidden sm:inline"><T zh="退出" /></span>
               </Button>
             </form>
           </div>
@@ -102,14 +100,14 @@ export default async function DashboardPage({
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.34em] text-cyan-300/45">Mission Control</p>
               <h1 className="mt-2 text-balance text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl">
-                {displayName}{translate('，', lang)}{translate(activeLanguage.name, lang)}{translate(' 链路已接入。', lang)}
+                {displayName}<T zh="，" /><T zh={activeLanguage.name} /><T zh=" 链路已接入。" />
               </h1>
               <p className="mt-1 text-pretty text-sm text-ink-mute">
                 {completedCount === 0
-                  ? translate('从 {language} 第一个节点开始，先把入口、输出和类型打稳。', lang).replace('{language}', translate(activeLanguage.name, lang))
+                  ? <T zh="从 {language} 第一个节点开始，先把入口、输出和类型打稳。" params={{ language: activeLanguage.name }} />
                   : completedCount === activeLanguage.levels.length
-                  ? translate('{language} 基础节点已清理。现在可以去专业分支写点像项目的东西。', lang).replace('{language}', translate(activeLanguage.name, lang))
-                  : translate('已完成 {done} / {total} 个节点，继续推进。', lang).replace('{done}', String(completedCount)).replace('{total}', String(activeLanguage.levels.length))}
+                  ? <T zh="{language} 基础节点已清理。现在可以去专业分支写点像项目的东西。" params={{ language: activeLanguage.name }} />
+                  : <T zh="已完成 {done} / {total} 个节点，继续推进。" params={{ done: completedCount, total: activeLanguage.levels.length }} />}
               </p>
             </div>
 
@@ -139,13 +137,13 @@ export default async function DashboardPage({
                   <Route className="h-5 w-5" />
                 </div>
                 <div className="mt-3">
-                  <p className="text-sm font-semibold text-foreground">{translate('继续任务', lang)}</p>
+                  <p className="text-sm font-semibold text-foreground"><T zh="继续任务" /></p>
                   <p className="mt-0.5 text-xs text-ink-mute">
-                    {translate('接入 Lv.', lang)}<span className="tabular-nums">{nextLevelId}</span>{translate(' 代码节点', lang)}
+                    <T zh="接入 Lv." /><span className="tabular-nums">{nextLevelId}</span><T zh=" 代码节点" />
                   </p>
                 </div>
                 <div className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary transition-all group-hover:gap-2">
-                  {translate('进入', lang)} <ArrowRight className="h-3.5 w-3.5" />
+                  <T zh="进入" /> <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               </section>
             </Link>
@@ -154,7 +152,7 @@ export default async function DashboardPage({
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-2 text-sm font-semibold text-ink-soft">
                   <Activity className="h-4 w-4 text-primary/70" />
-                  {translate('基础进度', lang)}
+                  <T zh="基础进度" />
                 </span>
                 <span className="font-mono text-2xl font-bold tabular-nums text-primary">{completedCount}/{activeLanguage.levels.length}</span>
               </div>
@@ -168,24 +166,24 @@ export default async function DashboardPage({
               </div>
               <p className="mt-3 text-center text-xs text-ink-mute">
                 {completedCount === activeLanguage.levels.length
-                  ? translate('基础节点全部点亮，领域分支已经为你开门。', lang)
-                  : translate('{total} 个基础节点点亮后，领域分支就会开门。', lang).replace('{total}', String(activeLanguage.levels.length))}
+                  ? <T zh="基础节点全部点亮，领域分支已经为你开门。" />
+                  : <T zh="{total} 个基础节点点亮后，领域分支就会开门。" params={{ total: activeLanguage.levels.length }} />}
               </p>
             </section>
 
             <section className="cn-panel rounded-2xl p-5">
               <p className="inline-flex items-center gap-2 text-sm font-semibold text-ink-soft">
                 <GitBranch className="h-4 w-4 text-primary/65" />
-                {translate('领域分支', lang)}
+                <T zh="领域分支" />
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-hairline bg-foreground/[0.025] p-3">
                   <p className="font-mono text-2xl font-semibold tabular-nums text-foreground">{activeLanguage.courseMaps.length}</p>
-                  <p className="mt-1 text-[10px] text-ink-mute">{translate('条领域枝干', lang)}</p>
+                  <p className="mt-1 text-[10px] text-ink-mute"><T zh="条领域枝干" /></p>
                 </div>
                 <div className="rounded-xl border border-hairline bg-foreground/[0.025] p-3">
                   <p className="font-mono text-2xl font-semibold tabular-nums text-foreground">{totalCourseTasks}</p>
-                  <p className="mt-1 text-[10px] text-ink-mute">{translate('道规划训练', lang)}</p>
+                  <p className="mt-1 text-[10px] text-ink-mute"><T zh="道规划训练" /></p>
                 </div>
               </div>
             </section>
@@ -193,14 +191,14 @@ export default async function DashboardPage({
             <section className="cn-panel rounded-2xl px-4 py-4">
               <p className="inline-flex items-center gap-2 text-sm font-semibold text-ink-soft">
                 <TerminalSquare className="h-4 w-4 text-primary/65" />
-                {translate('运行模式', lang)}
+                <T zh="运行模式" />
               </p>
-              <p className="mt-2 text-xs leading-relaxed text-ink-mute">{translate(routeSnapshot.runtimeNote, lang)}</p>
+              <p className="mt-2 text-xs leading-relaxed text-ink-mute"><T zh={routeSnapshot.runtimeNote} /></p>
             </section>
 
             <p className="flex items-start gap-2 px-1.5 text-[11px] italic leading-relaxed text-ink-mute">
               <Target className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary/45" />
-              <span>&quot;{translate('先把第一行代码跑通，其他都会跟上。', lang)}&quot; {translate('— CodeNexus 小助手', lang)}</span>
+              <span>&quot;<T zh="先把第一行代码跑通，其他都会跟上。" />&quot; <T zh="— CodeNexus 小助手" /></span>
             </p>
           </div>
 

@@ -23,11 +23,12 @@ import { getLanguageModule } from '@/lib/language-modules'
 import { getLanguageRouteSnapshot } from '@/lib/course-engagement'
 import { getServerLang } from '@/lib/i18n-server'
 import { translate } from '@/lib/i18n'
+import { T } from '@/components/i18n/t'
 
 const GUEST_SETTINGS = {
-  tauntFrequency: 62,
+  tauntFrequency: 15,
   fontMode: 'cyberpunk' as const,
-  noiseBrightness: 48,
+  noiseBrightness: 0,
   chatDock: 'right' as const,
   chatPanelWidth: 390,
   autoOpenMentor: false,
@@ -36,7 +37,7 @@ const GUEST_SETTINGS = {
   terminalFontSize: 14,
   mapAnimations: true,
   courseViewMode: 'picker' as const,
-  assistantPersona: 'mika' as const,
+  assistantPersona: 'nexus' as const,
   assistantLiveliness: 58,
   assistantMemory: false,
 }
@@ -61,22 +62,22 @@ export async function GuestDashboard({ activeLanguageId = 'python' }: { activeLa
           <div className="flex items-center gap-2">
             <LanguageToggle variant="badge" />
             <span className="hidden rounded-lg border border-cyan-300/18 bg-cyan-300/[0.06] px-3 py-2 font-mono text-xs text-cyan-100/68 md:inline-flex">
-              {translate('学习', lang)}
+              <T zh="学习" />
             </span>
             <Link
               href="/login"
               className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-hairline px-3 text-sm font-semibold text-ink-soft transition-colors hover:border-cyan-300/28 hover:text-cyan-100"
             >
               <LogIn className="h-3.5 w-3.5" />
-              {translate('登录', lang)}
+              <T zh="登录" />
             </Link>
             <Link
               href="/register?from=play"
               className="cn-focus-ring inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
             >
               <Save className="hidden h-3.5 w-3.5 sm:block" />
-              <span className="hidden sm:inline">{translate('保存进度', lang)}</span>
-              <span className="sm:hidden">{translate('保存', lang)}</span>
+              <span className="hidden sm:inline"><T zh="保存进度" /></span>
+              <span className="sm:hidden"><T zh="保存" /></span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -88,31 +89,31 @@ export async function GuestDashboard({ activeLanguageId = 'python' }: { activeLa
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/18 bg-cyan-300/[0.06] px-3 py-1.5 text-xs font-medium text-cyan-100/78">
               <Radar className="h-3.5 w-3.5" />
-              {translate('AI 编程学习 · 从 0 到实战', lang)}
+              <T zh="AI 编程学习 · 从 0 到实战" />
             </div>
             <h1 className="mt-6 text-balance text-[2.65rem] font-semibold leading-[1.04] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-              {translate('先把代码跑起来，', lang)}
-              <span className="block text-primary">{translate('再谈长期学习。', lang)}</span>
+              <T zh="先把代码跑起来，" />
+              <span className="block text-primary"><T zh="再谈长期学习。" /></span>
             </h1>
             <p className="mt-5 max-w-2xl text-pretty text-base leading-8 text-ink-soft sm:text-lg">
-              {translate('在 CodeNexus，你可以直接在浏览器里学编程、运行代码、获得小助手反馈。从第一句 `print()` 开始，逐步建立真正能动手的编程思维。', lang)}
+              <T zh="在 CodeNexus，你可以直接在浏览器里学编程、运行代码、获得小助手反馈。从第一句 `print()` 开始，逐步建立真正能动手的编程思维。" />
             </p>
 
             <div className="mt-7 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-hairline bg-foreground/[0.03] p-4 backdrop-blur transition-colors duration-300 hover:border-cyan-300/22 hover:bg-foreground/[0.05]">
                 <Code2 className="h-5 w-5 text-primary" />
-                <p className="mt-3 text-sm font-semibold text-foreground">{translate('在线编程', lang)}</p>
-                <p className="mt-1 text-xs leading-5 text-ink-mute">{translate('浏览器内编辑、运行代码。', lang)}</p>
+                <p className="mt-3 text-sm font-semibold text-foreground"><T zh="在线编程" /></p>
+                <p className="mt-1 text-xs leading-5 text-ink-mute"><T zh="浏览器内编辑、运行代码。" /></p>
               </div>
               <div className="rounded-2xl border border-hairline bg-foreground/[0.03] p-4 backdrop-blur transition-colors duration-300 hover:border-cyan-300/22 hover:bg-foreground/[0.05]">
                 <MessageSquareText className="h-5 w-5 text-primary" />
-                <p className="mt-3 text-sm font-semibold text-foreground">{translate('AI 小助手', lang)}</p>
-                <p className="mt-1 text-xs leading-5 text-ink-mute">{translate('登录后保留上下文和记忆。', lang)}</p>
+                <p className="mt-3 text-sm font-semibold text-foreground"><T zh="AI 小助手" /></p>
+                <p className="mt-1 text-xs leading-5 text-ink-mute"><T zh="登录后保留上下文和记忆。" /></p>
               </div>
               <div className="rounded-2xl border border-hairline bg-foreground/[0.03] p-4 backdrop-blur transition-colors duration-300 hover:border-cyan-300/22 hover:bg-foreground/[0.05]">
                 <MonitorPlay className="h-5 w-5 text-primary" />
-                <p className="mt-3 text-sm font-semibold text-foreground">{translate('实战导向', lang)}</p>
-                <p className="mt-1 text-xs leading-5 text-ink-mute">{translate('从小练习走向项目作品。', lang)}</p>
+                <p className="mt-3 text-sm font-semibold text-foreground"><T zh="实战导向" /></p>
+                <p className="mt-1 text-xs leading-5 text-ink-mute"><T zh="从小练习走向项目作品。" /></p>
               </div>
             </div>
           </div>
@@ -130,40 +131,40 @@ export async function GuestDashboard({ activeLanguageId = 'python' }: { activeLa
                 <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[var(--code-green)] shadow-[0_0_14px_color-mix(in_oklab,var(--code-green)_70%,transparent)]" />
               </div>
               <div>
-                <p className="text-lg font-semibold text-foreground">{translate('Nexus 小助手', lang)}</p>
-                <p className="mt-1 text-xs text-emerald-200/72">{translate('游客模式在线', lang)}</p>
+                <p className="text-lg font-semibold text-foreground"><T zh="Nexus 小助手" /></p>
+                <p className="mt-1 text-xs text-emerald-200/72"><T zh="游客模式在线" /></p>
               </div>
             </div>
 
             <p className="mt-5 text-pretty text-sm leading-7 text-ink-soft">
-              {translate('你好，我会在课程里解释概念、观察你的代码意图，并把你从“看懂了”拽到“真的写出来”。', lang)}
+              <T zh="你好，我会在课程里解释概念、观察你的代码意图，并把你从“看懂了”拽到“真的写出来”。" />
             </p>
 
             <div className="mt-5 grid gap-3">
               <div className="rounded-xl border border-hairline bg-foreground/[0.03] p-4">
                 <p className="inline-flex items-center gap-2 text-sm font-semibold text-ink-soft">
                   <BotMessageSquare className="h-4 w-4 text-primary" />
-                  {translate('当前路线', lang)}
+                  <T zh="当前路线" />
                 </p>
-                <p className="mt-2 text-sm font-semibold text-primary">{translate(activeLanguage.name, lang)}</p>
-                <p className="mt-1 text-xs leading-5 text-ink-mute">{translate(activeLanguage.description, lang)}</p>
+                <p className="mt-2 text-sm font-semibold text-primary"><T zh={activeLanguage.name} /></p>
+                <p className="mt-1 text-xs leading-5 text-ink-mute"><T zh={activeLanguage.description} /></p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <div className="rounded-xl border border-hairline bg-background/40 p-4">
                   <p className="inline-flex items-center gap-2 text-xs font-semibold text-ink-soft">
                     <CloudOff className="h-3.5 w-3.5 text-amber-200/75" />
-                    {translate('进度状态', lang)}
+                    <T zh="进度状态" />
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-ink-soft">{translate('未保存', lang)}</p>
-                  <p className="mt-1 text-xs leading-5 text-ink-mute">{translate('登录后才能跨设备保留学习记录。', lang)}</p>
+                  <p className="mt-2 text-sm font-semibold text-ink-soft"><T zh="未保存" /></p>
+                  <p className="mt-1 text-xs leading-5 text-ink-mute"><T zh="登录后才能跨设备保留学习记录。" /></p>
                 </div>
                 <div className="rounded-xl border border-hairline bg-background/40 p-4">
                   <p className="inline-flex items-center gap-2 text-xs font-semibold text-ink-soft">
                     <TerminalSquare className="h-3.5 w-3.5 text-primary/75" />
-                    {translate('运行模式', lang)}
+                    <T zh="运行模式" />
                   </p>
-                  <p className="mt-2 text-xs leading-5 text-ink-mute">{translate(routeSnapshot.runtimeNote, lang)}</p>
+                  <p className="mt-2 text-xs leading-5 text-ink-mute"><T zh={routeSnapshot.runtimeNote} /></p>
                 </div>
               </div>
 
@@ -171,7 +172,7 @@ export async function GuestDashboard({ activeLanguageId = 'python' }: { activeLa
                 href={`/play?language=${activeLanguage.route}&level=1`}
                 className="cn-focus-ring inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_8px_22px_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:scale-[0.98]"
               >
-                {translate('进入第一课', lang)}
+                <T zh="进入第一课" />
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -193,19 +194,19 @@ export async function GuestDashboard({ activeLanguageId = 'python' }: { activeLa
           <div className="mb-4 flex flex-col justify-between gap-3 px-1 sm:flex-row sm:items-end">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-cyan-300/45">Course Launchpad</p>
-              <h2 className="mt-1 text-xl font-semibold text-foreground">{translate('选择你的学习路径', lang)}</h2>
-              <p className="mt-1 text-sm leading-6 text-ink-mute">{translate('先选语言，再选领域分支，最后进入具体课程。', lang)}</p>
+              <h2 className="mt-1 text-xl font-semibold text-foreground"><T zh="选择你的学习路径" /></h2>
+              <p className="mt-1 text-sm leading-6 text-ink-mute"><T zh="先选语言，再选领域分支，最后进入具体课程。" /></p>
             </div>
             <div className="flex flex-wrap gap-2 text-[10px] text-ink-mute">
               <span className="rounded-lg border border-hairline bg-foreground/[0.03] px-2.5 py-1.5 tabular-nums">
-                {activeLanguage.courseMaps.length} {translate('条分支', lang)}
+                {activeLanguage.courseMaps.length} <T zh="条分支" />
               </span>
               <span className="rounded-lg border border-hairline bg-foreground/[0.03] px-2.5 py-1.5 tabular-nums">
-                {totalCourseTasks} {translate('道训练', lang)}
+                {totalCourseTasks} <T zh="道训练" />
               </span>
               <span className="inline-flex items-center gap-1 rounded-lg border border-amber-300/16 bg-amber-300/[0.06] px-2.5 py-1.5 text-amber-100/62">
                 <LockKeyhole className="h-3 w-3" />
-                {translate('试玩不保存', lang)}
+                <T zh="试玩不保存" />
               </span>
             </div>
           </div>

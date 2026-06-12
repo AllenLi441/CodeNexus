@@ -203,7 +203,7 @@ export function NewUserTutorial({
               {codename}{tr('，先用 3 分钟搞懂 CodeNexus。')}
             </h2>
             <p className="mt-3 text-sm leading-7 text-white/48">
-              {persona.name} {tr('会把新手第一轮路线讲清楚：怎么选课、怎么写、怎么运行、什么时候问小助手。')}
+              {tr(persona.name)} {tr('会把新手第一轮路线讲清楚：怎么选课、怎么写、怎么运行、什么时候问小助手。')}
             </p>
           </div>
           <div className="mt-4 flex flex-wrap gap-1.5">
