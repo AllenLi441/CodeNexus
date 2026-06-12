@@ -23,6 +23,8 @@ type CommandCenterProps = {
   initialCodename: string
   initialSettings?: Partial<CommandSettings> | null
   compact?: boolean
+  /** Trial mode: settings persist in this browser only (no account row to save). */
+  guestMode?: boolean
 }
 
 const FREQUENCY_LABELS = [
@@ -109,6 +111,7 @@ export function CommandCenter({
   initialCodename,
   initialSettings = DEFAULT_COMMAND_SETTINGS,
   compact = false,
+  guestMode = false,
 }: CommandCenterProps) {
   const router = useRouter()
   const tr = useTr()
@@ -127,6 +130,13 @@ export function CommandCenter({
     if (!canSave) return
     setError(null)
     setSaved(false)
+    // Guests have no account row — updateSettings already persisted everything
+    // (including the BYO API key) to this browser's localStorage.
+    if (guestMode) {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1600)
+      return
+    }
     startTransition(async () => {
       const res = await updateCommandSettings({
         codename: trimmedCodename,
@@ -547,7 +557,7 @@ export function CommandCenter({
                   {error && <p className="rounded-lg border border-red-400/25 bg-red-400/8 px-3 py-2 text-xs text-red-200">{tr(error)}</p>}
                   {saved && (
                     <p className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/25 bg-emerald-400/8 px-3 py-2 text-xs text-emerald-200">
-                      <Check className="h-3.5 w-3.5" /> {tr('设置已保存')}
+                      <Check className="h-3.5 w-3.5" /> {tr(guestMode ? '试玩设置已存到本机浏览器' : '设置已保存')}
                     </p>
                   )}
                 </div>

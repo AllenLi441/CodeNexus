@@ -3454,4 +3454,6 @@ export const EN_MAP: Record<string, string> = {
   "用 Lv.1-10 的能力做一个能运行、能展示、能复盘的 Visual Basic 小作品。": "Use your Lv.1-10 skills to build a small Visual Basic project you can run, show off, and review.",
   "用 Lv.1-15 的能力做一个能运行、能展示、能复盘的 Visual Basic 小作品。": "Use your Lv.1-15 skills to build a small Visual Basic project you can run, show off, and review.",
   "用 Lv.1-20 的能力做一个能运行、能展示、能复盘的 Visual Basic 小作品。": "Use your Lv.1-20 skills to build a small Visual Basic project you can run, show off, and review.",
+  "说出你真正想做的东西（记账小工具、猜数字游戏…），我会把它拆成 4–6 步专属路线，每步还标好可以去练的关卡。在命令中心填入你自己的 API Key 即可生成，或登录后直接用平台模型。下面是一个示例：": "Tell me what you actually want to build (a budgeting tool, a number-guessing game…) and I'll break it into a 4–6 step personal route, each step linked to a level you can practice. Add your own API key in the Command Center to generate it, or sign in to use the platform model. Here's an example:",
+  "试玩设置已存到本机浏览器": "Trial settings saved in this browser",
 }

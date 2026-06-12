@@ -16,7 +16,6 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import {
-  ArrowLeft,
   BookOpen,
   Bot,
   BriefcaseBusiness,
@@ -46,7 +45,7 @@ import {
   type CourseMap,
   type CourseNode,
 } from '@/lib/course-maps'
-import { getLanguageModule, isModuleLevelCompleted, type LearningLanguage } from '@/lib/language-modules'
+import { LANGUAGE_MODULES, getLanguageModule, isModuleLevelCompleted, type LearningLanguage } from '@/lib/language-modules'
 import { getCourseNodeHook, getCourseProjectPreview } from '@/lib/course-engagement'
 import { appleEase, appleSpring, quickFade } from '@/lib/motion'
 
@@ -306,7 +305,7 @@ export function QuestMap({
 }) {
   const router = useRouter()
   const tr = useTr()
-  const { settings, updateSettings } = useCommandSettings(initialSettings)
+  const { settings } = useCommandSettings(initialSettings)
   const language = useMemo(() => getLanguageModule(activeLanguageId), [activeLanguageId])
   const courseMaps = language.courseMaps
   const levels = language.levels
@@ -414,14 +413,32 @@ export function QuestMap({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
             {showLanguageBack && (
-              <button
-                type="button"
-                onClick={() => updateSettings({ courseViewMode: 'picker' })}
-                className="cn-focus-ring inline-flex h-9 flex-shrink-0 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.025] px-3 text-xs font-semibold text-cyan-100/72 transition-colors hover:border-cyan-300/35 hover:bg-cyan-300/10 hover:text-cyan-50"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                {tr('选择语言')}
-              </button>
+              /* Current-language box with quick-switch pills. Switching languages
+                 stays in map view — the old button here flipped courseViewMode back
+                 to 'picker' and silently overwrote the user's saved preference. */
+              <div className="w-full flex-shrink-0 rounded-lg border border-cyan-300/16 bg-cyan-300/[0.05] px-3 py-2.5 sm:w-auto">
+                <p className="font-mono text-[9px] uppercase tracking-[0.26em] text-cyan-300/45">{tr('当前语言：')}</p>
+                <p className="mt-0.5 text-base font-semibold leading-none text-cyan-50">{language.name}</p>
+                <div className="mt-2 flex max-w-[240px] flex-wrap gap-1">
+                  {LANGUAGE_MODULES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        if (item.id === language.id) return
+                        router.replace(demoMode ? `/play?language=${item.route}` : `/dashboard?language=${item.route}`)
+                      }}
+                      className={`cn-focus-ring rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+                        item.id === language.id
+                          ? 'bg-cyan-300 font-semibold text-black'
+                          : 'border border-white/10 bg-white/[0.03] text-white/45 hover:border-cyan-300/30 hover:text-cyan-100'
+                      }`}
+                    >
+                      {item.shortName}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-cyan-300/40">{language.domainLabel}</p>

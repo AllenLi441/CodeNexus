@@ -186,14 +186,16 @@ export function CustomRoutePanel({ route, levels, languageName, guestMode, onCha
     )
   }
 
-  // ── State: guest — honest preview, no live generation ───────────────────────
-  if (guestMode) {
+  // ── State: guest WITHOUT a BYO key — honest preview, no live generation.
+  // Guests who added their own API key in the Command Center fall through to
+  // the real generation flow (their key, their spend — full feature parity).
+  if (guestMode && !settings.aiApiKey.trim()) {
     return (
       <div className={SECTION_WRAP}>
         <div className="rounded-lg border border-cyan-300/14 bg-cyan-300/[0.035] p-3">
           {header}
           <p className="text-[11px] leading-relaxed text-white/45">
-            {tr('说出你真正想做的东西（记账小工具、猜数字游戏…），登录后我会把它拆成 4–6 步专属路线，每步还标好可以去练的关卡。下面是一个示例：')}
+            {tr('说出你真正想做的东西（记账小工具、猜数字游戏…），我会把它拆成 4–6 步专属路线，每步还标好可以去练的关卡。在命令中心填入你自己的 API Key 即可生成，或登录后直接用平台模型。下面是一个示例：')}
           </p>
           <div className="mt-2 grid gap-1.5 opacity-70">
             {GUEST_EXAMPLE.map((step, index) => (

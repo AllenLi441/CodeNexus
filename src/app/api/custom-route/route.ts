@@ -15,6 +15,14 @@ function json(data: unknown, status = 200) {
   return Response.json(data, { status })
 }
 
+function clientIp(req: NextRequest) {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown'
+  )
+}
+
 // Compact menu so the model can attach each milestone to a real, playable level.
 function levelMenu() {
   return LEVELS.map((level) => `${level.id}. ${level.title}`).join('\n')
@@ -69,14 +77,20 @@ export async function POST(req: NextRequest) {
   const lang = req.headers.get('x-codenexus-lang') === 'en' ? 'en' : 'zh'
   const isEn = lang === 'en'
 
-  // Only signed-in learners spend model tokens.
+  // Signed-in learners use the platform model; guests may generate too, but
+  // only with their own key (BYO) — anonymous traffic never burns our spend.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }))
-  if (!user) {
-    return json({ error: isEn ? 'Sign in first and I’ll build your custom route.' : '请先登录，再让我帮你定制路线。' }, 401)
+  const byoKey = req.headers.get('x-codenexus-ai-key')?.trim()
+  if (!user && !byoKey) {
+    return json({
+      error: isEn
+        ? 'In trial mode, add your own API key in the Command Center to generate a route — or sign in to use the platform model.'
+        : '试玩模式先在命令中心填入你自己的 API Key 就能生成路线，或登录后直接用平台模型。',
+    }, 401)
   }
 
-  const limit = checkRateLimit(`route:${user.id}`, ROUTE_LIMIT, ROUTE_WINDOW_MS)
+  const limit = checkRateLimit(user ? `route:${user.id}` : `route:guest:${clientIp(req)}`, ROUTE_LIMIT, ROUTE_WINDOW_MS)
   if (!limit.ok) {
     const seconds = Math.max(1, Math.ceil(limit.retryAfterMs / 1000))
     return json({ error: isEn ? `Too fast — try again in ${seconds}s.` : `定制得太快了，${seconds} 秒后再来一次。` }, 429)

@@ -895,7 +895,7 @@ export function PythonRunner({
 
         <LanguageToggle variant="badge" />
         {pyStatusIndicator}
-        {isGuestPlay ? (
+        {isGuestPlay && (
           <Link
             href="/register?from=play"
             className="cn-focus-ring inline-flex h-8 flex-shrink-0 items-center rounded-lg border border-cyan-300/24 bg-cyan-300/10 px-2 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/18 sm:px-3"
@@ -903,13 +903,15 @@ export function PythonRunner({
             <span className="sm:hidden">{tr('注册')}</span>
             <span className="hidden sm:inline">{tr('保存进度')}</span>
           </Link>
-        ) : (
-          <CommandCenter
-            initialCodename={codename}
-            initialSettings={initialSettings}
-            compact
-          />
         )}
+        {/* Guests get the Command Center too — settings persist locally and the
+            BYO API key entered there unlocks the assistant and route generation. */}
+        <CommandCenter
+          initialCodename={codename}
+          initialSettings={initialSettings}
+          compact
+          guestMode={isGuestPlay}
+        />
         {/* Sound toggle */}
         <button
           onClick={toggleSound}
