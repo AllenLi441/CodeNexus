@@ -32,7 +32,9 @@ export type CommandSettings = {
 }
 
 export const DEFAULT_COMMAND_SETTINGS: CommandSettings = {
-  tauntFrequency: 55,
+  // Sarcasm is locked to the lowest setting product-wide; the slider was removed
+  // from the UI, so this value is fixed at 0 everywhere it's read.
+  tauntFrequency: 0,
   // 'cyberpunk' is the proportional sans stack (with CJK fallbacks) — the
   // professional default. 'hacker' (global monospace) stays as an opt-in.
   fontMode: 'cyberpunk',
@@ -69,7 +71,7 @@ function clampNumber(value: number, min: number, max: number, fallback: number) 
 
 export function normalizeCommandSettings(settings?: Partial<CommandSettings> | null): CommandSettings {
   return {
-    tauntFrequency: clampPercent(settings?.tauntFrequency ?? DEFAULT_COMMAND_SETTINGS.tauntFrequency),
+    tauntFrequency: 0,
     fontMode: settings?.fontMode === 'hacker' ? 'hacker' : 'cyberpunk',
     noiseBrightness: clampPercent(settings?.noiseBrightness ?? DEFAULT_COMMAND_SETTINGS.noiseBrightness),
     chatDock: settings?.chatDock === 'left' ? 'left' : 'right',

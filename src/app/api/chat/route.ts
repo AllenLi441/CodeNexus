@@ -227,7 +227,6 @@ export async function POST(req: NextRequest) {
     messages,
     code,
     codename = lang === 'en' ? 'Rookie' : '无名小白',
-    tauntFrequency = 55,
     languageName = 'Python',
     assistantPersona = DEFAULT_ASSISTANT_PERSONA,
     assistantLiveliness = DEFAULT_ASSISTANT_LIVELINESS,
@@ -236,6 +235,10 @@ export async function POST(req: NextRequest) {
     lastRunState,
     lastRunMessage,
   } = body
+
+  // Sarcasm is locked to the lowest setting product-wide — ignore any value the
+  // client sends and always use 0 (lowest snark, lowest temperature).
+  const tauntFrequency = 0
 
   const en = lang === 'en'
   const contextMessages = []

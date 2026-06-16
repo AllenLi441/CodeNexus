@@ -1,14 +1,19 @@
 import { EN_MAP } from './i18n-en'
+import { BRANCH_EN } from './branches/branch-en'
 
 export type Lang = 'zh' | 'en'
 export const LANG_COOKIE = 'zf-lang'
 export const DEFAULT_LANG: Lang = 'zh'
 
 // zh→en lookup. The Chinese string is the key; a missing key falls back to the
-// Chinese, so partial coverage is always safe. Use this everywhere display text
-// needs to switch language (client via useTr(), server via translate(s, lang)).
+// Chinese, so partial coverage is always safe. Branch translations are spread
+// first so the curated EN_MAP wins on any key collision.
+const EN_LOOKUP: Record<string, string> = { ...BRANCH_EN, ...EN_MAP }
+
+// Use this everywhere display text needs to switch language (client via
+// useTr(), server via translate(s, lang)).
 export function translate(zh: string, lang: Lang): string {
-  return lang === 'en' ? (EN_MAP[zh] ?? zh) : zh
+  return lang === 'en' ? (EN_LOOKUP[zh] ?? zh) : zh
 }
 
 const t = {

@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bot, Check, Code2, Cpu, KeyRound, MessageSquare, Monitor, PanelRightOpen, Save, Settings2, SlidersHorizontal, Sparkles, Terminal, UserRound, X } from 'lucide-react'
+import { Bot, Check, Code2, Cpu, KeyRound, MessageSquare, Monitor, PanelRightOpen, Save, Settings2, Sparkles, Terminal, UserRound, X } from 'lucide-react'
 import { updateCommandSettings } from '@/app/actions/settings'
 import {
   type CommandSettings,
@@ -25,16 +25,6 @@ type CommandCenterProps = {
   compact?: boolean
   /** Trial mode: settings persist in this browser only (no account row to save). */
   guestMode?: boolean
-}
-
-const FREQUENCY_LABELS = [
-  { at: 20, label: '克制' },
-  { at: 65, label: '带刺' },
-  { at: 101, label: '火力全开' },
-]
-
-function frequencyLabel(value: number) {
-  return FREQUENCY_LABELS.find((item) => value < item.at)?.label ?? '带刺'
 }
 
 function SliderControl({
@@ -229,29 +219,6 @@ export function CommandCenter({
                       />
                       <p className="mt-2 text-[11px] leading-relaxed text-white/32">{tr('小助手会用这个代号称呼你。别起太长，代码已经够啰嗦了。')}</p>
                     </div>
-
-                    <section className="space-y-3 rounded-lg border border-white/8 bg-white/[0.025] p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs font-medium text-white/70">
-                          <SlidersHorizontal className="h-3.5 w-3.5 text-cyan-300/70" />
-                          {tr('嘲讽频率')}
-                        </div>
-                        <span className="text-xs text-cyan-200">{tr(frequencyLabel(settings.tauntFrequency))}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={settings.tauntFrequency}
-                        onChange={(event) => updateSettings({ tauntFrequency: Number(event.target.value) })}
-                        className="w-full accent-cyan-300"
-                      />
-                      <div className="flex justify-between text-[10px] uppercase tracking-wider text-white/25">
-                        <span>{tr('冷静')}</span>
-                        <span>{settings.tauntFrequency}</span>
-                        <span>{tr('尖锐')}</span>
-                      </div>
-                    </section>
 
                     <section className="space-y-3 rounded-lg border border-white/8 bg-white/[0.025] p-4">
                       <div className="flex items-center gap-2 text-xs font-medium text-white/70">

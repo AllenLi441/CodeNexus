@@ -44,3 +44,7 @@ output/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated-content staging (not shipped)
+src/lib/branches/.staging/
+gen/.backup-branches/

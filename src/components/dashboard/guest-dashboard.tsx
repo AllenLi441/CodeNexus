@@ -26,7 +26,7 @@ import { translate } from '@/lib/i18n'
 import { T } from '@/components/i18n/t'
 
 const GUEST_SETTINGS = {
-  tauntFrequency: 15,
+  tauntFrequency: 0,
   fontMode: 'cyberpunk' as const,
   noiseBrightness: 0,
   chatDock: 'right' as const,

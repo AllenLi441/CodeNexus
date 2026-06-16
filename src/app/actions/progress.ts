@@ -36,7 +36,8 @@ export type ProfileRow = {
 
 const DEFAULT_PROFILE: ProfileRow = {
   nickname: null,
-  mentor_taunt_frequency: 55,
+  // Sarcasm locked to lowest product-wide.
+  mentor_taunt_frequency: 0,
   mentor_font_mode: 'cyberpunk',
   noise_brightness: 45,
   chat_dock: 'right',
@@ -82,10 +83,8 @@ function normalizeProfile(
       : typeof metadata?.display_name === 'string'
       ? metadata.display_name
       : null,
-    mentor_taunt_frequency: asNumber(
-      row?.mentor_taunt_frequency ?? metadata?.mentor_taunt_frequency,
-      DEFAULT_PROFILE.mentor_taunt_frequency
-    ),
+    // Locked to lowest regardless of any previously-saved value.
+    mentor_taunt_frequency: 0,
     mentor_font_mode: asFontMode(row?.mentor_font_mode ?? metadata?.mentor_font_mode),
     noise_brightness: asNumber(
       row?.noise_brightness ?? metadata?.noise_brightness,

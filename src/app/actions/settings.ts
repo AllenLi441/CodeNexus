@@ -58,7 +58,8 @@ export async function updateCommandSettings(payload: CommandSettingsPayload): Pr
   }
 
   const fontMode: FontMode = payload.fontMode === 'hacker' ? 'hacker' : 'cyberpunk'
-  const tauntFrequency = clampPercent(payload.tauntFrequency)
+  // Sarcasm is locked to the lowest setting; never persist anything but 0.
+  const tauntFrequency = 0
   const noiseBrightness = clampPercent(payload.noiseBrightness)
   const chatDock = payload.chatDock === 'left' ? 'left' : 'right'
   const chatPanelWidth = clampNumber(payload.chatPanelWidth, 320, 520, 380)

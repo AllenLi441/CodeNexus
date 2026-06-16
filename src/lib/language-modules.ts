@@ -1,5 +1,13 @@
 import { COURSE_MAPS, type CourseMap, type CourseNode } from '@/lib/course-maps'
 import { LEVELS, type Level, type LessonSection, type TestCase } from '@/lib/levels'
+import { attachBranchLevels } from './branches/assemble'
+import { C_BRANCH_LEVELS } from './branches/c'
+import { CPP_BRANCH_LEVELS } from './branches/cpp'
+import { JAVA_BRANCH_LEVELS } from './branches/java'
+import { CSHARP_BRANCH_LEVELS } from './branches/csharp'
+import { JAVASCRIPT_BRANCH_LEVELS } from './branches/javascript'
+import { VISUAL_BASIC_BRANCH_LEVELS } from './branches/visual-basic'
+import { PYTHON_BRANCH_LEVELS } from './branches/python'
 
 export type LanguageId = 'python' | 'c' | 'cpp' | 'java' | 'csharp' | 'javascript' | 'visual-basic'
 export type RuntimeKind = 'python-pyodide' | 'server-exec' | 'static-check'
@@ -2821,6 +2829,17 @@ const visualBasicLevels = [
   ...createVisualBasicExpertLevels(),
 ]
 
+// Assemble each language: append authored branch sub-levels to `levels[]` and
+// attach the resulting `levelId`s to the matching CourseNodes. Nodes with no
+// authored content yet stay as "课程即将上线" placeholders.
+const pythonModule = attachBranchLevels(LEVELS, COURSE_MAPS, PYTHON_BRANCH_LEVELS)
+const cModule = attachBranchLevels(cLevels, [foundationMap('C', cLevels, 'amber'), ...genericBranches('C', 'c', 'amber')], C_BRANCH_LEVELS)
+const cppModule = attachBranchLevels(cppLevels, [foundationMap('C++', cppLevels, 'violet'), ...genericBranches('C++', 'cpp', 'violet')], CPP_BRANCH_LEVELS)
+const javaModule = attachBranchLevels(javaLevels, [foundationMap('Java', javaLevels, 'rose'), ...genericBranches('Java', 'java', 'rose')], JAVA_BRANCH_LEVELS)
+const csharpModule = attachBranchLevels(csharpLevels, [foundationMap('C#', csharpLevels, 'cyan'), ...genericBranches('C#', 'csharp', 'cyan')], CSHARP_BRANCH_LEVELS)
+const javascriptModule = attachBranchLevels(javascriptLevels, [foundationMap('JavaScript', javascriptLevels, 'emerald'), ...genericBranches('JavaScript', 'js', 'emerald')], JAVASCRIPT_BRANCH_LEVELS)
+const visualBasicModule = attachBranchLevels(visualBasicLevels, [foundationMap('Visual Basic', visualBasicLevels, 'cyan'), ...genericBranches('Visual Basic', 'vb', 'cyan')], VISUAL_BASIC_BRANCH_LEVELS)
+
 export const LANGUAGE_MODULES: LearningLanguage[] = [
   {
     id: 'python',
@@ -2834,8 +2853,8 @@ export const LANGUAGE_MODULES: LearningLanguage[] = [
     tagline: 'AI、自动化、数据、Web 和视觉应用的高效入口。',
     description: '保留完整 Pyodide 实时运行环境，20 个基础节点加专业领域分支。',
     domainLabel: 'Python Branch Atlas',
-    levels: LEVELS,
-    courseMaps: COURSE_MAPS,
+    levels: pythonModule.levels,
+    courseMaps: pythonModule.courseMaps,
   },
   {
     id: 'c',
@@ -2849,8 +2868,8 @@ export const LANGUAGE_MODULES: LearningLanguage[] = [
     tagline: '系统、内存、嵌入式和性能工程的地基。',
     description: '从 main、类型、数组、函数到指针，先把底层思维打稳。',
     domainLabel: 'C Systems Atlas',
-    levels: cLevels,
-    courseMaps: [foundationMap('C', cLevels, 'amber'), ...genericBranches('C', 'c', 'amber')],
+    levels: cModule.levels,
+    courseMaps: cModule.courseMaps,
   },
   {
     id: 'cpp',
@@ -2864,8 +2883,8 @@ export const LANGUAGE_MODULES: LearningLanguage[] = [
     tagline: '高性能应用、游戏引擎、交易系统和复杂工程。',
     description: '从 cout、vector、引用、class 到 RAII，建立现代 C++ 习惯。',
     domainLabel: 'C++ Engineering Atlas',
-    levels: cppLevels,
-    courseMaps: [foundationMap('C++', cppLevels, 'violet'), ...genericBranches('C++', 'cpp', 'violet')],
+    levels: cppModule.levels,
+    courseMaps: cppModule.courseMaps,
   },
   {
     id: 'java',
@@ -2879,8 +2898,8 @@ export const LANGUAGE_MODULES: LearningLanguage[] = [
     tagline: '后端服务、Android、企业系统和大型工程协作。',
     description: '从 Main、类型、ArrayList、方法到类建模，接入 Java 生态。',
     domainLabel: 'Java Platform Atlas',
-    levels: javaLevels,
-    courseMaps: [foundationMap('Java', javaLevels, 'rose'), ...genericBranches('Java', 'java', 'rose')],
+    levels: javaModule.levels,
+    courseMaps: javaModule.courseMaps,
   },
   {
     id: 'csharp',
@@ -2894,8 +2913,8 @@ export const LANGUAGE_MODULES: LearningLanguage[] = [
     tagline: '.NET、Unity、桌面工具、后端服务和企业应用。',
     description: '从 Console、类型、List、方法到属性和类，打通 C# 入门。',
     domainLabel: 'C# .NET Atlas',
-    levels: csharpLevels,
-    courseMaps: [foundationMap('C#', csharpLevels, 'cyan'), ...genericBranches('C#', 'csharp', 'cyan')],
+    levels: csharpModule.levels,
+    courseMaps: csharpModule.courseMaps,
   },
   {
     id: 'javascript',
@@ -2909,8 +2928,8 @@ export const LANGUAGE_MODULES: LearningLanguage[] = [
     tagline: 'Web 前端、Node.js、全栈应用和自动化脚本。',
     description: '从 console.log、let/const、数组方法、函数到 async/await。',
     domainLabel: 'JavaScript Web Atlas',
-    levels: javascriptLevels,
-    courseMaps: [foundationMap('JavaScript', javascriptLevels, 'emerald'), ...genericBranches('JavaScript', 'js', 'emerald')],
+    levels: javascriptModule.levels,
+    courseMaps: javascriptModule.courseMaps,
   },
   {
     id: 'visual-basic',
@@ -2924,8 +2943,8 @@ export const LANGUAGE_MODULES: LearningLanguage[] = [
     tagline: '桌面工具、Office 自动化、业务系统和 .NET 维护。',
     description: '从 Module、Dim、If、For Each、Function 到 Class。',
     domainLabel: 'Visual Basic Business Atlas',
-    levels: visualBasicLevels,
-    courseMaps: [foundationMap('Visual Basic', visualBasicLevels, 'cyan'), ...genericBranches('Visual Basic', 'vb', 'cyan')],
+    levels: visualBasicModule.levels,
+    courseMaps: visualBasicModule.courseMaps,
   },
 ]
 

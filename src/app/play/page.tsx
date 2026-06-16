@@ -58,7 +58,7 @@ export default async function PlayPage({
       initialLevelId={levelId}
       initialProgress={[]}
       initialSettings={{
-        tauntFrequency: 15,
+        tauntFrequency: 0,
         fontMode: 'cyberpunk',
         noiseBrightness: 0,
         chatDock: 'right',
