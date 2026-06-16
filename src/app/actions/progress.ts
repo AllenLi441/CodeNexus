@@ -8,7 +8,6 @@ import {
   resolveAssistantPersona,
   type AssistantPersonaId,
 } from '@/lib/assistant-persona'
-import { hasFullUnlockAccess, mergeFullUnlockProgress } from '@/lib/server-entitlements'
 
 export type ProgressRow = {
   level_id: number
@@ -132,7 +131,9 @@ export async function fetchUserProgress(): Promise<{
   const progress = (progressRes.data ?? []) as ProgressRow[]
 
   return {
-    progress: hasFullUnlockAccess(user.email) ? mergeFullUnlockProgress(progress) : progress,
+    // Every account sees its REAL progress. Levels are freely selectable/jumpable
+    // via the UI (unlockAll); completion is never auto-filled.
+    progress,
     profile: normalizeProfile(profileRes.data as Record<string, unknown> | null, user.user_metadata),
   }
 }
@@ -140,7 +141,6 @@ export async function fetchUserProgress(): Promise<{
 export async function recordAttempt(levelId: number) {
   const user = await getCurrentUser()
   if (!user) return
-  if (hasFullUnlockAccess(user.email)) return
   const supabase = await createClient()
 
   const { data: existing } = await supabase
@@ -165,7 +165,6 @@ export async function completeLevel(levelId: number): Promise<{
 }> {
   const user = await getCurrentUser()
   if (!user) throw new Error('Unauthenticated')
-  if (hasFullUnlockAccess(user.email)) return { alreadyCompleted: true }
   const supabase = await createClient()
 
   const { data: existing } = await supabase
