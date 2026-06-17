@@ -36,7 +36,7 @@ import { TerminalOutput } from './terminal-output'
 import { GuidePanel } from './guide-panel'
 import { AIChat } from './ai-chat'
 import { LevelCompleteOverlay } from './level-complete'
-import { LessonBriefing } from './lesson-briefing'
+import { LessonIntro } from './lesson-intro'
 import { MobileToolbar } from './mobile-toolbar'
 import { ShareButton } from './share-button'
 import { SparkParticles } from './spark-particles'
@@ -1077,7 +1077,7 @@ export function PythonRunner({
             </>
           ) : (
             <div className="min-h-0 flex-1 overflow-hidden">
-              <LessonBriefing level={level} languageName={language.name} codename={codename} onStart={startPractice} />
+              <LessonIntro level={level} languageName={language.name} codename={codename} settings={settings} onStart={startPractice} />
             </div>
           )}
         </main>
@@ -1105,7 +1105,7 @@ export function PythonRunner({
         {/* Tab content */}
         <div className="flex-1 overflow-hidden">
           {mobileTab === 'briefing' && (
-            <LessonBriefing level={level} languageName={language.name} codename={codename} onStart={startPractice} />
+            <LessonIntro level={level} languageName={language.name} codename={codename} settings={settings} onStart={startPractice} />
           )}
 
           {mobileTab === 'guide' && (
@@ -1135,7 +1135,7 @@ export function PythonRunner({
                   {testHintsBar}
                 </>
               ) : (
-                <LessonBriefing level={level} languageName={language.name} codename={codename} onStart={startPractice} />
+                <LessonIntro level={level} languageName={language.name} codename={codename} settings={settings} onStart={startPractice} />
               )}
             </div>
           )}
