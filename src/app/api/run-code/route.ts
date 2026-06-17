@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
-// Remote compile+run (Wandbox fallback) needs headroom beyond the default 10s.
+// Remote compile+run can be slow on a cold sandbox; give it headroom past 10s.
 export const maxDuration = 30
 
 type SupportedLanguage = 'c' | 'cpp' | 'java' | 'csharp' | 'javascript' | 'visual-basic'
@@ -18,7 +13,6 @@ type RunPayload = {
   code?: string
 }
 
-const execFileAsync = promisify(execFile)
 const MAX_CODE_LENGTH = 50_000
 const MAX_OUTPUT_LENGTH = 12_000
 // NOTE: the timeout message interpolates `${TIMEOUT_MS / 1000}s` into a string
@@ -27,8 +21,8 @@ const MAX_OUTPUT_LENGTH = 12_000
 // to Chinese.
 const TIMEOUT_MS = 8_000
 
-// 30 runs / minute / user. Each run can be a real compile, so this is a hard
-// cost ceiling (CPU + tmpfs IO). Adjust if learners legitimately exceed it.
+// 30 runs / minute / user. Each run is a real remote compile+run, so this is a
+// hard cost ceiling. Adjust if learners legitimately exceed it.
 const RUN_LIMIT = 30
 const RUN_WINDOW_MS = 60_000
 
@@ -38,63 +32,7 @@ function truncate(value: string) {
   return `${value.slice(0, MAX_OUTPUT_LENGTH)}\n... (output truncated / 输出已截断)`
 }
 
-async function commandExists(command: string) {
-  try {
-    await execFileAsync('which', [command], { timeout: 1_000 })
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function firstAvailable(commands: string[]) {
-  for (const command of commands) {
-    if (await commandExists(command)) return command
-  }
-  return null
-}
-
-async function runCommand(command: string, args: string[], cwd: string) {
-  const started = Date.now()
-  try {
-    const { stdout, stderr } = await execFileAsync(command, args, {
-      cwd,
-      timeout: TIMEOUT_MS,
-      maxBuffer: 1024 * 1024,
-      env: {
-        NODE_ENV: process.env.NODE_ENV ?? 'production',
-        PATH: process.env.PATH ?? '',
-        HOME: cwd,
-        TMPDIR: cwd,
-        LANG: process.env.LANG ?? 'C.UTF-8',
-        LC_ALL: process.env.LC_ALL ?? process.env.LANG ?? 'C.UTF-8',
-      },
-    })
-    return {
-      ok: true,
-      output: truncate(stdout),
-      error: truncate(stderr),
-      executionMs: Math.max(1, Date.now() - started),
-    }
-  } catch (error) {
-    const err = error as Error & { stdout?: string | Buffer; stderr?: string | Buffer; killed?: boolean; signal?: string }
-    const stdout = Buffer.isBuffer(err.stdout) ? err.stdout.toString('utf8') : err.stdout ?? ''
-    const stderr = Buffer.isBuffer(err.stderr) ? err.stderr.toString('utf8') : err.stderr ?? ''
-    const message = err.killed || err.signal === 'SIGTERM'
-      ? `运行超时：超过 ${TIMEOUT_MS / 1000}s，已停止。`
-      : stderr || err.message
-
-    return {
-      ok: false,
-      output: truncate(String(stdout)),
-      error: truncate(String(message)),
-      executionMs: Math.max(1, Date.now() - started),
-    }
-  }
-}
-
 function speedTier(executionMs: number) {
-  if (executionMs < 50) return { emoji: '✓', label: `${executionMs}ms`, percentile: '真实运行' }
   if (executionMs < 500) return { emoji: '✓', label: `${executionMs}ms`, percentile: '真实运行' }
   return { emoji: '✓', label: `${executionMs}ms`, percentile: '含编译/启动开销' }
 }
@@ -109,11 +47,75 @@ function response(output: string, error: string, executionMs: number) {
   })
 }
 
-// Remote execution fallback. Vercel's serverless runtime has Node (so JS runs
-// locally) but NOT gcc/g++/javac/mono, so C/C++/Java/C# are compiled+run on a
-// remote sandbox. Defaults to the public Wandbox API (free, no key) and is
-// overridable via CODE_EXEC_WANDBOX_URL so the deployment can point at a
-// self-hosted instance for production reliability. VB is not on Wandbox.
+// ── Remote execution ─────────────────────────────────────────────────────────
+// Vercel's serverless runtime cannot spawn child processes (clone() fails with
+// "OCI runtime error: crun: clone: Resource temporarily unavailable"), so NO
+// language is compiled/run locally. Everything goes to a remote sandbox.
+//
+// Primary: Piston (https://github.com/engineer-man/piston) — free public API at
+// emkc.org, no key, runs every language we teach (incl. JS via Node and VB via
+// basic.net). Self-host and point CODE_EXEC_PISTON_URL at it for production.
+// Fallback: Wandbox, for the compiled languages it supports, if Piston is down.
+const PISTON_URL = process.env.CODE_EXEC_PISTON_URL?.trim() || 'https://emkc.org/api/v2/piston/execute'
+
+// language + version are pinned to runtimes confirmed available on emkc.org. The
+// JS entry pins Node 18 (NOT the deno-js runtime that shares the "javascript"
+// language id). filename matters for Java (`public class Main` → Main.java).
+const PISTON_LANG: Record<SupportedLanguage, { language: string; version: string; filename: string }> = {
+  c: { language: 'c', version: '10.2.0', filename: 'main.c' },
+  cpp: { language: 'c++', version: '10.2.0', filename: 'main.cpp' },
+  java: { language: 'java', version: '15.0.2', filename: 'Main.java' },
+  csharp: { language: 'csharp', version: '6.12.0', filename: 'Program.cs' },
+  javascript: { language: 'javascript', version: '18.15.0', filename: 'main.js' },
+  'visual-basic': { language: 'basic.net', version: '5.0.201', filename: 'Program.vb' },
+}
+
+type PistonStage = { stdout?: string; stderr?: string; output?: string; code?: number | null; signal?: string | null }
+type PistonResult = { run?: PistonStage; compile?: PistonStage; message?: string }
+
+async function runViaPiston(languageId: SupportedLanguage, code: string) {
+  const cfg = PISTON_LANG[languageId]
+  const started = Date.now()
+  const res = await fetch(PISTON_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      language: cfg.language,
+      version: cfg.version,
+      files: [{ name: cfg.filename, content: code }],
+      stdin: '',
+      compile_timeout: 10_000,
+      run_timeout: TIMEOUT_MS,
+    }),
+    signal: AbortSignal.timeout(20_000),
+  })
+  const executionMs = Math.max(1, Date.now() - started)
+
+  if (res.status === 429) {
+    throw new Error('rate-limited')
+  }
+  if (!res.ok) {
+    throw new Error(`piston ${res.status}`)
+  }
+
+  const data = (await res.json()) as PistonResult
+  // Compile-stage failure (compiled languages only): surface it as the error.
+  if (data.compile && typeof data.compile.code === 'number' && data.compile.code !== 0) {
+    const compileErr = (data.compile.stderr || data.compile.output || '').trim()
+    return response('', truncate(compileErr || '编译失败。'), executionMs)
+  }
+
+  const run = data.run ?? {}
+  const stdout = run.stdout ?? ''
+  const stderr = run.stderr ?? ''
+  // Server-side kill on the run timeout.
+  if (run.signal === 'SIGKILL' && !stdout.trim()) {
+    return response('', `运行超时：超过 ${TIMEOUT_MS / 1000}s，已停止。`, executionMs)
+  }
+  return response(truncate(stdout), truncate(stderr), executionMs)
+}
+
+// Wandbox fallback. Only the compilers Wandbox exposes; JS/VB have no fallback.
 const WANDBOX_URL = process.env.CODE_EXEC_WANDBOX_URL?.trim() || 'https://wandbox.org/api/compile.json'
 const WANDBOX_COMPILER: Partial<Record<SupportedLanguage, string>> = {
   c: 'gcc-12.3.0-c',
@@ -124,126 +126,60 @@ const WANDBOX_COMPILER: Partial<Record<SupportedLanguage, string>> = {
 
 async function runViaWandbox(languageId: SupportedLanguage, code: string) {
   const compiler = WANDBOX_COMPILER[languageId]
-  if (!compiler) {
-    return response('', '这门语言暂时不支持在线编译运行。', 1)
-  }
-  // Wandbox writes the source to prog.java, so a `public class X` trips the
+  if (!compiler) return response('', '在线运行服务暂时不可用，稍后再试。', 1)
+  // Wandbox writes source to prog.java, so a `public class X` trips the
   // "class X is public, should be in X.java" rule. A package-private class with
-  // main still runs identically — strip only the `public` before `class`.
+  // main runs identically — strip only the `public` before `class`.
   const payloadCode = languageId === 'java' ? code.replace(/\bpublic\s+(?=class\b)/g, '') : code
 
   const started = Date.now()
+  const res = await fetch(WANDBOX_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ compiler, code: payloadCode, stdin: '' }),
+    signal: AbortSignal.timeout(15_000),
+  })
+  const executionMs = Math.max(1, Date.now() - started)
+  if (!res.ok) {
+    return response('', '在线运行服务暂时不可用，稍后再试。', executionMs)
+  }
+  const data = (await res.json()) as {
+    program_output?: string
+    program_error?: string
+    compiler_error?: string
+    status?: string
+  }
+  const compileErr = (data.compiler_error ?? '').trim()
+  const runOut = truncate(data.program_output ?? '')
+  const runErr = truncate(data.program_error ?? '')
+  if (compileErr && (data.status !== '0' || !runOut)) {
+    return response(runOut, compileErr, executionMs)
+  }
+  return response(runOut, runErr, executionMs)
+}
+
+async function runRemote(languageId: SupportedLanguage, code: string) {
   try {
-    const res = await fetch(WANDBOX_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ compiler, code: payloadCode, stdin: '' }),
-      signal: AbortSignal.timeout(15_000),
-    })
-    const executionMs = Date.now() - started
-    if (!res.ok) {
-      console.error('[run-code] remote sandbox returned', res.status)
-      return response('', '在线编译服务暂时不可用，稍后再试。', executionMs)
-    }
-    const data = (await res.json()) as {
-      program_output?: string
-      program_error?: string
-      compiler_error?: string
-      status?: string
-    }
-    const compileErr = (data.compiler_error ?? '').trim()
-    const runOut = truncate(data.program_output ?? '')
-    const runErr = truncate(data.program_error ?? '')
-    // Non-zero status with no stdout → surface the compiler error as the failure.
-    if (compileErr && (data.status !== '0' || !runOut)) {
-      return response(runOut, compileErr, executionMs)
-    }
-    return response(runOut, runErr, executionMs)
+    return await runViaPiston(languageId, code)
   } catch (err) {
-    console.error('[run-code] remote sandbox unreachable:', err instanceof Error ? err.message : err)
-    return response('', '在线编译服务暂时不可用，稍后再试。', Date.now() - started)
+    const reason = err instanceof Error ? err.message : String(err)
+    console.error('[run-code] piston failed:', reason)
+    // Rate-limited: don't hammer the fallback, tell the learner to wait.
+    if (reason === 'rate-limited') {
+      return response('', '在线运行有点忙，等几秒再点运行。', 1)
+    }
+    // Network / 5xx: try the Wandbox fallback for compiled languages.
+    try {
+      return await runViaWandbox(languageId, code)
+    } catch (fallbackErr) {
+      console.error('[run-code] wandbox fallback failed:', fallbackErr instanceof Error ? fallbackErr.message : fallbackErr)
+      return response('', '在线运行服务暂时不可用，稍后再试。', 1)
+    }
   }
 }
 
-async function runJavaScript(code: string, cwd: string) {
-  const node = await firstAvailable(['node'])
-  if (!node) return response('', '缺少 Node.js，无法真实运行 JavaScript。', 1)
-  const file = join(cwd, 'main.js')
-  await writeFile(file, code, 'utf8')
-  const result = await runCommand(node, ['--no-warnings', file], cwd)
-  return response(result.output, result.error, result.executionMs)
-}
-
-async function runC(code: string, cwd: string) {
-  const compiler = await firstAvailable(['clang', 'gcc'])
-  if (!compiler) return runViaWandbox('c', code)
-  const source = join(cwd, 'main.c')
-  const binary = join(cwd, 'main')
-  await writeFile(source, code, 'utf8')
-
-  const compile = await runCommand(compiler, [source, '-O0', '-Wall', '-Wextra', '-o', binary], cwd)
-  if (!compile.ok) return response(compile.output, compile.error, compile.executionMs)
-
-  const run = await runCommand(binary, [], cwd)
-  return response(run.output, run.error, compile.executionMs + run.executionMs)
-}
-
-async function runCpp(code: string, cwd: string) {
-  const compiler = await firstAvailable(['clang++', 'g++'])
-  if (!compiler) return runViaWandbox('cpp', code)
-  const source = join(cwd, 'main.cpp')
-  const binary = join(cwd, 'main')
-  await writeFile(source, code, 'utf8')
-
-  const compile = await runCommand(compiler, [source, '-std=c++17', '-O0', '-Wall', '-Wextra', '-o', binary], cwd)
-  if (!compile.ok) return response(compile.output, compile.error, compile.executionMs)
-
-  const run = await runCommand(binary, [], cwd)
-  return response(run.output, run.error, compile.executionMs + run.executionMs)
-}
-
-async function runJava(code: string, cwd: string) {
-  const javac = await firstAvailable(['javac'])
-  const java = await firstAvailable(['java'])
-  if (!javac || !java) return runViaWandbox('java', code)
-  const source = join(cwd, 'Main.java')
-  await writeFile(source, code, 'utf8')
-
-  const compile = await runCommand(javac, ['Main.java'], cwd)
-  if (!compile.ok) return response(compile.output, compile.error, compile.executionMs)
-
-  const run = await runCommand(java, ['Main'], cwd)
-  return response(run.output, run.error, compile.executionMs + run.executionMs)
-}
-
-async function runCSharp(code: string, cwd: string) {
-  const dotnet = await firstAvailable(['dotnet'])
-  if (!dotnet) return runViaWandbox('csharp', code)
-
-  const projectDir = join(cwd, 'CSharpRun')
-  const create = await runCommand(dotnet, ['new', 'console', '--force', '--output', projectDir], cwd)
-  if (!create.ok) return response(create.output, create.error, create.executionMs)
-
-  await writeFile(join(projectDir, 'Program.cs'), code, 'utf8')
-  const run = await runCommand(dotnet, ['run', '--no-restore', '--project', projectDir], cwd)
-  return response(run.output, run.error, create.executionMs + run.executionMs)
-}
-
-async function runVisualBasic(code: string, cwd: string) {
-  const dotnet = await firstAvailable(['dotnet'])
-  if (!dotnet) return runViaWandbox('visual-basic', code)
-
-  const projectDir = join(cwd, 'VBRun')
-  const create = await runCommand(dotnet, ['new', 'console', '-lang', 'VB', '--force', '--output', projectDir], cwd)
-  if (!create.ok) return response(create.output, create.error, create.executionMs)
-
-  await writeFile(join(projectDir, 'Program.vb'), code, 'utf8')
-  const run = await runCommand(dotnet, ['run', '--no-restore', '--project', projectDir], cwd)
-  return response(run.output, run.error, create.executionMs + run.executionMs)
-}
-
 export async function POST(req: NextRequest) {
-  // Auth: anon users cannot spawn child compilers on our box.
+  // Auth: anon users can't burn our remote-execution quota.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -275,26 +211,9 @@ export async function POST(req: NextRequest) {
   if (code.length > MAX_CODE_LENGTH) {
     return NextResponse.json({ error: 'Code too large' }, { status: 400 })
   }
-
-  const cwd = await mkdtemp(join(tmpdir(), 'codenexus-run-'))
-  try {
-    switch (languageId) {
-      case 'javascript':
-        return await runJavaScript(code, cwd)
-      case 'c':
-        return await runC(code, cwd)
-      case 'cpp':
-        return await runCpp(code, cwd)
-      case 'java':
-        return await runJava(code, cwd)
-      case 'csharp':
-        return await runCSharp(code, cwd)
-      case 'visual-basic':
-        return await runVisualBasic(code, cwd)
-      default:
-        return NextResponse.json({ error: 'Unsupported language' }, { status: 400 })
-    }
-  } finally {
-    await rm(cwd, { recursive: true, force: true })
+  if (!(languageId in PISTON_LANG)) {
+    return NextResponse.json({ error: 'Unsupported language' }, { status: 400 })
   }
+
+  return runRemote(languageId, code)
 }

@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   AlertTriangle,
   BookOpen,
+  BrainCircuit,
   Eraser,
   Info,
   Keyboard,
@@ -132,6 +133,59 @@ function runStaticCode(language: LearningLanguage, level: Level, code: string, t
   }
 }
 
+type MasteryVerdict = {
+  mastered: boolean
+  score: number
+  summary: string
+  gotRight: string[]
+  missing: string[]
+  nextStep: string
+}
+
+// AI mastery review. After the code runs for real, ask the model to judge — from
+// the goal + the learner's code + the actual output — whether they demonstrated
+// the concept. Returns null when no model is available (guest with no key, rate
+// limit, upstream error) so the caller falls back to the structural checks.
+async function assessMastery(
+  language: LearningLanguage,
+  level: Level,
+  code: string,
+  output: string,
+  error: string,
+  settings: CommandSettings,
+  lang: 'zh' | 'en',
+): Promise<MasteryVerdict | null> {
+  try {
+    const referenceExample = level.sections.find((s) => s.codeBlock)?.codeBlock?.code
+    const res = await fetch('/api/assess', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-codenexus-ai-provider': settings.aiProvider,
+        'x-codenexus-lang': lang,
+        ...(settings.aiApiKey ? {
+          'x-codenexus-ai-key': settings.aiApiKey,
+          'x-codenexus-ai-base-url': settings.aiBaseUrl,
+          'x-codenexus-ai-model': settings.aiModel,
+        } : {}),
+      },
+      body: JSON.stringify({
+        languageName: language.name,
+        levelTitle: level.title,
+        objective: level.objective,
+        referenceExample,
+        code,
+        output,
+        error,
+      }),
+    })
+    if (!res.ok) return null
+    return (await res.json()) as MasteryVerdict
+  } catch {
+    return null
+  }
+}
+
 async function runServerCode(language: LearningLanguage, code: string, tr: (zh: string) => string): Promise<RunResult> {
   const res = await fetch('/api/run-code', {
     method: 'POST',
@@ -167,7 +221,7 @@ export function PythonRunner({
   const language = useMemo(() => getLanguageModule(languageId), [languageId])
   const levels = language.levels
   const levelMap = useMemo(() => new Map(levels.map((item) => [item.id, item])), [levels])
-  const runtimeCopy = useMemo(() => getRuntimeModeCopy(language.name, language.runtime, tr, language.id), [language.name, language.runtime, tr, language.id])
+  const runtimeCopy = useMemo(() => getRuntimeModeCopy(language.name, language.runtime, tr), [language.name, language.runtime, tr])
   const [assistantOpen, setAssistantOpen] = useState(() => settings.autoOpenMentor)
 
   // ── Level ────────────────────────────────────────────────────────────────────
@@ -187,6 +241,7 @@ export function PythonRunner({
   const [entries, setEntries] = useState<TerminalEntry[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [lastTestResult, setLastTestResult] = useState<TestResult | null>(null)
+  const [aiVerdict, setAiVerdict] = useState<MasteryVerdict | null>(null)
   const [lastOutput, setLastOutput] = useState('')
   const [lastImage, setLastImage] = useState<string | null>(null)
   const [learningProfile, setLearningProfile] = useState<LearningProfile>({ records: [] })
@@ -396,6 +451,7 @@ export function PythonRunner({
     setCode(restored)
     setEntries([])
     setLastTestResult(null)
+    setAiVerdict(null)
     setProactiveHint(null)
     setLastOutput('')
     setLastImage(null)
@@ -546,7 +602,24 @@ export function PythonRunner({
       const testOutput = result.imageBase64
         ? `${result.output}\n__ZF_IMAGE__${result.imageBase64}`
         : result.output
-      const testResult = runTests(level, testOutput, code)
+      const structural = runTests(level, testOutput, code)
+
+      // AI mastery review is the primary judge when the code actually ran and a
+      // model is available: it can pass a valid alternative solution the rigid
+      // regex tests would reject (and reject hard-coded fakes the regex accepts).
+      // Falls back to the structural result when the AI is unavailable.
+      const ranForReal =
+        language.runtime === 'python-pyodide' ||
+        (language.runtime === 'server-exec' && !isGuestPlay)
+      let verdict: MasteryVerdict | null = null
+      if (ranForReal && !result.error) {
+        verdict = await assessMastery(language, level, code, result.output, result.error, settings, lang)
+      }
+      setAiVerdict(verdict)
+      const testResult: TestResult = {
+        ...structural,
+        passed: verdict ? verdict.mastered : structural.passed,
+      }
       setLastTestResult(testResult)
 
       if (!testResult.passed) {
@@ -586,10 +659,6 @@ export function PythonRunner({
       }
 
       if (testResult.passed) {
-        const ranForReal =
-          language.runtime === 'python-pyodide' ||
-          (language.runtime === 'server-exec' && !isGuestPlay)
-
         // Guest mode on non-Python languages only structure-checks the source —
         // it never compiles or runs. Be honest: never mark the level complete or
         // celebrate "通关" on a check that didn't actually run the code.
@@ -706,7 +775,7 @@ export function PythonRunner({
       setIsRunning(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [briefingComplete, code, isRunning, pyStatus, graphicsLoading, level, completedLevelIds, proactiveHint, language, levels, isGuestPlay, lang, tr])
+  }, [briefingComplete, code, isRunning, pyStatus, graphicsLoading, level, completedLevelIds, proactiveHint, language, levels, isGuestPlay, lang, tr, settings])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -781,7 +850,7 @@ export function PythonRunner({
     </div>
   )
 
-  const testHintsBar = lastTestResult && !lastTestResult.passed && failureDiagnosis && (
+  const testHintsBar = !aiVerdict && lastTestResult && !lastTestResult.passed && failureDiagnosis && (
     <div className="flex-shrink-0 space-y-2 border-t border-white/5 bg-amber-500/5 px-4 py-3">
       <div className="rounded-lg border border-amber-300/18 bg-amber-400/[0.055] px-3 py-2">
         <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-100/85">
@@ -801,6 +870,45 @@ export function PythonRunner({
           {tr(r.hint)}
         </p>
       ))}
+    </div>
+  )
+
+  // AI mastery review feedback (shown when the model judged the submission and
+  // it did not yet pass). On a pass, the level-complete overlay celebrates it.
+  const aiVerdictBar = aiVerdict && !aiVerdict.mastered && (
+    <div className="flex-shrink-0 border-t border-white/5 px-4 py-3">
+      <div className="cn-frost space-y-2 rounded-lg px-3 py-2.5">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-cyan-100/90">
+          <BrainCircuit className="h-3.5 w-3.5 text-cyan-200" />
+          {tr('小助手判定')}
+          <span className="ml-auto font-mono text-[10px] text-white/45">{tr('掌握度')} {aiVerdict.score}/100</span>
+        </p>
+        {aiVerdict.summary && <p className="text-[11px] leading-relaxed text-white/68">{aiVerdict.summary}</p>}
+        {aiVerdict.gotRight.length > 0 && (
+          <div className="grid gap-1">
+            {aiVerdict.gotRight.slice(0, 3).map((item, i) => (
+              <p key={i} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-emerald-200/75">
+                <span className="mt-0.5 flex-shrink-0 text-emerald-300/80">✓</span>{item}
+              </p>
+            ))}
+          </div>
+        )}
+        {aiVerdict.missing.length > 0 && (
+          <div className="grid gap-1">
+            {aiVerdict.missing.slice(0, 3).map((item, i) => (
+              <p key={i} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-amber-200/80">
+                <XCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-300/80" />{item}
+              </p>
+            ))}
+          </div>
+        )}
+        {aiVerdict.nextStep && (
+          <p className="text-[11px] leading-relaxed text-white/55">
+            <span className="text-cyan-100/72">{tr('下一步')}：</span>{aiVerdict.nextStep}
+            <span className="text-emerald-200/70"> {tr('再试一次，你离通过很近。')}</span>
+          </p>
+        )}
+      </div>
     </div>
   )
 
@@ -964,6 +1072,7 @@ export function PythonRunner({
               <div className="flex-1 overflow-hidden">
                 <CodeEditor ref={editorRef} value={code} onChange={handleCodeChange} language={language.editorLanguage} />
               </div>
+              {aiVerdictBar}
               {testHintsBar}
             </>
           ) : (
@@ -1022,6 +1131,7 @@ export function PythonRunner({
                   <div className="flex-1 overflow-hidden">
                     <CodeEditor ref={editorRef} value={code} onChange={handleCodeChange} language={language.editorLanguage} />
                   </div>
+                  {aiVerdictBar}
                   {testHintsBar}
                 </>
               ) : (

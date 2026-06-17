@@ -164,15 +164,15 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
         />
 
         <div className="border-b border-white/5 px-4 pb-3 pt-2">
-          <div className="rounded-lg border border-cyan-300/14 bg-cyan-300/[0.035] p-3">
+          <div className="cn-frost rounded-lg p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-200/55">
+              <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-200/70">
                 <RadioTower className="h-3.5 w-3.5" />
                 {mission.kicker}
               </span>
             </div>
-            <p className="text-xs leading-relaxed text-white/58">{mission.brief}</p>
-            <div className="mt-2 grid gap-1.5 text-[11px] leading-relaxed text-white/34">
+            <p className="text-xs leading-relaxed text-white/72">{mission.brief}</p>
+            <div className="mt-2 grid gap-1.5 text-[11px] leading-relaxed text-white/52">
               <p><span className="text-cyan-100/62">{tr('限制：')}</span>{mission.constraint.replace(/^限制：/, '').replace(/^Constraint: /, '')}</p>
               <p><span className="text-cyan-100/62">{tr('交付：')}</span>{mission.payoff.replace(/^交付：/, '').replace(/^Deliverable: /, '')}</p>
             </div>
@@ -180,15 +180,15 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
         </div>
 
         <div className="border-b border-white/5 px-4 pb-3">
-          <div className="space-y-3 rounded-lg border border-white/8 bg-white/[0.022] p-3">
+          <div className="cn-frost space-y-3 rounded-lg p-3">
             <div className="flex items-center gap-2">
               <BrainCircuit className="h-3.5 w-3.5 text-cyan-200/70" />
-              <p className="text-xs font-semibold text-white/72">{tr('这关真正要学')}</p>
+              <p className="text-xs font-semibold text-white/82">{tr('这关真正要学')}</p>
             </div>
-            <p className="text-xs leading-relaxed text-white/45">{teaching.mentalModel}</p>
+            <p className="text-xs leading-relaxed text-white/60">{teaching.mentalModel}</p>
             <div className="grid gap-1.5">
               {teaching.learnFirst.map((item) => (
-                <p key={item} className="flex items-start gap-2 text-[11px] leading-relaxed text-white/36">
+                <p key={item} className="flex items-start gap-2 text-[11px] leading-relaxed text-white/52">
                   <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-cyan-200/60" />
                   {item}
                 </p>
@@ -198,7 +198,7 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
         </div>
 
         <div className="border-b border-white/5 px-4 pb-3">
-          <div className="space-y-2 rounded-lg border border-amber-300/12 bg-amber-300/[0.035] p-3">
+          <div className="cn-frost space-y-2 rounded-lg p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <ScanSearch className="h-3.5 w-3.5 text-amber-100/70" />
@@ -251,13 +251,13 @@ export function GuidePanel({ levelId, levels, languageName, onFillCode, onChange
         </div>
 
         <div className="border-b border-white/5 px-4 pb-3">
-          <div className="space-y-2 rounded-lg border border-cyan-300/12 bg-cyan-300/[0.028] p-3">
+          <div className="cn-frost space-y-2 rounded-lg p-3">
             <div className="flex items-center gap-2">
               <ListChecks className="h-3.5 w-3.5 text-cyan-200/70" />
-              <p className="text-xs font-semibold text-white/72">{tr('实践路线')}</p>
+              <p className="text-xs font-semibold text-white/82">{tr('实践路线')}</p>
             </div>
             {teaching.practiceSteps.slice(0, 3).map((step, index) => (
-              <p key={step} className="flex gap-2 text-[11px] leading-relaxed text-white/38">
+              <p key={step} className="flex gap-2 text-[11px] leading-relaxed text-white/55">
                 <span className="font-mono text-cyan-200/58">{index + 1}</span>
                 <span>{step}</span>
               </p>
