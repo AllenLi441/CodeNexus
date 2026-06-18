@@ -48,8 +48,23 @@ function buildScript(
   )
   lines.push(tr('先说这关到底在学什么：') + teaching.concept + '。' + teaching.mentalModel)
   lines.push(tr('为什么值得学？') + teaching.realUse)
-  teaching.walkthrough.forEach((w) => lines.push(`**${w.title}** ${w.body}`))
-  level.sections.forEach((s) => lines.push(`**${tr(s.heading)}** ${tr(s.body)}`))
+
+  // Lead with the lesson's OWN authored sections (specific), including their
+  // tips/warnings. Fall back to the generic walkthrough only when a lesson has
+  // no written sections, so every one of the ~900 lessons gets a real talk.
+  const richSections = level.sections.filter((s) => s.body && s.body.trim())
+  if (richSections.length) {
+    richSections.forEach((s) => {
+      lines.push(`**${tr(s.heading)}** ${tr(s.body)}`)
+      if (s.tip) lines.push(tr('提示：') + tr(s.tip))
+      if (s.warning) lines.push(tr('小心：') + tr(s.warning))
+    })
+  } else {
+    teaching.walkthrough.forEach((w) => lines.push(`**${w.title}** ${w.body}`))
+  }
+  if (level.sections.some((s) => s.codeBlock)) {
+    lines.push(tr('具体怎么写，我把参考代码放进下面「完整图文讲义」了，需要就展开照着看。'))
+  }
   if (teaching.pitfalls.length) lines.push(tr('提醒一个常见坑：') + teaching.pitfalls[0])
   if (teaching.learnFirst.length) lines.push(tr('动手前先想清楚：') + teaching.learnFirst.join('、') + '。')
   lines.push(tr('好，轮到你了。这关目标是：') + tr(level.objective) + '。')
