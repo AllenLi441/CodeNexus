@@ -47,6 +47,7 @@ function systemPrompt(languageName: string, lang: 'zh' | 'en') {
 Judging rules:
 - Look at the lesson objective, the learner's ${languageName} code, and the program's REAL output.
 - Pass (mastered=true) when the code genuinely achieves the objective and the output is consistent with it — EVEN IF the learner used a different but valid approach than any example, or different variable names / wording / formatting. Do not demand one exact "right answer".
+- Judge by the GOAL/outcome, not by which function or library was used. If the objective names a specific function (e.g. "use X()"), treat that as ONE example, not a hard requirement: any other valid approach that produces the same result passes. NEVER fail a learner merely because they "didn't use that specific function".
 - Fail (mastered=false) when: the code does not run or output contradicts the goal; the code is empty, trivial, or unrelated; or the learner hard-coded/printed the expected result without actually doing the work the objective asks for.
 - Be encouraging but honest. Keep every string short and concrete.
 
@@ -60,6 +61,7 @@ Respond with STRICT JSON ONLY (no markdown, no prose), in English, shaped exactl
 判定规则：
 - 同时看本关目标、学员的 ${languageName} 代码、以及程序真实输出。
 - 通过（mastered=true）的标准：代码确实完成了目标，且输出与目标一致——哪怕用的方法、变量名、措辞或格式和示例不同，也算通过。不要只认一种「标准答案」。
+- 按「目标/结果」判，不按「用了哪个函数或库」判。就算本关目标里写了某个具体函数（例如「用 X()」），那也只是一种示例写法、不是硬性要求：只要用别的合理写法达成了同样结果，就算通过。绝不能因为「没用到那个特定函数」而判不过。
 - 不通过（mastered=false）的情况：代码跑不起来或输出与目标矛盾；代码为空、敷衍或与本关无关；或者学员直接把预期结果硬编码/打印出来，并没有真正做目标要求的事。
 - 鼓励但诚实。每条都要短、具体。
 

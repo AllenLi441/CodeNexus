@@ -467,6 +467,7 @@ export function AIChat({
   lastRunMessage,
   lastEditAt,
   onOpenChange,
+  openSignal,
 }: {
   currentCode: string
   codename: string
@@ -485,6 +486,7 @@ export function AIChat({
   lastRunMessage?: string
   lastEditAt?: number
   onOpenChange?: (open: boolean) => void
+  openSignal?: number
 }) {
   const persona = resolveAssistantPersona(settings.assistantPersona)
   const { lang } = useLanguage()
@@ -613,6 +615,12 @@ export function AIChat({
     autoOpenAppliedRef.current = true
     void Promise.resolve().then(() => setIsOpen(true))
   }, [settings.autoOpenMentor])
+
+  // Opened on demand from the lesson intro's "ask the assistant" button.
+  useEffect(() => {
+    if (!openSignal) return
+    void Promise.resolve().then(() => setIsOpen(true))
+  }, [openSignal])
 
   const isRightDocked = settings.chatDock === 'right'
   const panelSideClass = isRightDocked ? 'xl:right-0 xl:left-auto xl:border-l' : 'xl:left-0 xl:right-auto xl:border-r'

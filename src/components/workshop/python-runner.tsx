@@ -223,6 +223,9 @@ export function PythonRunner({
   const levelMap = useMemo(() => new Map(levels.map((item) => [item.id, item])), [levels])
   const runtimeCopy = useMemo(() => getRuntimeModeCopy(language.name, language.runtime, tr), [language.name, language.runtime, tr])
   const [assistantOpen, setAssistantOpen] = useState(() => settings.autoOpenMentor)
+  // Bumped when the learner clicks "ask the assistant" from the lesson intro —
+  // opens the floating AIChat panel (which carries the lesson context).
+  const [askSignal, setAskSignal] = useState(0)
 
   // ── Level ────────────────────────────────────────────────────────────────────
   const [levelId, setLevelId] = useState(Math.min(Math.max(initialLevelId, 1), levels.length))
@@ -1077,7 +1080,7 @@ export function PythonRunner({
             </>
           ) : (
             <div className="min-h-0 flex-1 overflow-hidden">
-              <LessonIntro level={level} languageName={language.name} codename={codename} settings={settings} onStart={startPractice} />
+              <LessonIntro key={level.id} level={level} languageName={language.name} codename={codename} onStart={startPractice} onAsk={() => setAskSignal((s) => s + 1)} />
             </div>
           )}
         </main>
@@ -1105,7 +1108,7 @@ export function PythonRunner({
         {/* Tab content */}
         <div className="flex-1 overflow-hidden">
           {mobileTab === 'briefing' && (
-            <LessonIntro level={level} languageName={language.name} codename={codename} settings={settings} onStart={startPractice} />
+            <LessonIntro key={level.id} level={level} languageName={language.name} codename={codename} onStart={startPractice} onAsk={() => setAskSignal((s) => s + 1)} />
           )}
 
           {mobileTab === 'guide' && (
@@ -1135,7 +1138,7 @@ export function PythonRunner({
                   {testHintsBar}
                 </>
               ) : (
-                <LessonIntro level={level} languageName={language.name} codename={codename} settings={settings} onStart={startPractice} />
+                <LessonIntro key={level.id} level={level} languageName={language.name} codename={codename} onStart={startPractice} onAsk={() => setAskSignal((s) => s + 1)} />
               )}
             </div>
           )}
@@ -1233,6 +1236,7 @@ export function PythonRunner({
         lastRunMessage={assistantRunMessage}
         lastEditAt={lastEditAt}
         onOpenChange={setAssistantOpen}
+        openSignal={askSignal}
       />
 
       {/* ── Level complete overlay ───────────────────────────────────────────── */}
