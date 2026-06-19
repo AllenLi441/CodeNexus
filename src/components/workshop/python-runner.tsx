@@ -245,6 +245,9 @@ export function PythonRunner({
   const [isRunning, setIsRunning] = useState(false)
   const [lastTestResult, setLastTestResult] = useState<TestResult | null>(null)
   const [aiVerdict, setAiVerdict] = useState<MasteryVerdict | null>(null)
+  // Caches the last AI verdict by exact code, so re-running identical code reuses
+  // it instead of paying another AI call + 1-3s wait. Reset on level change.
+  const lastJudgedRef = useRef<{ code: string; verdict: MasteryVerdict } | null>(null)
   const [lastOutput, setLastOutput] = useState('')
   const [lastImage, setLastImage] = useState<string | null>(null)
   const [learningProfile, setLearningProfile] = useState<LearningProfile>({ records: [] })
@@ -455,6 +458,7 @@ export function PythonRunner({
     setEntries([])
     setLastTestResult(null)
     setAiVerdict(null)
+    lastJudgedRef.current = null
     setProactiveHint(null)
     setLastOutput('')
     setLastImage(null)
@@ -616,7 +620,12 @@ export function PythonRunner({
         (language.runtime === 'server-exec' && !isGuestPlay)
       let verdict: MasteryVerdict | null = null
       if (ranForReal && !result.error) {
-        verdict = await assessMastery(language, level, code, result.output, result.error, settings, lang)
+        if (lastJudgedRef.current && lastJudgedRef.current.code === code) {
+          verdict = lastJudgedRef.current.verdict
+        } else {
+          verdict = await assessMastery(language, level, code, result.output, result.error, settings, lang)
+          if (verdict) lastJudgedRef.current = { code, verdict }
+        }
       }
       setAiVerdict(verdict)
       const testResult: TestResult = {

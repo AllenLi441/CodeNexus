@@ -172,6 +172,12 @@ export function LessonIntro({ level, languageName, codename, onStart, onAsk }: L
           )}
         </div>
 
+        {sp.supported && sp.enabled && !sp.langVoiceAvailable && (
+          <p className="-mt-2 mb-3 text-[11px] leading-relaxed text-amber-200/70">
+            {tr('未检测到中文语音，将用系统默认嗓音朗读；可在系统设置里添加中文语音以获得更好效果。')}
+          </p>
+        )}
+
         {/* Assistant conversation */}
         <div className="flex-1 space-y-3">
           <AnimatePresence initial={false}>

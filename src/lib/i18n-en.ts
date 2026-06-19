@@ -3279,6 +3279,7 @@ export const EN_MAP: Record<string, string> = {
   "打开编辑器，从最小能跑的一版写起。有任何不懂的，直接点「问小助手」告诉我你卡在哪。": "Open the editor and start from the smallest version that runs. Stuck on anything? Tap \"Ask the assistant\" and tell me where.",
   "有不懂的？问小助手": "Don't get it? Ask the assistant",
   "全部展开": "Show all",
+  "未检测到中文语音，将用系统默认嗓音朗读；可在系统设置里添加中文语音以获得更好效果。": "No Chinese voice detected — using the system default voice. Add a Chinese voice in your system settings for better results.",
   "具体怎么写，我把参考代码放进下面「完整图文讲义」了，需要就展开照着看。": "For exact code, I've put a reference snippet in the \"full written lesson\" below — expand it and follow along if you need.",
   "目标很简单——{obj}。准备好就打开编辑器，我们边写边来。": "The goal is simple — {obj}. When you're ready, open the editor and we'll write it together.",
   "{lang} 代码会发送到云端沙箱真实编译运行，输出和报错来自真实工具链。代码会离开本机，请不要包含隐私信息。": "{lang} code is sent to a cloud sandbox to compile and run for real — output and errors come from a real toolchain. Your code leaves this device, so don't include private information.",

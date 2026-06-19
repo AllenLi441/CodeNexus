@@ -22,6 +22,10 @@ export type UseSpeech = {
   enabled: boolean
   setEnabled: (on: boolean) => void
   voices: SpeechSynthesisVoice[]
+  // True when the device actually has a voice for the current language. When
+  // false, speech still works via the browser default, but quality/coverage is
+  // poor (common on Android/Linux/Chrome with no Chinese voice) — the UI warns.
+  langVoiceAvailable: boolean
   voiceURI: string
   setVoiceURI: (uri: string) => void
   speaking: boolean
@@ -33,6 +37,7 @@ export function useSpeech(lang: 'zh' | 'en'): UseSpeech {
   const supported = speechAvailable()
   const [enabled, setEnabledState] = useState(false)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [langVoiceAvailable, setLangVoiceAvailable] = useState(false)
   const [voiceURI, setVoiceURIState] = useState('')
   const [speaking, setSpeaking] = useState(false)
   // Hold the latest onDone so a cancel/replace doesn't leave a dangling promise.
@@ -64,6 +69,7 @@ export function useSpeech(lang: 'zh' | 'en'): UseSpeech {
       const prefix = langPrefix(lang)
       const matching = all.filter((v) => v.lang?.toLowerCase().startsWith(prefix))
       setVoices(matching.length ? matching : all)
+      setLangVoiceAvailable(matching.length > 0)
     }
     load()
     window.speechSynthesis.addEventListener('voiceschanged', load)
@@ -139,5 +145,5 @@ export function useSpeech(lang: 'zh' | 'en'): UseSpeech {
   // Stop any speech on unmount.
   useEffect(() => cancel, [cancel])
 
-  return { supported, enabled, setEnabled, voices, voiceURI, setVoiceURI, speaking, speak, cancel }
+  return { supported, enabled, setEnabled, voices, langVoiceAvailable, voiceURI, setVoiceURI, speaking, speak, cancel }
 }
