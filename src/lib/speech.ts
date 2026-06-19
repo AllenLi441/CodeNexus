@@ -34,7 +34,7 @@ export type UseSpeech = {
 }
 
 export function useSpeech(lang: 'zh' | 'en'): UseSpeech {
-  const supported = speechAvailable()
+  const [supported, setSupported] = useState(false)
   const [enabled, setEnabledState] = useState(false)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
   const [langVoiceAvailable, setLangVoiceAvailable] = useState(false)
@@ -43,10 +43,19 @@ export function useSpeech(lang: 'zh' | 'en'): UseSpeech {
   // Hold the latest onDone so a cancel/replace doesn't leave a dangling promise.
   const doneRef = useRef<(() => void) | null>(null)
 
-  // Restore persisted prefs (best-effort). Deferred off the synchronous effect
+  // Detect support AFTER mount, so the server render and the first client render
+  // agree (the voice UI is client-only — gating it on a post-mount flag avoids a
+  // hydration mismatch / React #418).
+  useEffect(() => {
+    let cancelled = false
+    void Promise.resolve().then(() => { if (!cancelled) setSupported(speechAvailable()) })
+    return () => { cancelled = true }
+  }, [])
+
+  // Restore persisted prefs (best-effort), deferred off the synchronous effect
   // body so we don't trigger cascading renders (React 19 set-state-in-effect).
   useEffect(() => {
-    if (!supported) return
+    if (!speechAvailable()) return
     let cancelled = false
     void Promise.resolve().then(() => {
       if (cancelled) return
@@ -58,12 +67,12 @@ export function useSpeech(lang: 'zh' | 'en'): UseSpeech {
       }
     })
     return () => { cancelled = true }
-  }, [supported])
+  }, [])
 
   // Load voices for the active language. getVoices() is often empty until the
   // async 'voiceschanged' event fires, so we listen for it.
   useEffect(() => {
-    if (!supported) return
+    if (!speechAvailable()) return
     const load = () => {
       const all = window.speechSynthesis.getVoices()
       const prefix = langPrefix(lang)
@@ -74,7 +83,7 @@ export function useSpeech(lang: 'zh' | 'en'): UseSpeech {
     load()
     window.speechSynthesis.addEventListener('voiceschanged', load)
     return () => window.speechSynthesis.removeEventListener('voiceschanged', load)
-  }, [supported, lang])
+  }, [lang])
 
   const cancel = useCallback(() => {
     if (!supported) return
