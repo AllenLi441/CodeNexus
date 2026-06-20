@@ -53,10 +53,12 @@ function response(output: string, error: string, executionMs: number) {
 // language is compiled/run locally. Everything goes to a remote sandbox.
 //
 // Primary: Piston (https://github.com/engineer-man/piston) — free public API at
-// emkc.org, no key, runs every language we teach (incl. JS via Node and VB via
-// basic.net). Self-host and point CODE_EXEC_PISTON_URL at it for production.
-// Fallback: Wandbox, for the compiled languages it supports, if Piston is down.
-const PISTON_URL = process.env.CODE_EXEC_PISTON_URL?.trim() || 'https://emkc.org/api/v2/piston/execute'
+// Provider order (see runRemote): a self-hosted Piston (CODE_EXEC_PISTON_URL) is
+// tried first when configured; otherwise the free Paiza.IO public runner; Wandbox
+// is a last-resort fallback for the compiled languages it supports. The emkc.org
+// public Piston went whitelist-only on 2026-02-15 (intermittent 401), so it is NO
+// LONGER a default — only a Piston URL you set (self-hosted) is ever used.
+const PISTON_URL = process.env.CODE_EXEC_PISTON_URL?.trim() || ''
 
 // language + version are pinned to runtimes confirmed available on emkc.org. The
 // JS entry pins Node 18 (NOT the deno-js runtime that shares the "javascript"
@@ -119,6 +121,82 @@ async function runViaPiston(languageId: SupportedLanguage, code: string) {
   return response(truncate(stdout), truncate(stderr), executionMs)
 }
 
+// Paiza.IO — free public runner (api_key=guest, no key needed). Covers all six
+// languages INCLUDING Visual Basic. Async: create a runner (longpoll for the
+// result), then read details. No whitelist, but it's a free best-effort service.
+const PAIZA_URL = process.env.CODE_EXEC_PAIZA_URL?.trim() || 'https://api.paiza.io'
+const PAIZA_LANG: Record<SupportedLanguage, string> = {
+  c: 'c',
+  cpp: 'cpp',
+  java: 'java',
+  csharp: 'csharp',
+  javascript: 'javascript',
+  'visual-basic': 'vb',
+}
+
+type PaizaJob = { id?: string; status?: string; error?: string }
+type PaizaDetails = {
+  build_result?: string
+  build_stdout?: string
+  build_stderr?: string
+  stdout?: string
+  stderr?: string
+  result?: string
+}
+
+async function runViaPaiza(languageId: SupportedLanguage, code: string) {
+  const started = Date.now()
+  const createBody = new URLSearchParams({
+    source_code: code,
+    language: PAIZA_LANG[languageId],
+    input: '',
+    longpoll: 'true',
+    longpoll_timeout: '14',
+    api_key: 'guest',
+  })
+  const createRes = await fetch(`${PAIZA_URL}/runners/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: createBody.toString(),
+    signal: AbortSignal.timeout(20_000),
+  })
+  if (!createRes.ok) {
+    const body = await createRes.text().catch(() => '')
+    throw new Error(`paiza ${createRes.status}: ${body.slice(0, 120)}`)
+  }
+  let job = (await createRes.json()) as PaizaJob
+  if (!job.id) throw new Error(`paiza no-id: ${JSON.stringify(job).slice(0, 120)}`)
+
+  // longpoll usually returns 'completed'; if it timed out as 'running', poll.
+  let tries = 0
+  while (job.status !== 'completed' && tries < 6) {
+    await new Promise((r) => setTimeout(r, 1_200))
+    const stRes = await fetch(`${PAIZA_URL}/runners/get_status?id=${job.id}&api_key=guest`, {
+      signal: AbortSignal.timeout(10_000),
+    })
+    job = (await stRes.json()) as PaizaJob
+    tries++
+  }
+  if (job.status !== 'completed') throw new Error('paiza timeout')
+
+  const detRes = await fetch(`${PAIZA_URL}/runners/get_details?id=${job.id}&api_key=guest`, {
+    signal: AbortSignal.timeout(10_000),
+  })
+  if (!detRes.ok) throw new Error(`paiza details ${detRes.status}`)
+  const det = (await detRes.json()) as PaizaDetails
+  const executionMs = Math.max(1, Date.now() - started)
+
+  // Compile / build failure → surface it as the error.
+  if (det.build_result && det.build_result !== 'success') {
+    const be = (det.build_stderr || det.build_stdout || '').trim()
+    return response('', truncate(be || '编译失败。'), executionMs)
+  }
+  if (det.result === 'timeout') {
+    return response('', '运行超时，已停止。', executionMs)
+  }
+  return response(truncate(det.stdout ?? ''), truncate(det.stderr ?? ''), executionMs)
+}
+
 // Wandbox fallback. Only the compilers Wandbox exposes; JS/VB have no fallback.
 const WANDBOX_URL = process.env.CODE_EXEC_WANDBOX_URL?.trim() || 'https://wandbox.org/api/compile.json'
 const WANDBOX_COMPILER: Partial<Record<SupportedLanguage, string>> = {
@@ -163,23 +241,28 @@ async function runViaWandbox(languageId: SupportedLanguage, code: string) {
 }
 
 async function runRemote(languageId: SupportedLanguage, code: string) {
-  try {
-    return await runViaPiston(languageId, code)
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err)
-    console.error('[run-code] piston failed:', reason)
-    // Rate-limited: don't hammer the fallback, tell the learner to wait.
-    if (reason === 'rate-limited') {
-      return response('', '在线运行有点忙，等几秒再点运行。', 1)
-    }
-    // Network / 5xx: try the Wandbox fallback for compiled languages.
+  // Try providers in order. A returned response (incl. compile/runtime errors) is
+  // the final answer; only a THROWN error falls through to the next provider.
+  const providers: Array<{ name: string; run: () => Promise<NextResponse> }> = []
+  if (PISTON_URL) providers.push({ name: 'piston', run: () => runViaPiston(languageId, code) })
+  providers.push({ name: 'paiza', run: () => runViaPaiza(languageId, code) })
+  providers.push({ name: 'wandbox', run: () => runViaWandbox(languageId, code) })
+
+  let reason = ''
+  for (const p of providers) {
     try {
-      return await runViaWandbox(languageId, code)
-    } catch (fallbackErr) {
-      console.error('[run-code] wandbox fallback failed:', fallbackErr instanceof Error ? fallbackErr.message : fallbackErr)
-      return response('', `在线运行服务暂时不可用，稍后再试。（${reason}）`, 1)
+      return await p.run()
+    } catch (err) {
+      const r = err instanceof Error ? err.message : String(err)
+      console.error(`[run-code] ${p.name} failed:`, r)
+      if (r === 'rate-limited') {
+        return response('', '在线运行有点忙，等几秒再点运行。', 1)
+      }
+      // Keep the most informative reason (not the wandbox "unsupported" noise).
+      if (r !== 'no-wandbox-compiler') reason = r
     }
   }
+  return response('', `在线运行服务暂时不可用，稍后再试。（${reason}）`, 1)
 }
 
 export async function POST(req: NextRequest) {
