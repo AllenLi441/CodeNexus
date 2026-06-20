@@ -66,8 +66,11 @@ const PISTON_LANG: Record<SupportedLanguage, { language: string; version: string
   cpp: { language: 'c++', version: '10.2.0', filename: 'main.cpp' },
   java: { language: 'java', version: '15.0.2', filename: 'Main.java' },
   csharp: { language: 'csharp', version: '6.12.0', filename: 'Program.cs' },
-  javascript: { language: 'javascript', version: '18.15.0', filename: 'main.js' },
-  'visual-basic': { language: 'basic.net', version: '5.0.201', filename: 'Program.vb' },
+  // `node-js` (alias) forces Piston's Node runtime, not its deno "javascript"
+  // runtime. `*` = latest available version, so we survive Piston version drift
+  // (pinned 18.15.0 / 5.0.201 stopped matching, which silently broke JS + VB).
+  javascript: { language: 'node-js', version: '*', filename: 'main.js' },
+  'visual-basic': { language: 'basic.net', version: '*', filename: 'Program.vb' },
 }
 
 type PistonStage = { stdout?: string; stderr?: string; output?: string; code?: number | null; signal?: string | null }
@@ -95,7 +98,8 @@ async function runViaPiston(languageId: SupportedLanguage, code: string) {
     throw new Error('rate-limited')
   }
   if (!res.ok) {
-    throw new Error(`piston ${res.status}`)
+    const body = await res.text().catch(() => '')
+    throw new Error(`piston ${res.status}: ${body.slice(0, 120)}`)
   }
 
   const data = (await res.json()) as PistonResult
@@ -126,7 +130,7 @@ const WANDBOX_COMPILER: Partial<Record<SupportedLanguage, string>> = {
 
 async function runViaWandbox(languageId: SupportedLanguage, code: string) {
   const compiler = WANDBOX_COMPILER[languageId]
-  if (!compiler) return response('', '在线运行服务暂时不可用，稍后再试。', 1)
+  if (!compiler) throw new Error('no-wandbox-compiler')
   // Wandbox writes source to prog.java, so a `public class X` trips the
   // "class X is public, should be in X.java" rule. A package-private class with
   // main runs identically — strip only the `public` before `class`.
@@ -173,7 +177,7 @@ async function runRemote(languageId: SupportedLanguage, code: string) {
       return await runViaWandbox(languageId, code)
     } catch (fallbackErr) {
       console.error('[run-code] wandbox fallback failed:', fallbackErr instanceof Error ? fallbackErr.message : fallbackErr)
-      return response('', '在线运行服务暂时不可用，稍后再试。', 1)
+      return response('', `在线运行服务暂时不可用，稍后再试。（${reason}）`, 1)
     }
   }
 }
