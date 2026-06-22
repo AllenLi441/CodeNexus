@@ -21,10 +21,12 @@ const MAX_OUTPUT_LENGTH = 12_000
 // to Chinese.
 const TIMEOUT_MS = 8_000
 
-// 30 runs / minute / user. Each run is a real remote compile+run, so this is a
-// hard cost ceiling. Adjust if learners legitimately exceed it.
-const RUN_LIMIT = 30
+// Per-user burst + daily caps. Each run is a real remote compile+run that spends
+// the (free, shared) Paiza quota, so these bound abuse. Env-tunable.
+const RUN_LIMIT = Number(process.env.RUN_PER_MIN) || 30
 const RUN_WINDOW_MS = 60_000
+const RUN_PER_DAY = Number(process.env.RUN_PER_DAY) || 400
+const RUN_DAY_MS = 86_400_000
 
 function truncate(value: string) {
   if (value.length <= MAX_OUTPUT_LENGTH) return value
@@ -279,6 +281,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: '运行太频繁，请稍后再试。' },
       { status: 429, headers: { 'Retry-After': String(seconds) } },
+    )
+  }
+  // Per-user daily cap — bounds how much of the shared Paiza quota one account
+  // can spend in a day. Self-host a runner (CODE_EXEC_PISTON_URL) to lift it.
+  if (!checkRateLimit(`run:day:${user.id}`, RUN_PER_DAY, RUN_DAY_MS).ok) {
+    return NextResponse.json(
+      { error: '今天的在线运行次数到上限了，明天再来；或自托管运行后端解除限制。' },
+      { status: 429 },
     )
   }
 
