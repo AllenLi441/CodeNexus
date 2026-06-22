@@ -60,17 +60,16 @@ function response(output: string, error: string, executionMs: number) {
 // LONGER a default — only a Piston URL you set (self-hosted) is ever used.
 const PISTON_URL = process.env.CODE_EXEC_PISTON_URL?.trim() || ''
 
-// language + version are pinned to runtimes confirmed available on emkc.org. The
-// JS entry pins Node 18 (NOT the deno-js runtime that shares the "javascript"
-// language id). filename matters for Java (`public class Main` → Main.java).
+// Used only by a SELF-HOSTED Piston (CODE_EXEC_PISTON_URL — see
+// docs/self-host-piston.md). version '*' = "latest installed", so it matches
+// whatever language packages you install on your Piston without version-pinning.
+// `node-js` forces the Node runtime (not Piston's deno "javascript"). filename
+// matters for Java (`public class Main` → Main.java).
 const PISTON_LANG: Record<SupportedLanguage, { language: string; version: string; filename: string }> = {
-  c: { language: 'c', version: '10.2.0', filename: 'main.c' },
-  cpp: { language: 'c++', version: '10.2.0', filename: 'main.cpp' },
-  java: { language: 'java', version: '15.0.2', filename: 'Main.java' },
-  csharp: { language: 'csharp', version: '6.12.0', filename: 'Program.cs' },
-  // `node-js` (alias) forces Piston's Node runtime, not its deno "javascript"
-  // runtime. `*` = latest available version, so we survive Piston version drift
-  // (pinned 18.15.0 / 5.0.201 stopped matching, which silently broke JS + VB).
+  c: { language: 'c', version: '*', filename: 'main.c' },
+  cpp: { language: 'c++', version: '*', filename: 'main.cpp' },
+  java: { language: 'java', version: '*', filename: 'Main.java' },
+  csharp: { language: 'csharp', version: '*', filename: 'Program.cs' },
   javascript: { language: 'node-js', version: '*', filename: 'main.js' },
   'visual-basic': { language: 'basic.net', version: '*', filename: 'Program.vb' },
 }
