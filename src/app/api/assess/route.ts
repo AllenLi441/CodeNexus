@@ -12,8 +12,17 @@ export const maxDuration = 30
 // Returns 200 with a verdict, or a non-200 the client treats as "AI unavailable,
 // fall back to the structural checks" (e.g. guests with no key).
 
-const ASSESS_LIMIT = 30
-const ASSESS_WINDOW_MS = 60_000
+// Cost guardrails (env-tunable). Each clean run can trigger one AI judgment, so
+// these bound DeepSeek spend. Exceeding ANY cap returns non-200 → the client
+// falls back to the local structural checks (judging still works, just free).
+// NOTE: in-memory + per-instance (see rate-limit.ts) — a soft floor, not a hard
+// global guarantee; move to a shared store (Upstash) for strict global limits.
+const ASSESS_PER_MIN = Number(process.env.ASSESS_PER_MIN) || 20
+const ASSESS_PER_DAY = Number(process.env.ASSESS_PER_DAY) || 200
+const ASSESS_GLOBAL_PER_HOUR = Number(process.env.ASSESS_GLOBAL_PER_HOUR) || 3000
+const MINUTE_MS = 60_000
+const HOUR_MS = 3_600_000
+const DAY_MS = 86_400_000
 
 const MAX_FIELD = 8_000
 
@@ -110,10 +119,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: ai.error }, { status: 400 })
   }
 
-  const rateKey = user ? `assess:${user.id}` : `assess:guest`
-  const limit = checkRateLimit(rateKey, ASSESS_LIMIT, ASSESS_WINDOW_MS)
-  if (!limit.ok) {
+  // Per-user burst + per-user daily caps, then a global hourly circuit breaker.
+  const who = user ? user.id : 'guest'
+  if (!checkRateLimit(`assess:min:${who}`, ASSESS_PER_MIN, MINUTE_MS).ok) {
     return NextResponse.json({ error: 'rate-limited' }, { status: 429 })
+  }
+  if (!checkRateLimit(`assess:day:${who}`, ASSESS_PER_DAY, DAY_MS).ok) {
+    return NextResponse.json({ error: 'daily-limit' }, { status: 429 })
+  }
+  if (!checkRateLimit('assess:global:hour', ASSESS_GLOBAL_PER_HOUR, HOUR_MS).ok) {
+    return NextResponse.json({ error: 'global-busy' }, { status: 503 })
   }
 
   let body: AssessPayload
