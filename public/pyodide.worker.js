@@ -8,11 +8,14 @@
  *                  | {type:'init-error',message} | {type:'run-error',id,message}
  */
 const PYODIDE_VERSION = "0.26.4";
-// Mirror order matters: jsDelivr's fastly endpoint tends to be reachable from
-// mainland China when the default endpoint isn't, so it backs up the primary.
+// Mirror order tuned for mainland-China speed: the default cdn.jsdelivr.net is
+// often slow from China, so try Gcore (Asia PoPs, usually fastest there) first,
+// then Fastly, then the default. Each is a full Pyodide dist (~9MB wasm + stdlib)
+// so any can serve everything; the worker falls to the next only on a hard error.
 const CDN_MIRRORS = [
-  "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/",
+  "https://gcore.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/",
   "https://fastly.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/",
+  "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/",
 ];
 
 let py = null;
