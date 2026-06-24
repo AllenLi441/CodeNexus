@@ -1,19 +1,30 @@
 import { EN_MAP } from './i18n-en'
-import { BRANCH_EN } from './branches/branch-en'
 
 export type Lang = 'zh' | 'en'
 export const LANG_COOKIE = 'zf-lang'
 export const DEFAULT_LANG: Lang = 'zh'
 
-// zh→en lookup. The Chinese string is the key; a missing key falls back to the
-// Chinese, so partial coverage is always safe. Branch translations are spread
-// first so the curated EN_MAP wins on any key collision.
-const EN_LOOKUP: Record<string, string> = { ...BRANCH_EN, ...EN_MAP }
+// Branch-lesson EN translations (~1MB) are heavy and only needed in English, so
+// they are NOT statically imported — that used to ship them to EVERY client,
+// including Chinese users who never switch. The client lazy-loads them via
+// loadBranchEn() when in English; until loaded, EN branch strings fall back to
+// Chinese (server + client both start that way, so there is no hydration
+// mismatch — English upgrades in via a normal state update after load).
+let branchEn: Record<string, string> = {}
+let branchEnPromise: Promise<void> | null = null
+export function loadBranchEn(): Promise<void> {
+  if (branchEnPromise) return branchEnPromise
+  branchEnPromise = import('./branches/branch-en')
+    .then((m) => { branchEn = m.BRANCH_EN })
+    .catch(() => { branchEnPromise = null })
+  return branchEnPromise
+}
 
-// Use this everywhere display text needs to switch language (client via
-// useTr(), server via translate(s, lang)).
+// Switch display text by language. Curated EN_MAP wins over branch translations;
+// missing keys fall back to Chinese, so partial coverage is always safe.
 export function translate(zh: string, lang: Lang): string {
-  return lang === 'en' ? (EN_LOOKUP[zh] ?? zh) : zh
+  if (lang !== 'en') return zh
+  return EN_MAP[zh] ?? branchEn[zh] ?? zh
 }
 
 const t = {

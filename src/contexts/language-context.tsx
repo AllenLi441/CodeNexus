@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext, useMemo, useState, useTransition, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, useTransition, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { type Lang, LANG_COOKIE, DEFAULT_LANG, TRANSLATIONS, translate } from '@/lib/i18n'
+import { type Lang, LANG_COOKIE, DEFAULT_LANG, TRANSLATIONS, translate, loadBranchEn } from '@/lib/i18n'
 import { persistLanguage } from '@/app/actions/language'
 
 // Use a loose type so both zh/en translations are assignable
@@ -12,12 +12,14 @@ type LanguageContextValue = {
   lang: Lang
   t: AnyTranslation
   setLang: (lang: Lang) => void
+  branchRev: number
 }
 
 const LanguageContext = createContext<LanguageContextValue>({
   lang: DEFAULT_LANG,
   t: TRANSLATIONS[DEFAULT_LANG] as AnyTranslation,
   setLang: () => {},
+  branchRev: 0,
 })
 
 export function LanguageProvider({ children, initialLang }: { children: ReactNode; initialLang?: Lang }) {
@@ -33,6 +35,18 @@ export function LanguageProvider({ children, initialLang }: { children: ReactNod
     }
     return DEFAULT_LANG
   })
+  const [branchRev, setBranchRev] = useState(0)
+
+  // In English, lazy-load the heavy branch translations (kept out of the default
+  // bundle), then bump a revision so useTr() re-renders with them. Server + the
+  // client's first render both show Chinese for branch strings, so this upgrade
+  // is a normal post-hydration state update — no hydration mismatch.
+  useEffect(() => {
+    if (lang !== 'en') return
+    let active = true
+    void loadBranchEn().then(() => { if (active) setBranchRev((r) => r + 1) })
+    return () => { active = false }
+  }, [lang])
 
   function setLang(newLang: Lang) {
     if (newLang === lang) return
@@ -51,7 +65,7 @@ export function LanguageProvider({ children, initialLang }: { children: ReactNod
   }
 
   return (
-    <LanguageContext.Provider value={{ lang, t: TRANSLATIONS[lang] as AnyTranslation, setLang }}>
+    <LanguageContext.Provider value={{ lang, t: TRANSLATIONS[lang] as AnyTranslation, setLang, branchRev }}>
       {children}
     </LanguageContext.Provider>
   )
@@ -64,6 +78,8 @@ export function useLanguage() {
 // Convenience hook: returns a `tr('中文')` function bound to the current language.
 // Wrap display strings with it — missing translations fall back to Chinese.
 export function useTr() {
-  const { lang } = useLanguage()
-  return useMemo(() => (zh: string) => translate(zh, lang), [lang])
+  const { lang, branchRev } = useLanguage()
+  // branchRev is a dep so EN branch translations re-render in once lazy-loaded.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => (zh: string) => translate(zh, lang), [lang, branchRev])
 }
